@@ -1608,7 +1608,7 @@ def save_uploaded_attachments(uploaded_files):
     for uploaded_file in uploaded_files:
         safe_name = uploaded_file.name.replace(" ", "_")
         unique_name = f"{uuid.uuid4().hex}_{safe_name}"
-        file_path = os.path.join(UPLOAD_FOLDER, unique_name)
+        file_path = os.path.abspath(os.path.join(UPLOAD_FOLDER, unique_name))
 
         with open(file_path, "wb") as file:
             file.write(uploaded_file.getbuffer())
@@ -1933,19 +1933,33 @@ def show_ticket_list():
 
                     st.write(f"📎 **{file_name}** ({file_size} bytes)")
 
-                    if file_path and os.path.exists(file_path):
+                    resolved_path = file_path
+                    saved_name = attachment.get("saved_name")
+
+                    # Try fallback if original path doesn't work
+                    if not resolved_path or not os.path.exists(resolved_path):
+                        if saved_name:
+                            fallback_path = os.path.join(UPLOAD_FOLDER,
+                                                         saved_name)
+                            if os.path.exists(fallback_path):
+                                resolved_path = fallback_path
+
+                    if resolved_path and os.path.exists(resolved_path):
                         if file_type.startswith("image"):
-                            st.image(file_path, caption=file_name, use_container_width=True)
+                            st.image(resolved_path, caption=file_name,
+                                     use_container_width=True)
                         else:
-                            with open(file_path, "rb") as file:
+                            with open(resolved_path, "rb") as file:
                                 st.download_button(
                                     label=f"⬇️ Download {file_name}",
                                     data=file,
                                     file_name=file_name,
-                                    key=f"download_{i}_{attachment_index}",
+                                    key=f"download_{i}_{attachment_index}"
                                 )
                     else:
                         st.warning("Attachment file was not found on disk.")
+                        st.caption(
+                            "The ticket still has the attachment record, but the file is missing from storage.")
 
             suggestions = ticket.get("suggestions", [])
             if suggestions:
