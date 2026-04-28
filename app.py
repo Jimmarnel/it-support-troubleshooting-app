@@ -1,5 +1,6 @@
 import json
 import os
+import sqlite3
 import uuid
 
 import streamlit as st
@@ -7,10 +8,105 @@ import streamlit as st
 # -----------------------------
 # STORAGE CONFIG
 # -----------------------------
-TICKETS_FILE = "tickets.json"
 UPLOAD_FOLDER = "ticket_attachments"
+DATABASE_FILE = "it_support.db"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+# -----------------------------
+# DATABASE SETUP
+# -----------------------------
+def get_db_connection():
+    """Create and return a SQLite database connection."""
+    connection = sqlite3.connect(DATABASE_FILE)
+    connection.row_factory = sqlite3.Row
+    return connection
+
+
+def initialize_database():
+    """Create SQLite tables if they do not already exist."""
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'User'
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS issues (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT UNIQUE NOT NULL,
+            category TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            tags TEXT,
+            symptoms TEXT,
+            causes TEXT,
+            user_steps TEXT,
+            it_steps TEXT,
+            steps TEXT
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS tickets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            email TEXT,
+            issue TEXT NOT NULL,
+            description TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            priority TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'Open',
+            assigned_to TEXT DEFAULT 'Unassigned',
+            resolution_notes TEXT DEFAULT '',
+            likely_infrastructure INTEGER DEFAULT 0,
+            unread_for_admin INTEGER DEFAULT 1,
+            unread_for_user INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS ticket_comments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticket_id INTEGER NOT NULL,
+            author TEXT NOT NULL,
+            role TEXT NOT NULL,
+            comment TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (ticket_id) REFERENCES tickets (id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS ticket_attachments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticket_id INTEGER NOT NULL,
+            original_name TEXT NOT NULL,
+            saved_name TEXT NOT NULL,
+            path TEXT NOT NULL,
+            file_type TEXT,
+            size INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (ticket_id) REFERENCES tickets (id)
+        )
+    """)
+
+    # Add ticket_data column for full ticket JSON storage during migration.
+    cursor.execute("PRAGMA table_info(tickets)")
+    ticket_columns = [column[1] for column in cursor.fetchall()]
+    if "ticket_data" not in ticket_columns:
+        cursor.execute("ALTER TABLE tickets ADD COLUMN ticket_data TEXT")
+
+    connection.commit()
+    connection.close()
 
 
 # -----------------------------
@@ -183,36 +279,64 @@ issues = [
 # -----------------------------
 # SIMPLE LOGIN CONFIG
 # -----------------------------
-USERS_FILE = "users.json"
-
 users = {
     "user": {"password": "user123", "role": "User", "email": "user@example.com"},
     "admin": {"password": "admin123", "role": "Admin", "email": "admin@example.com"},
 }
 
 
-def load_users():
-    """Load registered users from JSON storage."""
-    global users
+def create_user(username, email, password, role="User"):
+    """Create a user in the SQLite database."""
+    username_clean = username.strip()
+    email_clean = email.strip()
 
-    if not os.path.exists(USERS_FILE):
-        save_users()
-        return
+    connection = get_db_connection()
+    cursor = connection.cursor()
 
     try:
-        with open(USERS_FILE, "r", encoding="utf-8") as file:
-            saved_users = json.load(file)
-    except (json.JSONDecodeError, OSError):
-        saved_users = {}
+        cursor.execute(
+            """
+            INSERT INTO users (username, email, password, role)
+            VALUES (?, ?, ?, ?)
+            """,
+            (username_clean, email_clean, password, role),
+        )
+        connection.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+    finally:
+        connection.close()
 
-    if isinstance(saved_users, dict):
-        users.update(saved_users)
+
+def get_user(username):
+    """Get one user from the SQLite database."""
+    username_clean = username.strip()
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username_clean,))
+    user = cursor.fetchone()
+    connection.close()
+
+    return dict(user) if user else None
 
 
-def save_users():
-    """Save users to JSON storage."""
-    with open(USERS_FILE, "w", encoding="utf-8") as file:
-        json.dump(users, file, indent=4)
+def ensure_default_users():
+    """Create default demo users if they do not exist."""
+    for username, account in users.items():
+        if not get_user(username):
+            create_user(
+                username=username,
+                email=account.get("email", ""),
+                password=account["password"],
+                role=account["role"],
+            )
+
+
+def load_users():
+    """Keep demo users available in SQLite."""
+    ensure_default_users()
 
 
 # -----------------------------
@@ -365,13 +489,16 @@ def show_role_based_steps(issue):
 # HELPER FUNCTIONS
 # -----------------------------
 def login_user(username, password):
-    """Validate a user login."""
-    account = users.get(username)
+    """Validate a user login using SQLite."""
+    username_clean = username.strip()
+    account = get_user(username_clean)
+
     if account and account["password"] == password:
         st.session_state["logged_in"] = True
-        st.session_state["username"] = username
+        st.session_state["username"] = username_clean
         st.session_state["role"] = account["role"]
         return True
+
     return False
 
 
@@ -417,18 +544,21 @@ def show_login_page():
 
                 if not username_clean or not email_clean or not new_password:
                     st.error("Username, email, and password are required")
-                elif username_clean in users:
+                elif get_user(username_clean):
                     st.error("This username already exists")
                 elif new_password != confirm_password:
                     st.error("Passwords do not match")
                 else:
-                    users[username_clean] = {
-                        "password": new_password,
-                        "role": "User",
-                        "email": email_clean,
-                    }
-                    save_users()
-                    st.success("✅ Account created. You can now log in.")
+                    created = create_user(
+                        username=username_clean,
+                        email=email_clean,
+                        password=new_password,
+                        role="User",
+                    )
+                    if created:
+                        st.success("✅ Account created. You can now log in.")
+                    else:
+                        st.error("Could not create account. Please try another username.")
 
 
 def require_admin():
@@ -505,7 +635,8 @@ def calculate_search_score(issue, search_query):
         "a", "an", "and", "are", "as", "at", "be", "but", "by", "for",
         "from", "had", "has", "have", "i", "in", "is", "it", "of", "on",
         "or", "that", "the", "this", "to", "was", "were", "with", "works",
-        "fine", "tried", "try", "connect", "connected", "morning"
+        "fine", "tried", "try", "connect", "connected", "morning",
+        "issue", "problem", "problems", "trouble", "error", "errors", "working"
     }
 
     query_words = [
@@ -996,8 +1127,6 @@ def show_guided_troubleshooting():
 # -----------------------------
 # KNOWLEDGE BASE STORAGE
 # -----------------------------
-ISSUES_FILE = "issues.json"
-
 DEFAULT_ISSUE_TITLES = {
     "No Internet Connection",
     "DNS Resolution Failure",
@@ -1017,43 +1146,127 @@ DEFAULT_ISSUE_TITLES = {
 }
 
 
-def load_issues():
-    """Load Knowledge Base issues from JSON storage."""
-    if not os.path.exists(ISSUES_FILE):
-        return
+def serialize_list(items):
+    """Convert a list to JSON text for database storage."""
+    return json.dumps(items or [])
 
+
+def deserialize_list(value):
+    """Convert JSON text from database back to a list."""
+    if not value:
+        return []
     try:
-        with open(ISSUES_FILE, "r", encoding="utf-8") as file:
-            saved_issues = json.load(file)
-    except (json.JSONDecodeError, OSError):
-        return
+        data = json.loads(value)
+        return data if isinstance(data, list) else []
+    except json.JSONDecodeError:
+        return []
 
-    if not isinstance(saved_issues, list):
-        return
 
-    # If the file contains a full saved Knowledge Base, use it as source of truth.
-    saved_titles = {issue.get("title") for issue in saved_issues if isinstance(issue, dict)}
-    has_full_kb = len(saved_titles.intersection(DEFAULT_ISSUE_TITLES)) >= 5
+def save_issue_to_db(issue):
+    """Insert or update one issue in SQLite."""
+    connection = get_db_connection()
+    cursor = connection.cursor()
 
-    if has_full_kb:
+    cursor.execute(
+        """
+        INSERT INTO issues (
+            title, category, severity, tags, symptoms, causes,
+            user_steps, it_steps, steps
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(title) DO UPDATE SET
+            category = excluded.category,
+            severity = excluded.severity,
+            tags = excluded.tags,
+            symptoms = excluded.symptoms,
+            causes = excluded.causes,
+            user_steps = excluded.user_steps,
+            it_steps = excluded.it_steps,
+            steps = excluded.steps
+        """,
+        (
+            issue.get("title", ""),
+            issue.get("category", "Uncategorized"),
+            issue.get("severity", "Medium"),
+            serialize_list(issue.get("tags", [])),
+            serialize_list(issue.get("symptoms", [])),
+            serialize_list(issue.get("causes", [])),
+            serialize_list(issue.get("user_steps", [])),
+            serialize_list(issue.get("it_steps", [])),
+            serialize_list(issue.get("steps", [])),
+        ),
+    )
+
+    connection.commit()
+    connection.close()
+
+
+def delete_issue_from_db(title):
+    """Delete one issue from SQLite."""
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM issues WHERE title = ?", (title,))
+    connection.commit()
+    connection.close()
+
+
+def load_issues_from_db():
+    """Load all Knowledge Base issues from SQLite."""
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM issues ORDER BY category, title")
+    rows = cursor.fetchall()
+    connection.close()
+
+    return [
+        {
+            "title": row["title"],
+            "category": row["category"],
+            "severity": row["severity"],
+            "tags": deserialize_list(row["tags"]),
+            "symptoms": deserialize_list(row["symptoms"]),
+            "causes": deserialize_list(row["causes"]),
+            "user_steps": deserialize_list(row["user_steps"]),
+            "it_steps": deserialize_list(row["it_steps"]),
+            "steps": deserialize_list(row["steps"]),
+        }
+        for row in rows
+    ]
+
+
+def seed_issues_if_empty():
+    """Seed SQLite with current in-code issues if the issue table is empty."""
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT COUNT(*) AS count FROM issues")
+    count = cursor.fetchone()["count"]
+    connection.close()
+
+    if count == 0:
+        for issue in issues:
+            save_issue_to_db(issue)
+
+
+def load_issues():
+    """Load Knowledge Base issues from SQLite into the app."""
+    seed_issues_if_empty()
+    db_issues = load_issues_from_db()
+
+    if db_issues:
         issues.clear()
-        issues.extend(saved_issues)
-        return
-
-    # Backward compatibility: if old issues.json contains only custom issues,
-    # merge them into the default list.
-    existing_titles = {issue["title"] for issue in issues}
-    for issue in saved_issues:
-        title = issue.get("title")
-        if title and title not in existing_titles:
-            issues.append(issue)
-            existing_titles.add(title)
+        issues.extend(db_issues)
 
 
 def save_issues():
-    """Save the full Knowledge Base to JSON storage."""
-    with open(ISSUES_FILE, "w", encoding="utf-8") as file:
-        json.dump(issues, file, indent=4)
+    """Save the full Knowledge Base to SQLite."""
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM issues")
+    connection.commit()
+    connection.close()
+
+    for issue in issues:
+        save_issue_to_db(issue)
 
 
 # -----------------------------
@@ -1306,7 +1519,9 @@ def show_admin_kb_editor():
 
             with col2:
                 if st.button("🗑 Delete Issue", key=f"delete_issue_{idx}"):
+                    deleted_title = issue["title"]
                     issues.pop(idx)
+                    delete_issue_from_db(deleted_title)
 
                     save_issues()
 
@@ -1413,36 +1628,118 @@ def save_uploaded_attachments(uploaded_files):
 # TICKET STORAGE
 # -----------------------------
 def load_tickets():
-    """Load tickets from a JSON file."""
+    """Load tickets from SQLite into session state."""
     if "tickets" in st.session_state:
         return
 
-    if not os.path.exists(TICKETS_FILE):
-        st.session_state["tickets"] = []
-        return
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM tickets ORDER BY id DESC")
+    rows = cursor.fetchall()
+    connection.close()
 
-    try:
-        with open(TICKETS_FILE, "r", encoding="utf-8") as file:
-            st.session_state["tickets"] = json.load(file)
-    except (json.JSONDecodeError, OSError):
-        st.session_state["tickets"] = []
+    loaded_tickets = []
+
+    for row in rows:
+        row_dict = dict(row)
+        ticket_data = row_dict.get("ticket_data")
+
+        if ticket_data:
+            try:
+                ticket = json.loads(ticket_data)
+                ticket["db_id"] = row_dict.get("id")
+                loaded_tickets.append(ticket)
+                continue
+            except json.JSONDecodeError:
+                pass
+
+        # Fallback for older database rows without ticket_data
+        loaded_tickets.append({
+            "db_id": row_dict.get("id"),
+            "name": row_dict.get("username", ""),
+            "username": row_dict.get("username", ""),
+            "email": row_dict.get("email", ""),
+            "issue": row_dict.get("issue", ""),
+            "description": row_dict.get("description", ""),
+            "severity": row_dict.get("severity", "Medium"),
+            "priority": row_dict.get("priority", "Medium"),
+            "status": row_dict.get("status", "Open"),
+            "assigned_to": row_dict.get("assigned_to", "Unassigned"),
+            "resolution_notes": row_dict.get("resolution_notes", ""),
+            "likely_infrastructure": bool(row_dict.get("likely_infrastructure", 0)),
+            "unread_for_admin": bool(row_dict.get("unread_for_admin", 0)),
+            "unread_for_user": bool(row_dict.get("unread_for_user", 0)),
+            "comments": [],
+            "attachments": [],
+            "suggestions": [],
+            "user_guidance": [],
+        })
+
+    st.session_state["tickets"] = loaded_tickets
 
 
 def save_tickets():
-    """Save tickets to a JSON file."""
-    with open(TICKETS_FILE, "w", encoding="utf-8") as file:
-        json.dump(st.session_state.get("tickets", []), file, indent=4)
+    """Save tickets from session state into SQLite."""
+    tickets = st.session_state.get("tickets", [])
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Simple migration approach: session state is the source of truth for ticket objects.
+    cursor.execute("DELETE FROM tickets")
+
+    for ticket in tickets:
+        ticket_data = json.dumps(ticket, indent=4)
+        cursor.execute(
+            """
+            INSERT INTO tickets (
+                username,
+                email,
+                issue,
+                description,
+                severity,
+                priority,
+                status,
+                assigned_to,
+                resolution_notes,
+                likely_infrastructure,
+                unread_for_admin,
+                unread_for_user,
+                ticket_data
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                ticket.get("username") or ticket.get("name", ""),
+                ticket.get("email", ""),
+                ticket.get("issue", ""),
+                ticket.get("description", ""),
+                ticket.get("severity", "Medium"),
+                ticket.get("priority", "Medium"),
+                ticket.get("status", "Open"),
+                ticket.get("assigned_to", "Unassigned"),
+                ticket.get("resolution_notes", ""),
+                1 if ticket.get("likely_infrastructure") else 0,
+                1 if ticket.get("unread_for_admin") else 0,
+                1 if ticket.get("unread_for_user") else 0,
+                ticket_data,
+            ),
+        )
+
+    connection.commit()
+    connection.close()
 
 
 # -----------------------------
 # TICKET SYSTEM (STEP 5)
 # -----------------------------
-def suggest_issues_from_text(description, max_results=3):
-    """Suggest likely issues based on a ticket description."""
+def suggest_issues_from_text(description, title="", max_results=3):
+    """Suggest likely issues based on ticket title and description."""
     suggestions = []
+    combined_text = f"{title} {description}".strip()
 
     for issue in issues:
-        score = calculate_search_score(issue, description)
+        score = calculate_search_score(issue, combined_text)
         if score > 0:
             suggestions.append((issue, score))
 
@@ -1454,7 +1751,7 @@ def show_ticket_form():
     st.title("🎫 Create Support Ticket")
 
     current_username = st.session_state.get("username", "Unknown")
-    current_user = users.get(current_username, {})
+    current_user = get_user(current_username) or {}
     current_email = current_user.get("email", "")
 
     st.info(f"Creating ticket as: **{current_username}**")
@@ -1478,7 +1775,7 @@ def show_ticket_form():
                 st.error("Issue Title and Description are required")
                 return
 
-            suggested_issues = suggest_issues_from_text(description)
+            suggested_issues = suggest_issues_from_text(description, issue_title)
             user_guidance = get_user_guidance_for_ticket(description)
             attachments = save_uploaded_attachments(uploaded_files)
             priority = calculate_ticket_priority(description, severity)
@@ -1507,6 +1804,8 @@ def show_ticket_form():
                 "likely_infrastructure": is_likely_infrastructure_issue(description),
                 "attachments": attachments,
                 "comments": [],
+                "unread_for_admin": True,
+                "unread_for_user": False,
             }
 
             if "tickets" not in st.session_state:
@@ -1602,7 +1901,8 @@ def show_ticket_list():
         elif priority == "High":
             st.warning(f"⚠️ HIGH PRIORITY: {ticket['issue']} — {status}")
 
-        with st.expander(f"Ticket {i}: {ticket['issue']} — {status} — {priority}"):
+        unread_label = " 🔔 New comment" if ticket.get("unread_for_admin") else ""
+        with st.expander(f"Ticket {i}: {ticket['issue']} — {status} — {priority}{unread_label}"):
             st.write(f"**Name:** {ticket['name']}")
             st.write(f"**Email:** {ticket['email']}")
             st.write(f"**Severity:** {ticket['severity']}")
@@ -1712,11 +2012,18 @@ def add_ticket_comment(ticket, comment_text):
     if "comments" not in ticket:
         ticket["comments"] = []
 
+    author_role = st.session_state.get("role", "User")
+
     ticket["comments"].append({
         "author": st.session_state.get("username", "Unknown"),
-        "role": st.session_state.get("role", "User"),
+        "role": author_role,
         "comment": comment_text.strip(),
     })
+
+    if author_role == "Admin":
+        ticket["unread_for_user"] = True
+    else:
+        ticket["unread_for_admin"] = True
 
     save_tickets()
     return True
@@ -1725,6 +2032,17 @@ def add_ticket_comment(ticket, comment_text):
 def show_ticket_comments(ticket, ticket_index):
     """Display and add ticket comments."""
     st.subheader("💬 Ticket Conversation")
+
+    role = st.session_state.get("role", "User")
+    unread_key = "unread_for_admin" if role == "Admin" else "unread_for_user"
+
+    if ticket.get(unread_key):
+        st.warning("🔔 New unread comment(s)")
+        if st.button("Mark comments as read", key=f"mark_read_{ticket_index}"):
+            ticket[unread_key] = False
+            save_tickets()
+            st.success("Comments marked as read")
+            st.rerun()
 
     comments = ticket.get("comments", [])
 
@@ -1764,13 +2082,15 @@ def show_admin_dashboard():
     in_progress_tickets = sum(1 for ticket in tickets if ticket.get("status") == "In Progress")
     resolved_tickets = sum(1 for ticket in tickets if ticket.get("status") == "Resolved")
     critical_tickets = sum(1 for ticket in tickets if ticket.get("priority") == "Critical")
+    unread_admin_comments = sum(1 for ticket in tickets if ticket.get("unread_for_admin"))
 
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
     col1.metric("Total Tickets", total_tickets)
     col2.metric("Open", open_tickets)
     col3.metric("In Progress", in_progress_tickets)
     col4.metric("Resolved", resolved_tickets)
     col5.metric("Critical", critical_tickets)
+    col6.metric("Unread Comments", unread_admin_comments)
 
     st.divider()
 
@@ -1787,6 +2107,13 @@ def show_admin_dashboard():
         st.error(f"🚨 {len(critical_items)} critical ticket(s) need immediate attention.")
         with st.expander("View critical tickets"):
             for ticket in critical_items:
+                st.write(f"- **{ticket.get('issue', 'Unknown issue')}** — {ticket.get('status', 'Open')}")
+
+    unread_comment_items = [ticket for ticket in tickets if ticket.get("unread_for_admin")]
+    if unread_comment_items:
+        st.warning(f"🔔 {len(unread_comment_items)} ticket(s) have unread comments for admin.")
+        with st.expander("View tickets with unread comments"):
+            for ticket in unread_comment_items:
                 st.write(f"- **{ticket.get('issue', 'Unknown issue')}** — {ticket.get('status', 'Open')}")
 
     st.subheader("Tickets by Status")
@@ -1834,7 +2161,9 @@ def show_my_tickets():
 
     user_tickets = [
         ticket for ticket in tickets
-        if ticket.get("name") == username or ticket.get("email") == username
+        if ticket.get("username") == username
+        or ticket.get("name") == username
+        or ticket.get("email") == username
     ]
 
     if not user_tickets:
@@ -1842,7 +2171,8 @@ def show_my_tickets():
         return
 
     for i, ticket in enumerate(user_tickets, 1):
-        with st.expander(f"Ticket {i}: {ticket.get('issue')} — {ticket.get('status', 'Open')}"):
+        unread_label = " 🔔 New comment" if ticket.get("unread_for_user") else ""
+        with st.expander(f"Ticket {i}: {ticket.get('issue')} — {ticket.get('status', 'Open')}{unread_label}"):
             st.write(f"**Severity:** {ticket.get('severity')}")
             show_priority_badge(ticket.get("priority", "Medium"))
             st.write(f"**Status:** {ticket.get('status', 'Open')}")
@@ -1860,6 +2190,7 @@ def show_my_tickets():
 # MAIN APP
 # -----------------------------
 def main():
+    initialize_database()
     load_users()
     load_issues()
     load_tickets()
