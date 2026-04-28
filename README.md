@@ -95,6 +95,9 @@ It reflects how real IT helpdesk systems operate.
 ## 📸 Screenshots
 
 - Dashboard
+<img width="554" height="272" alt="image" src="https://github.com/user-attachments/assets/5ee14609-fabe-439b-a84f-58d21fbdbbbd" />
+
+  
 - Create Ticket
 - Knowledge Base
 - Ticket with attachment preview
