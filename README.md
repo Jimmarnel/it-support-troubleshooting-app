@@ -96,10 +96,14 @@ It reflects how real IT helpdesk systems operate.
 
 - Dashboard
 <img width="554" height="272" alt="image" src="https://github.com/user-attachments/assets/5ee14609-fabe-439b-a84f-58d21fbdbbbd" />
-
+<img width="554" height="236" alt="image" src="https://github.com/user-attachments/assets/600c2a9b-7dc9-41f9-9d59-409598cd91ee" />
   
 - Create Ticket
+  <img width="1889" height="729" alt="image" src="https://github.com/user-attachments/assets/b758fd38-4abf-4605-a06d-75a5457530ee" />
+
 - Knowledge Base
+- <img width="1915" height="914" alt="image" src="https://github.com/user-attachments/assets/499d9893-09e8-45c0-9b72-d1e728dfa184" />
+
 - Ticket with attachment preview
 
 ---
