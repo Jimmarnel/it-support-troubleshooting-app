@@ -1,0 +1,17 @@
+{
+    "user": {
+        "password": "user123",
+        "role": "User",
+        "email": "user@example.com"
+    },
+    "admin": {
+        "password": "admin123",
+        "role": "Admin",
+        "email": "admin@example.com"
+    },
+    "Jasmine": {
+        "password": "jas123",
+        "role": "User",
+        "email": "jasmine@gmail.com"
+    }
+}

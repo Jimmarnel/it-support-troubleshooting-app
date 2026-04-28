@@ -1,0 +1,209 @@
+[
+    {
+        "name": "Sarah Jonson",
+        "email": "Sjonson@gmail.com",
+        "issue": "No emails received",
+        "description": "I can't receive any email in my inbox.",
+        "severity": "Medium",
+        "status": "Resolved",
+        "assigned_to": "Unassigned",
+        "resolution_notes": "Extend the storage.",
+        "suggestions": [
+            {
+                "title": "Email Not Receiving",
+                "category": "Email",
+                "severity": "Medium",
+                "score": 106
+            },
+            {
+                "title": "Email Not Sending",
+                "category": "Email",
+                "severity": "Medium",
+                "score": 88
+            },
+            {
+                "title": "Disk Space Full",
+                "category": "System",
+                "severity": "Medium",
+                "score": 12
+            }
+        ],
+        "comments": [
+            {
+                "author": "admin",
+                "role": "Admin",
+                "comment": "Would you please check your inbox and confirm that you received an email?"
+            }
+        ]
+    },
+    {
+        "name": "Noah James",
+        "email": "Njames@gmail.com",
+        "issue": "Users Unable to Access Shared Network Drive",
+        "description": "Multiple users in the Finance department report that they cannot access the shared network drive \\\\FIN-SERVER01\\Shared. When attempting to open the drive, they receive the error: \u201cNetwork path not found.\u201d  \nUsers are still able to browse the internet and access email, but file server access is unavailable. Issue began around 9:15 AM and affects all users on the same floor.",
+        "severity": "High",
+        "status": "Open",
+        "assigned_to": "Unassigned",
+        "resolution_notes": "",
+        "suggestions": [
+            {
+                "title": "Intermittent Connectivity to File Server",
+                "category": "Network",
+                "severity": "Medium",
+                "score": 417
+            },
+            {
+                "title": "Some Websites Not Loading",
+                "category": "Network",
+                "severity": "Medium",
+                "score": 313
+            },
+            {
+                "title": "Email Not Receiving",
+                "category": "Email",
+                "severity": "Medium",
+                "score": 168
+            }
+        ]
+    },
+    {
+        "name": "Noah James",
+        "email": "Njames@gmail.com",
+        "issue": "Unauthorized Login Attempt Detected on User Account",
+        "description": "Multiple failed login attempts on my account from an external IP address not associated with the organization.",
+        "severity": "High",
+        "status": "Open",
+        "assigned_to": "Unassigned",
+        "resolution_notes": "",
+        "suggestions": [
+            {
+                "title": "Login Failure",
+                "category": "Authentication",
+                "severity": "High",
+                "score": 75
+            },
+            {
+                "title": "Email Not Receiving",
+                "category": "Email",
+                "severity": "Medium",
+                "score": 56
+            },
+            {
+                "title": "Some Websites Not Loading",
+                "category": "Network",
+                "severity": "Medium",
+                "score": 56
+            }
+        ],
+        "user_guidance": [
+            "Try the suggested user-friendly steps first",
+            "If the issue continues, create a support ticket with details",
+            "Include what you were trying to do, when it started, and any error message"
+        ],
+        "likely_infrastructure": false,
+        "attachments": [
+            {
+                "original_name": "issue screenshot.png",
+                "saved_name": "f21d059c9a0f408c9919e54d1e8b5964_issue_screenshot.png",
+                "path": "ticket_attachments\\f21d059c9a0f408c9919e54d1e8b5964_issue_screenshot.png",
+                "type": "image/png",
+                "size": 48387
+            }
+        ]
+    },
+    {
+        "name": "user",
+        "email": "user@gmail.com",
+        "issue": "Internet connection is low and sometimes down when I leave my office",
+        "description": "Every time I leave my office and take my laptop to show my manager something, the internet connection got down.",
+        "severity": "Medium",
+        "priority": "Medium",
+        "status": "Open",
+        "assigned_to": "Unassigned",
+        "resolution_notes": "",
+        "suggestions": [
+            {
+                "title": "Some Websites Not Loading",
+                "category": "Network",
+                "severity": "Medium",
+                "score": 172
+            },
+            {
+                "title": "No Internet Connection",
+                "category": "Network",
+                "severity": "High",
+                "score": 85
+            },
+            {
+                "title": "VPN Connection Failure",
+                "category": "VPN",
+                "severity": "High",
+                "score": 68
+            }
+        ],
+        "user_guidance": [
+            "Try the suggested user-friendly steps first",
+            "If the issue continues, create a support ticket with details",
+            "Include what you were trying to do, when it started, and any error message"
+        ],
+        "likely_infrastructure": false,
+        "attachments": [],
+        "comments": [
+            {
+                "author": "admin",
+                "role": "Admin",
+                "comment": "How far is your manager's office?"
+            },
+            {
+                "author": "user",
+                "role": "User",
+                "comment": "His office is in the 1 floor away. I am in the second floor and my manager is on the third floor."
+            },
+            {
+                "author": "admin",
+                "role": "Admin",
+                "comment": "That is probably because the two floors connect to a different access point. You are not in the same wifi network. We will fix the issue soon. Thank you for your patience."
+            }
+        ]
+    },
+    {
+        "name": "Jasmine",
+        "username": "Jasmine",
+        "email": "jasmine@gmail.com",
+        "issue": "Internet connection is low and sometimes down.",
+        "description": "The internet connection in my office is not stable.",
+        "severity": "High",
+        "priority": "High",
+        "status": "Open",
+        "assigned_to": "Unassigned",
+        "resolution_notes": "",
+        "suggestions": [
+            {
+                "title": "Some Websites Not Loading",
+                "category": "Network",
+                "severity": "Medium",
+                "score": 182
+            },
+            {
+                "title": "No Internet Connection",
+                "category": "Network",
+                "severity": "High",
+                "score": 85
+            },
+            {
+                "title": "DNS Resolution Failure",
+                "category": "DNS",
+                "severity": "High",
+                "score": 58
+            }
+        ],
+        "user_guidance": [
+            "Try the suggested user-friendly steps first",
+            "If the issue continues, create a support ticket with details",
+            "Include what you were trying to do, when it started, and any error message"
+        ],
+        "likely_infrastructure": false,
+        "attachments": [],
+        "comments": []
+    }
+]
