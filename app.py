@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import sqlite3
@@ -1599,11 +1600,36 @@ def show_priority_badge(priority):
 # ATTACHMENT HELPERS
 # -----------------------------
 def save_uploaded_attachments(uploaded_files):
-    """Save uploaded ticket attachments and return attachment metadata."""
+    """Save uploaded ticket attachments and return attachment metadata.
+
+    Attachments are saved in two ways:
+    1. As files inside ticket_attachments/
+    2. As Base64 content inside the ticket record for more reliable preview/download
+    """
     saved_attachments = []
 
     if not uploaded_files:
         return saved_attachments
+
+    for uploaded_file in uploaded_files:
+        file_bytes = uploaded_file.getvalue()
+        safe_name = uploaded_file.name.replace(" ", "_")
+        unique_name = f"{uuid.uuid4().hex}_{safe_name}"
+        file_path = os.path.abspath(os.path.join(UPLOAD_FOLDER, unique_name))
+
+        with open(file_path, "wb") as file:
+            file.write(file_bytes)
+
+        saved_attachments.append({
+            "original_name": uploaded_file.name,
+            "saved_name": unique_name,
+            "path": file_path,
+            "type": uploaded_file.type,
+            "size": uploaded_file.size,
+            "content_base64": base64.b64encode(file_bytes).decode("utf-8"),
+        })
+
+    return saved_attachments
 
     for uploaded_file in uploaded_files:
         safe_name = uploaded_file.name.replace(" ", "_")
@@ -1935,31 +1961,45 @@ def show_ticket_list():
 
                     resolved_path = file_path
                     saved_name = attachment.get("saved_name")
+                    content_base64 = attachment.get("content_base64")
+                    attachment_bytes = None
 
-                    # Try fallback if original path doesn't work
+                    if content_base64:
+                        try:
+                            attachment_bytes = base64.b64decode(content_base64)
+                        except Exception:
+                            attachment_bytes = None
+
                     if not resolved_path or not os.path.exists(resolved_path):
                         if saved_name:
-                            fallback_path = os.path.join(UPLOAD_FOLDER,
-                                                         saved_name)
+                            fallback_path = os.path.join(UPLOAD_FOLDER, saved_name)
                             if os.path.exists(fallback_path):
                                 resolved_path = fallback_path
 
-                    if resolved_path and os.path.exists(resolved_path):
+                    if attachment_bytes:
                         if file_type.startswith("image"):
-                            st.image(resolved_path, caption=file_name,
-                                     use_container_width=True)
+                            st.image(attachment_bytes, caption=file_name, use_container_width=True)
+                        else:
+                            st.download_button(
+                                label=f"⬇️ Download {file_name}",
+                                data=attachment_bytes,
+                                file_name=file_name,
+                                key=f"download_db_{i}_{attachment_index}",
+                            )
+                    elif resolved_path and os.path.exists(resolved_path):
+                        if file_type.startswith("image"):
+                            st.image(resolved_path, caption=file_name, use_container_width=True)
                         else:
                             with open(resolved_path, "rb") as file:
                                 st.download_button(
                                     label=f"⬇️ Download {file_name}",
                                     data=file,
                                     file_name=file_name,
-                                    key=f"download_{i}_{attachment_index}"
+                                    key=f"download_{i}_{attachment_index}",
                                 )
                     else:
-                        st.warning("Attachment file was not found on disk.")
-                        st.caption(
-                            "The ticket still has the attachment record, but the file is missing from storage.")
+                        st.warning("Attachment file was not found.")
+                        st.caption("The ticket has attachment metadata, but no file content or saved file was available.")
 
             suggestions = ticket.get("suggestions", [])
             if suggestions:
