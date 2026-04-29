@@ -1803,7 +1803,7 @@ def show_ticket_form():
                 st.error("Issue Title and Description are required")
                 return
 
-            user_guidance = get_user_guidance_for_ticket(description)
+            user_guidance = []
             attachments = save_uploaded_attachments(uploaded_files)
             priority = calculate_ticket_priority(description, severity)
 
@@ -1819,7 +1819,7 @@ def show_ticket_form():
                 "assigned_to": "Unassigned",
                 "resolution_notes": "",
                 "suggestions": [],
-                "user_guidance": user_guidance,
+                "user_guidance": [],
                 "likely_infrastructure": is_likely_infrastructure_issue(description),
                 "attachments": attachments,
                 "comments": [],
@@ -1840,6 +1840,8 @@ def show_ticket_form():
 
             show_priority_badge(priority)
 
+            if is_likely_infrastructure_issue(description):
+                st.warning("This looks like a possible wider IT or infrastructure issue.")
 
 
 
