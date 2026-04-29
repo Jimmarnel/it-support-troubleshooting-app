@@ -1794,6 +1794,8 @@ def show_ticket_form():
             accept_multiple_files=True,
         )
 
+        st.info("💡 If you are not sure how to fix the issue, try Guided Troubleshooting before creating a ticket.")
+
         submitted = st.form_submit_button("Create Ticket")
 
         if submitted:
@@ -1801,7 +1803,6 @@ def show_ticket_form():
                 st.error("Issue Title and Description are required")
                 return
 
-            suggested_issues = suggest_issues_from_text(description, issue_title)
             user_guidance = get_user_guidance_for_ticket(description)
             attachments = save_uploaded_attachments(uploaded_files)
             priority = calculate_ticket_priority(description, severity)
@@ -1817,15 +1818,7 @@ def show_ticket_form():
                 "status": "Open",
                 "assigned_to": "Unassigned",
                 "resolution_notes": "",
-                "suggestions": [
-                    {
-                        "title": issue["title"],
-                        "category": issue["category"],
-                        "severity": issue["severity"],
-                        "score": score,
-                    }
-                    for issue, score in suggested_issues
-                ],
+                "suggestions": [],
                 "user_guidance": user_guidance,
                 "likely_infrastructure": is_likely_infrastructure_issue(description),
                 "attachments": attachments,
@@ -1847,27 +1840,8 @@ def show_ticket_form():
 
             show_priority_badge(priority)
 
-            if is_likely_infrastructure_issue(description):
-                st.warning("This looks like a possible wider IT or infrastructure issue.")
 
-            st.subheader("User Guidance")
-            for item in user_guidance:
-                st.write("-", item)
 
-            if suggested_issues:
-                st.subheader("🔎 Suggested matching issues")
-                for issue, score in suggested_issues:
-                    with st.expander(f"{issue['title']} — Match score: {score}"):
-                        st.write("**Category:**", issue["category"])
-                        show_severity(issue["severity"])
-
-                        st.write("**Possible causes:**")
-                        for cause in issue["causes"]:
-                            st.write("-", cause)
-
-                        show_role_based_steps(issue)
-            else:
-                st.warning("No matching Knowledge Base issue found for this ticket.")
 
 
 def get_priority_rank(priority):
