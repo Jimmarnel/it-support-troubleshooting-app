@@ -1,4 +1,7 @@
 import base64
+import csv
+import io
+from datetime import datetime, timedelta
 import json
 import os
 import sqlite3
@@ -105,6 +108,22 @@ def initialize_database():
     ticket_columns = [column[1] for column in cursor.fetchall()]
     if "ticket_data" not in ticket_columns:
         cursor.execute("ALTER TABLE tickets ADD COLUMN ticket_data TEXT")
+
+    # Add Knowledge Base article quality columns during migration.
+    cursor.execute("PRAGMA table_info(issues)")
+    issue_columns = [column[1] for column in cursor.fetchall()]
+
+    issue_quality_columns = {
+        "difficulty": "TEXT DEFAULT 'Beginner'",
+        "estimated_time": "TEXT DEFAULT '5 minutes'",
+        "applies_to": "TEXT DEFAULT '[]'",
+        "escalation_required": "INTEGER DEFAULT 0",
+        "last_updated": "TEXT DEFAULT ''",
+    }
+
+    for column_name, column_definition in issue_quality_columns.items():
+        if column_name not in issue_columns:
+            cursor.execute(f"ALTER TABLE issues ADD COLUMN {column_name} {column_definition}")
 
     connection.commit()
     connection.close()
@@ -529,7 +548,27 @@ def show_login_page():
                 else:
                     st.error("Invalid username or password")
 
-        st.info("Demo accounts: user / user123, admin / admin123")
+        st.markdown("### 🔑 Demo Credentials")
+        col_user, col_admin = st.columns(2)
+
+        with col_user:
+            st.info(
+                "**User Account**\n\n"
+                "Username: `user`\n\n"
+                "Password: `user123`"
+            )
+
+        with col_admin:
+            st.warning(
+                "**Admin Account**\n\n"
+                "Username: `admin`\n\n"
+                "Password: `admin123`"
+            )
+
+        st.caption(
+            "⚠️ Demo app only. Do not enter real passwords, confidential company data, "
+            "or sensitive support information."
+        )
 
     with tab_register:
         with st.form("register_form"):
@@ -705,6 +744,22 @@ def issue_matches_filters(issue, selected_category, selected_severity, search_qu
     return calculate_search_score(issue, search_query) > 0
 
 
+
+def show_issue_metadata(issue):
+    """Display professional Knowledge Base article metadata."""
+    meta_col1, meta_col2, meta_col3 = st.columns(3)
+
+    meta_col1.write(f"**Difficulty:** {issue.get('difficulty', 'Beginner')}")
+    meta_col2.write(f"**Estimated Time:** {issue.get('estimated_time', '5 minutes')}")
+    meta_col3.write(f"**Escalation Required:** {'Yes' if issue.get('escalation_required') else 'No'}")
+
+    applies_to = issue.get("applies_to", [])
+    if applies_to:
+        st.write("**Applies To:**", ", ".join(applies_to))
+
+    if issue.get("last_updated"):
+        st.caption(f"Last updated: {issue.get('last_updated')}")
+
 def show_severity(severity):
     """Display severity using Streamlit status styles."""
     if severity == "High":
@@ -749,6 +804,7 @@ def show_issue_card(issue, search_score=None):
     with st.expander(title):
         st.write("**Category:**", issue["category"])
         show_severity(issue["severity"])
+        show_issue_metadata(issue)
         st.write("**Tags:**", ", ".join(issue["tags"]))
 
         st.write("**Symptoms:**")
@@ -861,7 +917,7 @@ guided_flows = {
             },
         },
     },
-    "Slow Internet Performance": {
+    "Slow Internet": {
         "subtitle": "🐢 Slow Internet Flow",
         "start": "q1",
         "questions": {
@@ -941,7 +997,7 @@ guided_flows = {
             },
         },
     },
-    "Wi-Fi Connected But No Internet": {
+    "Wi-Fi Drops Frequently": {
         "subtitle": "📶 Wi-Fi Issue Flow",
         "start": "q1",
         "questions": {
@@ -1172,9 +1228,10 @@ def save_issue_to_db(issue):
         """
         INSERT INTO issues (
             title, category, severity, tags, symptoms, causes,
-            user_steps, it_steps, steps
+            user_steps, it_steps, steps,
+            difficulty, estimated_time, applies_to, escalation_required, last_updated
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(title) DO UPDATE SET
             category = excluded.category,
             severity = excluded.severity,
@@ -1183,7 +1240,12 @@ def save_issue_to_db(issue):
             causes = excluded.causes,
             user_steps = excluded.user_steps,
             it_steps = excluded.it_steps,
-            steps = excluded.steps
+            steps = excluded.steps,
+            difficulty = excluded.difficulty,
+            estimated_time = excluded.estimated_time,
+            applies_to = excluded.applies_to,
+            escalation_required = excluded.escalation_required,
+            last_updated = excluded.last_updated
         """,
         (
             issue.get("title", ""),
@@ -1195,6 +1257,11 @@ def save_issue_to_db(issue):
             serialize_list(issue.get("user_steps", [])),
             serialize_list(issue.get("it_steps", [])),
             serialize_list(issue.get("steps", [])),
+            issue.get("difficulty", "Beginner"),
+            issue.get("estimated_time", "5 minutes"),
+            serialize_list(issue.get("applies_to", [])),
+            1 if issue.get("escalation_required") else 0,
+            issue.get("last_updated", ""),
         ),
     )
 
@@ -1230,6 +1297,11 @@ def load_issues_from_db():
             "user_steps": deserialize_list(row["user_steps"]),
             "it_steps": deserialize_list(row["it_steps"]),
             "steps": deserialize_list(row["steps"]),
+            "difficulty": row["difficulty"] if "difficulty" in row.keys() and row["difficulty"] else "Beginner",
+            "estimated_time": row["estimated_time"] if "estimated_time" in row.keys() and row["estimated_time"] else "5 minutes",
+            "applies_to": deserialize_list(row["applies_to"]) if "applies_to" in row.keys() else [],
+            "escalation_required": bool(row["escalation_required"]) if "escalation_required" in row.keys() else False,
+            "last_updated": row["last_updated"] if "last_updated" in row.keys() else "",
         }
         for row in rows
     ]
@@ -1279,10 +1351,10 @@ def show_knowledge_base():
     st.subheader("🔥 Common Issues")
     common_titles = [
         "No Internet Connection",
-        "Cannot Login to System",
-        "Outlook Keeps Asking for Password",
-        "Weak Wi-Fi Signal",
-        "Cannot Access Network Drive",
+        "Login Failure",
+        "Wi-Fi Drops Frequently",
+        "Email Not Sending",
+        "DNS Resolution Failure",
     ]
 
     common_issues = [issue for issue in issues if issue["title"] in common_titles]
@@ -1349,6 +1421,7 @@ def show_knowledge_base():
                 with st.expander(f"🧩 {issue_title}"):
                     st.write("**Category:**", issue["category"])
                     show_severity(issue["severity"])
+                    show_issue_metadata(issue)
                     st.write("**Tags:**", ", ".join(issue.get("tags", [])))
 
                     st.write("**Symptoms:**")
@@ -1414,6 +1487,10 @@ def show_admin_kb_editor():
         title = st.text_input("Issue Title", key="kb_title")
         category = st.text_input("Category", placeholder="Network, DNS, Email, System...", key="kb_category")
         severity = st.selectbox("Severity", ["Low", "Medium", "High"], index=1, key="kb_severity")
+        difficulty = st.selectbox("Difficulty", ["Beginner", "Intermediate", "Advanced"], key="kb_difficulty")
+        estimated_time = st.text_input("Estimated Fix Time", value="5 minutes", key="kb_estimated_time")
+        applies_to_text = st.text_input("Applies To", placeholder="Windows, macOS, VPN, Email, Network...", key="kb_applies_to")
+        escalation_required = st.checkbox("Escalation Required", key="kb_escalation_required")
         tags_text = st.text_input("Tags", placeholder="Separate tags with commas", key="kb_tags")
         symptoms_text = st.text_area("Symptoms", placeholder="Enter one symptom per line", key="kb_symptoms")
         causes_text = st.text_area("Possible Causes", placeholder="Enter one cause per line", key="kb_causes")
@@ -1439,6 +1516,11 @@ def show_admin_kb_editor():
             "title": title.strip(),
             "category": category.strip(),
             "severity": severity,
+            "difficulty": difficulty,
+            "estimated_time": estimated_time.strip() or "5 minutes",
+            "applies_to": [item.strip() for item in applies_to_text.split(",") if item.strip()],
+            "escalation_required": escalation_required,
+            "last_updated": get_current_timestamp(),
             "tags": [tag.strip() for tag in tags_text.split(",") if tag.strip()],
             "symptoms": [line.strip() for line in symptoms_text.splitlines() if line.strip()],
             "causes": [line.strip() for line in causes_text.splitlines() if line.strip()],
@@ -1460,6 +1542,7 @@ def show_admin_kb_editor():
         with st.expander(issue["title"]):
             st.write("**Category:**", issue["category"])
             show_severity(issue["severity"])
+            show_issue_metadata(issue)
             st.write("**Tags:**", ", ".join(issue.get("tags", [])))
 
             st.write("**Symptoms:**")
@@ -1479,6 +1562,27 @@ def show_admin_kb_editor():
                 index=["Low", "Medium", "High"].index(issue["severity"]),
                 key=f"edit_sev_{idx}",
             )
+            edit_difficulty = st.selectbox(
+                "Difficulty",
+                ["Beginner", "Intermediate", "Advanced"],
+                index=["Beginner", "Intermediate", "Advanced"].index(issue.get("difficulty", "Beginner")),
+                key=f"edit_difficulty_{idx}",
+            )
+            edit_estimated_time = st.text_input(
+                "Estimated Fix Time",
+                value=issue.get("estimated_time", "5 minutes"),
+                key=f"edit_estimated_time_{idx}",
+            )
+            edit_applies_to = st.text_input(
+                "Applies To (comma separated)",
+                value=", ".join(issue.get("applies_to", [])),
+                key=f"edit_applies_to_{idx}",
+            )
+            edit_escalation_required = st.checkbox(
+                "Escalation Required",
+                value=bool(issue.get("escalation_required", False)),
+                key=f"edit_escalation_{idx}",
+            )
             edit_tags = st.text_input(
                 "Tags (comma separated)",
                 value=", ".join(issue.get("tags", [])),
@@ -1486,19 +1590,21 @@ def show_admin_kb_editor():
             )
             edit_symptoms = st.text_area(
                 "Symptoms (one per line)",
-                value="".join(issue.get("symptoms", [])),
+                value = "\n".join(issue.get("symptoms", [])),
                 key=f"edit_symptoms_{idx}",
             )
             edit_user_steps = st.text_area(
                 "User-Friendly Steps (one per line)",
-                value="".join(get_user_friendly_steps(issue)),
+                value = "\n".join(get_user_friendly_steps(issue)),
                 key=f"edit_user_steps_{idx}",
             )
             edit_steps = st.text_area(
                 "Advanced IT Steps (one per line)",
-                value="".join(get_it_steps(issue)),
+                value = "\n".join(get_it_steps(issue)),
                 key=f"edit_steps_{idx}",
             )
+
+
 
             col1, col2 = st.columns(2)
 
@@ -1507,6 +1613,11 @@ def show_admin_kb_editor():
                     issue["title"] = edit_title.strip()
                     issue["category"] = edit_category.strip()
                     issue["severity"] = edit_severity
+                    issue["difficulty"] = edit_difficulty
+                    issue["estimated_time"] = edit_estimated_time.strip() or "5 minutes"
+                    issue["applies_to"] = [item.strip() for item in edit_applies_to.split(",") if item.strip()]
+                    issue["escalation_required"] = edit_escalation_required
+                    issue["last_updated"] = get_current_timestamp()
                     issue["tags"] = [t.strip() for t in edit_tags.split(",") if t.strip()]
                     issue["symptoms"] = [s.strip() for s in edit_symptoms.splitlines() if s.strip()]
                     issue["user_steps"] = [s.strip() for s in edit_user_steps.splitlines() if s.strip()]
@@ -1529,6 +1640,129 @@ def show_admin_kb_editor():
                     st.warning("🗑 Issue deleted")
                     st.rerun()
 
+
+
+
+
+
+# -----------------------------
+# TICKET LIFECYCLE HELPERS
+# -----------------------------
+ASSIGNMENT_OPTIONS = [
+    "Unassigned",
+    "Tier 1 Support",
+    "Network Team",
+    "Systems Team",
+    "Security Team",
+    "Help Desk Manager",
+]
+
+TICKET_STATUSES = [
+    "Open",
+    "Assigned",
+    "In Progress",
+    "Waiting on User",
+    "Resolved",
+    "Closed",
+]
+
+
+def normalize_ticket_status(status):
+    """Return a valid ticket status."""
+    if status in TICKET_STATUSES:
+        return status
+    return "Open"
+
+
+def is_ticket_completed(status):
+    """Return True if a ticket should no longer count against active SLA."""
+    return status in ["Resolved", "Closed"]
+
+# -----------------------------
+# SLA HELPERS
+# -----------------------------
+def get_current_timestamp():
+    """Return current timestamp as a readable string."""
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def parse_timestamp(value):
+    """Parse stored timestamp safely."""
+    if not value:
+        return None
+
+    formats = [
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+    ]
+
+    for fmt in formats:
+        try:
+            return datetime.strptime(value, fmt)
+        except ValueError:
+            continue
+
+    return None
+
+
+def get_sla_hours(priority):
+    """Return SLA response target in hours based on priority."""
+    sla_targets = {
+        "Critical": 1,
+        "High": 4,
+        "Medium": 24,
+        "Low": 72,
+    }
+    return sla_targets.get(priority, 24)
+
+
+def get_sla_status(ticket):
+    """Return SLA status label and remaining/overdue context."""
+    priority = ticket.get("priority", "Medium")
+    status = ticket.get("status", "Open")
+
+    if is_ticket_completed(status):
+        return "Completed", "Ticket is resolved or closed"
+
+    created_at = parse_timestamp(ticket.get("created_at"))
+
+    if not created_at:
+        return "Unknown", "No creation timestamp available"
+
+    sla_hours = get_sla_hours(priority)
+    due_at = created_at + timedelta(hours=sla_hours)
+    now = datetime.now()
+    remaining = due_at - now
+
+    if remaining.total_seconds() < 0:
+        overdue_by = now - due_at
+        hours = int(overdue_by.total_seconds() // 3600)
+        minutes = int((overdue_by.total_seconds() % 3600) // 60)
+        return "Overdue", f"Overdue by {hours}h {minutes}m"
+
+    if remaining <= timedelta(hours=1):
+        minutes = int(remaining.total_seconds() // 60)
+        return "Due Soon", f"Due in {minutes}m"
+
+    hours = int(remaining.total_seconds() // 3600)
+    minutes = int((remaining.total_seconds() % 3600) // 60)
+    return "On Track", f"Due in {hours}h {minutes}m"
+
+
+def show_sla_badge(ticket):
+    """Display SLA status using Streamlit alert styles."""
+    sla_status, detail = get_sla_status(ticket)
+
+    if sla_status == "Overdue":
+        st.error(f"⏰ SLA: Overdue — {detail}")
+    elif sla_status == "Due Soon":
+        st.warning(f"⏳ SLA: Due Soon — {detail}")
+    elif sla_status == "On Track":
+        st.success(f"✅ SLA: On Track — {detail}")
+    elif sla_status == "Completed":
+        st.info(f"📌 SLA: Completed — {detail}")
+    else:
+        st.info(f"ℹ️ SLA: Unknown — {detail}")
 
 # -----------------------------
 # TICKET PRIORITY HELPERS
@@ -1631,24 +1865,6 @@ def save_uploaded_attachments(uploaded_files):
 
     return saved_attachments
 
-    for uploaded_file in uploaded_files:
-        safe_name = uploaded_file.name.replace(" ", "_")
-        unique_name = f"{uuid.uuid4().hex}_{safe_name}"
-        file_path = os.path.abspath(os.path.join(UPLOAD_FOLDER, unique_name))
-
-        with open(file_path, "wb") as file:
-            file.write(uploaded_file.getbuffer())
-
-        saved_attachments.append({
-            "original_name": uploaded_file.name,
-            "saved_name": unique_name,
-            "path": file_path,
-            "type": uploaded_file.type,
-            "size": uploaded_file.size,
-        })
-
-    return saved_attachments
-
 
 # -----------------------------
 # TICKET STORAGE
@@ -1674,6 +1890,8 @@ def load_tickets():
             try:
                 ticket = json.loads(ticket_data)
                 ticket["db_id"] = row_dict.get("id")
+                ticket.setdefault("created_at", get_current_timestamp())
+                ticket.setdefault("updated_at", ticket.get("created_at"))
                 loaded_tickets.append(ticket)
                 continue
             except json.JSONDecodeError:
@@ -1699,6 +1917,13 @@ def load_tickets():
             "attachments": [],
             "suggestions": [],
             "user_guidance": [],
+            "created_at": get_current_timestamp(),
+            "updated_at": get_current_timestamp(),
+            "assigned_at": "",
+            "waiting_on_user_at": "",
+            "resolved_at": "",
+            "closed_at": "",
+            "activity_log": [],
         })
 
     st.session_state["tickets"] = loaded_tickets
@@ -1803,7 +2028,6 @@ def show_ticket_form():
                 st.error("Issue Title and Description are required")
                 return
 
-            user_guidance = []
             attachments = save_uploaded_attachments(uploaded_files)
             priority = calculate_ticket_priority(description, severity)
 
@@ -1818,14 +2042,27 @@ def show_ticket_form():
                 "status": "Open",
                 "assigned_to": "Unassigned",
                 "resolution_notes": "",
+                "assigned_at": "",
+                "waiting_on_user_at": "",
+                "closed_at": "",
                 "suggestions": [],
-                "user_guidance": [],
                 "likely_infrastructure": is_likely_infrastructure_issue(description),
                 "attachments": attachments,
                 "comments": [],
                 "unread_for_admin": True,
                 "unread_for_user": False,
+                "created_at": get_current_timestamp(),
+                "updated_at": get_current_timestamp(),
+                "activity_log": [],
             }
+
+            add_ticket_activity(
+                ticket,
+                "created",
+                "Ticket created by user",
+                actor=current_username,
+                role="User",
+            )
 
             if "tickets" not in st.session_state:
                 st.session_state["tickets"] = []
@@ -1869,7 +2106,7 @@ def show_ticket_list():
 
     status_filter = st.selectbox(
         "Filter by status",
-        ["All", "Open", "In Progress", "Resolved"],
+        ["All"] + TICKET_STATUSES,
     )
 
     priority_filter = st.selectbox(
@@ -1903,25 +2140,32 @@ def show_ticket_list():
         elif priority == "High":
             st.warning(f"⚠️ HIGH PRIORITY: {ticket['issue']} — {status}")
 
+        sla_status, _ = get_sla_status(ticket)
+        sla_label = f" — SLA: {sla_status}"
         unread_label = " 🔔 New comment" if ticket.get("unread_for_admin") else ""
-        with st.expander(f"Ticket {i}: {ticket['issue']} — {status} — {priority}{unread_label}"):
+        with st.expander(f"Ticket {i}: {ticket['issue']} — {status} — {priority}{sla_label}{unread_label}"):
             st.write(f"**Name:** {ticket['name']}")
             st.write(f"**Email:** {ticket['email']}")
             st.write(f"**Severity:** {ticket['severity']}")
             show_priority_badge(priority)
+            show_sla_badge(ticket)
             st.write(f"**Status:** {status}")
+            if ticket.get("created_at"):
+                st.write(f"**Created:** {ticket.get('created_at')}")
+            if ticket.get("assigned_at"):
+                st.write(f"**Assigned At:** {ticket.get('assigned_at')}")
+            if ticket.get("waiting_on_user_at"):
+                st.write(f"**Waiting on User Since:** {ticket.get('waiting_on_user_at')}")
+            if ticket.get("resolved_at"):
+                st.write(f"**Resolved At:** {ticket.get('resolved_at')}")
+            if ticket.get("closed_at"):
+                st.write(f"**Closed At:** {ticket.get('closed_at')}")
             st.write(f"**Assigned To:** {assigned_to}")
             st.write("**Description:**")
             st.write(ticket["description"])
 
             if ticket.get("likely_infrastructure"):
                 st.warning("Possible wider IT/infrastructure issue")
-
-            guidance = ticket.get("user_guidance", [])
-            if guidance:
-                st.write("**User Guidance:**")
-                for item in guidance:
-                    st.write("-", item)
 
             attachments = ticket.get("attachments", [])
             if attachments:
@@ -1990,16 +2234,22 @@ def show_ticket_list():
             st.divider()
             st.subheader("Update Ticket")
 
+            current_status = normalize_ticket_status(status)
             new_status = st.selectbox(
                 "Status",
-                ["Open", "In Progress", "Resolved"],
-                index=["Open", "In Progress", "Resolved"].index(status),
+                TICKET_STATUSES,
+                index=TICKET_STATUSES.index(current_status),
                 key=f"status_{i}",
             )
 
-            new_assigned_to = st.text_input(
+            assignment_options = ASSIGNMENT_OPTIONS.copy()
+            if assigned_to not in assignment_options:
+                assignment_options.append(assigned_to)
+
+            new_assigned_to = st.selectbox(
                 "Assigned To",
-                value=assigned_to,
+                assignment_options,
+                index=assignment_options.index(assigned_to),
                 key=f"assigned_{i}",
             )
 
@@ -2017,10 +2267,52 @@ def show_ticket_list():
             )
 
             if st.button("Save Ticket Updates", key=f"save_ticket_{i}"):
+                previous_status = ticket.get("status", "Open")
+
                 ticket["status"] = new_status
                 ticket["priority"] = new_priority
                 ticket["assigned_to"] = new_assigned_to
                 ticket["resolution_notes"] = new_resolution_notes
+                ticket["updated_at"] = get_current_timestamp()
+
+                if new_status == "Assigned" and not ticket.get("assigned_at"):
+                    ticket["assigned_at"] = get_current_timestamp()
+                if new_status == "Waiting on User" and not ticket.get("waiting_on_user_at"):
+                    ticket["waiting_on_user_at"] = get_current_timestamp()
+                if new_status == "Resolved" and not ticket.get("resolved_at"):
+                    ticket["resolved_at"] = get_current_timestamp()
+                if new_status == "Closed" and not ticket.get("closed_at"):
+                    ticket["closed_at"] = get_current_timestamp()
+
+                if previous_status != new_status:
+                    add_ticket_activity(
+                        ticket,
+                        "status_change",
+                        f"Status changed from {previous_status} to {new_status}.",
+                        actor=st.session_state.get("username", "Unknown"),
+                        role=st.session_state.get("role", "Admin"),
+                    )
+                    ticket["unread_for_user"] = True
+
+                if assigned_to != new_assigned_to:
+                    add_ticket_activity(
+                        ticket,
+                        "assignment",
+                        f"Assignment changed from {assigned_to} to {new_assigned_to}.",
+                        actor=st.session_state.get("username", "Unknown"),
+                        role=st.session_state.get("role", "Admin"),
+                    )
+                    ticket["unread_for_user"] = True
+
+                if priority != new_priority:
+                    add_ticket_activity(
+                        ticket,
+                        "priority",
+                        f"Priority changed from {priority} to {new_priority}.",
+                        actor=st.session_state.get("username", "Unknown"),
+                        role=st.session_state.get("role", "Admin"),
+                    )
+                    ticket["unread_for_user"] = True
                 save_tickets()
                 st.success("✅ Ticket updated successfully")
 
@@ -2030,6 +2322,91 @@ def show_ticket_list():
 
             show_ticket_comments(ticket, i)
 
+
+
+
+# -----------------------------
+# TICKET TIMELINE HELPERS
+# -----------------------------
+def add_ticket_activity(ticket, event_type, message, actor=None, role=None):
+    """Add an activity event to the ticket timeline."""
+    ticket.setdefault("activity_log", [])
+    ticket["activity_log"].append({
+        "timestamp": get_current_timestamp(),
+        "actor": actor or st.session_state.get("username", "System"),
+        "role": role or st.session_state.get("role", "System"),
+        "type": event_type,
+        "message": message,
+    })
+
+
+def get_ticket_timeline(ticket):
+    """Return ticket activity and comments as one chronological timeline."""
+    timeline = []
+
+    if ticket.get("created_at"):
+        timeline.append({
+            "timestamp": ticket.get("created_at"),
+            "actor": ticket.get("username") or ticket.get("name", "User"),
+            "role": "User",
+            "type": "created",
+            "message": "Ticket created",
+        })
+
+    for activity in ticket.get("activity_log", []):
+        timeline.append({
+            "timestamp": activity.get("timestamp", ""),
+            "actor": activity.get("actor", "System"),
+            "role": activity.get("role", "System"),
+            "type": activity.get("type", "activity"),
+            "message": activity.get("message", ""),
+        })
+
+    for comment in ticket.get("comments", []):
+        timeline.append({
+            "timestamp": comment.get("timestamp", ""),
+            "actor": comment.get("author", "Unknown"),
+            "role": comment.get("role", "User"),
+            "type": "comment",
+            "message": comment.get("comment", ""),
+        })
+
+    def sort_key(item):
+        parsed = parse_timestamp(item.get("timestamp"))
+        return parsed or datetime.min
+
+    return sorted(timeline, key=sort_key)
+
+
+def show_ticket_timeline(ticket):
+    """Display the ticket timeline."""
+    st.subheader("🕒 Activity Timeline")
+
+    timeline = get_ticket_timeline(ticket)
+
+    if not timeline:
+        st.info("No activity yet.")
+        return
+
+    icon_map = {
+        "created": "🆕",
+        "status_change": "🔄",
+        "assignment": "👤",
+        "priority": "🚦",
+        "comment": "💬",
+        "activity": "📌",
+    }
+
+    for event in timeline:
+        icon = icon_map.get(event.get("type"), "📌")
+        timestamp = event.get("timestamp") or "No timestamp"
+        actor = event.get("actor", "Unknown")
+        role = event.get("role", "User")
+        message = event.get("message", "")
+
+        st.markdown(f"**{icon} {timestamp} — {actor} ({role})**")
+        st.write(message)
+        st.divider()
 
 # -----------------------------
 # TICKET COMMENTS
@@ -2048,7 +2425,16 @@ def add_ticket_comment(ticket, comment_text):
         "author": st.session_state.get("username", "Unknown"),
         "role": author_role,
         "comment": comment_text.strip(),
+        "timestamp": get_current_timestamp(),
     })
+
+    add_ticket_activity(
+        ticket,
+        "comment",
+        f"Comment added: {comment_text.strip()}",
+        actor=st.session_state.get("username", "Unknown"),
+        role=author_role,
+    )
 
     if author_role == "Admin":
         ticket["unread_for_user"] = True
@@ -2060,30 +2446,21 @@ def add_ticket_comment(ticket, comment_text):
 
 
 def show_ticket_comments(ticket, ticket_index):
-    """Display and add ticket comments."""
-    st.subheader("💬 Ticket Conversation")
-
+    """Display ticket timeline and add comments."""
     role = st.session_state.get("role", "User")
     unread_key = "unread_for_admin" if role == "Admin" else "unread_for_user"
 
     if ticket.get(unread_key):
-        st.warning("🔔 New unread comment(s)")
-        if st.button("Mark comments as read", key=f"mark_read_{ticket_index}"):
+        st.warning("🔔 New unread update(s)")
+        if st.button("Mark updates as read", key=f"mark_read_{ticket_index}"):
             ticket[unread_key] = False
             save_tickets()
-            st.success("Comments marked as read")
+            st.success("Updates marked as read")
             st.rerun()
 
-    comments = ticket.get("comments", [])
+    show_ticket_timeline(ticket)
 
-    if not comments:
-        st.info("No comments yet.")
-    else:
-        for comment in comments:
-            st.write(f"**{comment.get('author', 'Unknown')} ({comment.get('role', 'User')})**")
-            st.write(comment.get("comment", ""))
-            st.divider()
-
+    st.subheader("💬 Add Comment")
     new_comment = st.text_area(
         "Add a comment",
         key=f"comment_{ticket_index}",
@@ -2098,6 +2475,250 @@ def show_ticket_comments(ticket, ticket_index):
             st.error("Comment cannot be empty")
 
 
+
+
+
+
+# -----------------------------
+# EXPORT HELPERS
+# -----------------------------
+def flatten_ticket_for_export(ticket):
+    """Convert a ticket dictionary into a flat row for CSV export."""
+    comments = ticket.get("comments", [])
+    attachments = ticket.get("attachments", [])
+    sla_status, sla_detail = get_sla_status(ticket)
+
+    return {
+        "issue": ticket.get("issue", ""),
+        "username": ticket.get("username") or ticket.get("name", ""),
+        "email": ticket.get("email", ""),
+        "description": ticket.get("description", ""),
+        "severity": ticket.get("severity", ""),
+        "priority": ticket.get("priority", ""),
+        "status": ticket.get("status", ""),
+        "assigned_to": ticket.get("assigned_to", ""),
+        "likely_infrastructure": ticket.get("likely_infrastructure", False),
+        "sla_status": sla_status,
+        "sla_detail": sla_detail,
+        "created_at": ticket.get("created_at", ""),
+        "updated_at": ticket.get("updated_at", ""),
+        "assigned_at": ticket.get("assigned_at", ""),
+        "waiting_on_user_at": ticket.get("waiting_on_user_at", ""),
+        "resolved_at": ticket.get("resolved_at", ""),
+        "closed_at": ticket.get("closed_at", ""),
+        "resolution_notes": ticket.get("resolution_notes", ""),
+        "comments_count": len(comments),
+        "activity_count": len(ticket.get("activity_log", [])),
+        "attachments_count": len(attachments),
+        "unread_for_admin": ticket.get("unread_for_admin", False),
+        "unread_for_user": ticket.get("unread_for_user", False),
+    }
+
+
+def tickets_to_csv(tickets):
+    """Convert tickets into CSV text."""
+    output = io.StringIO()
+
+    fieldnames = [
+        "issue",
+        "username",
+        "email",
+        "description",
+        "severity",
+        "priority",
+        "status",
+        "assigned_to",
+        "likely_infrastructure",
+        "sla_status",
+        "sla_detail",
+        "created_at",
+        "updated_at",
+        "assigned_at",
+        "waiting_on_user_at",
+        "resolved_at",
+        "closed_at",
+        "resolution_notes",
+        "comments_count",
+        "activity_count",
+        "attachments_count",
+        "unread_for_admin",
+        "unread_for_user",
+    ]
+
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+
+    for ticket in tickets:
+        writer.writerow(flatten_ticket_for_export(ticket))
+
+    return output.getvalue()
+
+
+def show_export_tools(tickets):
+    """Display admin export tools."""
+    st.subheader("📤 Export Tools")
+
+    if not tickets:
+        st.info("No tickets available to export.")
+        return
+
+    csv_data = tickets_to_csv(tickets)
+
+    st.download_button(
+        label="⬇️ Download Tickets CSV",
+        data=csv_data,
+        file_name="tickets_export.csv",
+        mime="text/csv",
+    )
+
+    st.caption("CSV export includes ticket status, priority, SLA status, comments count, and attachments count.")
+
+# -----------------------------
+# SAMPLE DEMO DATA
+# -----------------------------
+def get_sample_tickets():
+    """Return realistic sample tickets for portfolio/demo mode."""
+    return [
+        {
+            "name": "sarah.finance",
+            "username": "sarah.finance",
+            "email": "sarah.finance@example.com",
+            "issue": "Shared drive unavailable for Finance",
+            "description": (
+                "Multiple users in the Finance department cannot access the shared drive "
+                "\\\\FIN-SERVER01\\Shared. They receive 'Network path not found'. "
+                "Internet and email still work."
+            ),
+            "severity": "High",
+            "priority": "Critical",
+            "status": "Open",
+            "assigned_to": "Systems Team",
+            "resolution_notes": "",
+            "suggestions": [],
+            "likely_infrastructure": True,
+            "attachments": [],
+            "comments": [
+                {
+                    "author": "sarah.finance",
+                    "role": "User",
+                    "comment": "This started around 9:15 AM and affects everyone on our floor.",
+                }
+            ],
+            "unread_for_admin": True,
+            "unread_for_user": False,
+        },
+        {
+            "name": "remote.user",
+            "username": "remote.user",
+            "email": "remote.user@example.com",
+            "issue": "VPN connection failure",
+            "description": "I am working remotely and the VPN keeps timing out when I try to connect.",
+            "severity": "High",
+            "priority": "High",
+            "status": "In Progress",
+            "assigned_to": "Network Team",
+            "resolution_notes": "",
+            "suggestions": [],
+            "likely_infrastructure": False,
+            "attachments": [],
+            "comments": [
+                {
+                    "author": "admin",
+                    "role": "Admin",
+                    "comment": "Checking VPN service status and user account permissions.",
+                }
+            ],
+            "unread_for_admin": False,
+            "unread_for_user": True,
+        },
+        {
+            "name": "maria.office",
+            "username": "maria.office",
+            "email": "maria.office@example.com",
+            "issue": "Outlook not receiving email",
+            "description": "Outlook has not received new emails since this morning, but webmail is working.",
+            "severity": "Medium",
+            "priority": "Medium",
+            "status": "Open",
+            "assigned_to": "Tier 1 Support",
+            "resolution_notes": "",
+            "suggestions": [],
+            "likely_infrastructure": False,
+            "attachments": [],
+            "comments": [],
+            "unread_for_admin": True,
+            "unread_for_user": False,
+        },
+        {
+            "name": "office.user",
+            "username": "office.user",
+            "email": "office.user@example.com",
+            "issue": "Printer offline in break room",
+            "description": "The break room printer shows offline and print jobs stay stuck in the queue.",
+            "severity": "Low",
+            "priority": "Low",
+            "status": "Resolved",
+            "assigned_to": "Tier 1 Support",
+            "resolution_notes": "Restarted printer and cleared the print queue.",
+            "suggestions": [],
+            "likely_infrastructure": False,
+            "attachments": [],
+            "comments": [
+                {
+                    "author": "admin",
+                    "role": "Admin",
+                    "comment": "Printer is back online. Please try printing again.",
+                }
+            ],
+            "unread_for_admin": False,
+            "unread_for_user": True,
+        },
+        {
+            "name": "james.sales",
+            "username": "james.sales",
+            "email": "james.sales@example.com",
+            "issue": "Laptop running slow",
+            "description": "My laptop is very slow today. Applications take a long time to open.",
+            "severity": "Medium",
+            "priority": "Medium",
+            "status": "In Progress",
+            "assigned_to": "Tier 1 Support",
+            "resolution_notes": "",
+            "suggestions": [],
+            "likely_infrastructure": False,
+            "attachments": [],
+            "comments": [],
+            "unread_for_admin": False,
+            "unread_for_user": False,
+        },
+    ]
+
+
+def load_sample_tickets():
+    """Load sample tickets without duplicating them."""
+    if "tickets" not in st.session_state:
+        st.session_state["tickets"] = []
+
+    existing_issues = {ticket.get("issue") for ticket in st.session_state["tickets"]}
+
+    added_count = 0
+    for sample_ticket in get_sample_tickets():
+        if sample_ticket["issue"] not in existing_issues:
+            sample_ticket.setdefault("created_at", get_current_timestamp())
+            sample_ticket.setdefault("updated_at", get_current_timestamp())
+            sample_ticket.setdefault("assigned_at", "")
+            sample_ticket.setdefault("waiting_on_user_at", "")
+            sample_ticket.setdefault("resolved_at", "")
+            sample_ticket.setdefault("closed_at", "")
+            sample_ticket.setdefault("activity_log", [])
+            st.session_state["tickets"].append(sample_ticket)
+            added_count += 1
+
+    if added_count:
+        save_tickets()
+
+    return added_count
+
 # -----------------------------
 # ADMIN DASHBOARD
 # -----------------------------
@@ -2109,24 +2730,55 @@ def show_admin_dashboard():
 
     total_tickets = len(tickets)
     open_tickets = sum(1 for ticket in tickets if ticket.get("status", "Open") == "Open")
+    assigned_tickets = sum(1 for ticket in tickets if ticket.get("status") == "Assigned")
     in_progress_tickets = sum(1 for ticket in tickets if ticket.get("status") == "In Progress")
+    waiting_tickets = sum(1 for ticket in tickets if ticket.get("status") == "Waiting on User")
     resolved_tickets = sum(1 for ticket in tickets if ticket.get("status") == "Resolved")
+    closed_tickets = sum(1 for ticket in tickets if ticket.get("status") == "Closed")
     critical_tickets = sum(1 for ticket in tickets if ticket.get("priority") == "Critical")
     unread_admin_comments = sum(1 for ticket in tickets if ticket.get("unread_for_admin"))
+    overdue_tickets = sum(1 for ticket in tickets if get_sla_status(ticket)[0] == "Overdue")
 
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    col1, col2, col3, col4 = st.columns(4)
     col1.metric("Total Tickets", total_tickets)
     col2.metric("Open", open_tickets)
-    col3.metric("In Progress", in_progress_tickets)
-    col4.metric("Resolved", resolved_tickets)
-    col5.metric("Critical", critical_tickets)
-    col6.metric("Unread Comments", unread_admin_comments)
+    col3.metric("Assigned", assigned_tickets)
+    col4.metric("In Progress", in_progress_tickets)
+
+    col5, col6, col7, col8 = st.columns(4)
+    col5.metric("Waiting on User", waiting_tickets)
+    col6.metric("Resolved", resolved_tickets)
+    col7.metric("Critical", critical_tickets)
+    col8.metric("SLA Overdue", overdue_tickets)
+
+    st.caption(f"Closed tickets: {closed_tickets} | Unread comments: {unread_admin_comments}")
+
+    st.divider()
+
+    show_export_tools(tickets)
 
     st.divider()
 
     if not tickets:
         st.info("No ticket data available yet.")
+        if st.button("📦 Load sample demo tickets"):
+            added_count = load_sample_tickets()
+            if added_count:
+                st.success(f"✅ Loaded {added_count} sample ticket(s).")
+                st.rerun()
+            else:
+                st.info("Sample tickets are already loaded.")
         return
+
+    with st.expander("Demo Data Tools"):
+        st.caption("Use this only for portfolio demos or testing.")
+        if st.button("📦 Load sample demo tickets"):
+            added_count = load_sample_tickets()
+            if added_count:
+                st.success(f"✅ Loaded {added_count} sample ticket(s).")
+                st.rerun()
+            else:
+                st.info("Sample tickets are already loaded.")
 
     critical_items = [
         ticket for ticket in tickets
@@ -2139,6 +2791,14 @@ def show_admin_dashboard():
             for ticket in critical_items:
                 st.write(f"- **{ticket.get('issue', 'Unknown issue')}** — {ticket.get('status', 'Open')}")
 
+    overdue_items = [ticket for ticket in tickets if get_sla_status(ticket)[0] == "Overdue"]
+    if overdue_items:
+        st.error(f"⏰ {len(overdue_items)} ticket(s) are SLA overdue.")
+        with st.expander("View SLA overdue tickets"):
+            for ticket in overdue_items:
+                sla_status, detail = get_sla_status(ticket)
+                st.write(f"- **{ticket.get('issue', 'Unknown issue')}** — {detail}")
+
     unread_comment_items = [ticket for ticket in tickets if ticket.get("unread_for_admin")]
     if unread_comment_items:
         st.warning(f"🔔 {len(unread_comment_items)} ticket(s) have unread comments for admin.")
@@ -2149,8 +2809,11 @@ def show_admin_dashboard():
     st.subheader("Tickets by Status")
     status_counts = {
         "Open": open_tickets,
+        "Assigned": assigned_tickets,
         "In Progress": in_progress_tickets,
+        "Waiting on User": waiting_tickets,
         "Resolved": resolved_tickets,
+        "Closed": closed_tickets,
     }
     st.bar_chart(status_counts)
 
@@ -2160,6 +2823,13 @@ def show_admin_dashboard():
         priority = ticket.get("priority", calculate_ticket_priority(ticket.get("description", ""), ticket.get("severity", "Medium")))
         priority_counts[priority] = priority_counts.get(priority, 0) + 1
     st.bar_chart(priority_counts)
+
+    st.subheader("Tickets by SLA Status")
+    sla_counts = {"On Track": 0, "Due Soon": 0, "Overdue": 0, "Completed": 0, "Unknown": 0}
+    for ticket in tickets:
+        sla_status, _ = get_sla_status(ticket)
+        sla_counts[sla_status] = sla_counts.get(sla_status, 0) + 1
+    st.bar_chart(sla_counts)
 
     st.subheader("Tickets by Severity")
     severity_counts = {"Low": 0, "Medium": 0, "High": 0}
@@ -2205,7 +2875,14 @@ def show_my_tickets():
         with st.expander(f"Ticket {i}: {ticket.get('issue')} — {ticket.get('status', 'Open')}{unread_label}"):
             st.write(f"**Severity:** {ticket.get('severity')}")
             show_priority_badge(ticket.get("priority", "Medium"))
+            show_sla_badge(ticket)
             st.write(f"**Status:** {ticket.get('status', 'Open')}")
+            if ticket.get("created_at"):
+                st.write(f"**Created:** {ticket.get('created_at')}")
+            if ticket.get("resolved_at"):
+                st.write(f"**Resolved At:** {ticket.get('resolved_at')}")
+            if ticket.get("closed_at"):
+                st.write(f"**Closed At:** {ticket.get('closed_at')}")
             st.write("**Description:**")
             st.write(ticket.get("description", ""))
 
@@ -2215,6 +2892,44 @@ def show_my_tickets():
 
             show_ticket_comments(ticket, f"user_{i}")
 
+
+
+
+# -----------------------------
+# HOME / OVERVIEW PAGE
+# -----------------------------
+def show_home_page():
+    st.title("🛠 IT Support Troubleshooting Portal")
+
+    role = st.session_state.get("role", "User")
+
+    if role == "Admin":
+        st.markdown("""
+### 👨‍💼 Admin Overview
+
+Use this system to:
+- Review and manage support tickets
+- Assign and update ticket status
+- Monitor priorities and critical issues
+- Manage Knowledge Base articles
+- Track support activity and trends
+""")
+    else:
+        st.markdown("""
+### 👤 User Overview
+
+Use this system to:
+- Troubleshoot common IT issues
+- Search the Knowledge Base
+- Create and track support tickets
+- Upload screenshots or logs
+- Communicate with IT support
+""")
+
+    if role == "Admin":
+        st.info("💡 Start with the Dashboard to review critical tickets, unread comments, and ticket trends.")
+    else:
+        st.info("💡 Start with Guided Troubleshooting before creating a ticket.")
 
 # -----------------------------
 # MAIN APP
@@ -2238,6 +2953,7 @@ def main():
 
     if st.session_state.get("role") == "Admin":
         menu_options = [
+            "🏠 Home",
             "📊 Dashboard",
             "🧭 Guided Troubleshooting",
             "🔍 Knowledge Base",
@@ -2247,7 +2963,9 @@ def main():
         ]
     else:
         menu_options = [
+            "🏠 Home",
             "🧭 Guided Troubleshooting",
+            "🔍 Knowledge Base",
             "🎫 Create Ticket",
             "🎟 My Tickets",
         ]
@@ -2257,7 +2975,9 @@ def main():
         menu_options,
     )
 
-    if mode == "📊 Dashboard":
+    if mode == "🏠 Home":
+        show_home_page()
+    elif mode == "📊 Dashboard":
         show_admin_dashboard()
     elif mode == "🧭 Guided Troubleshooting":
         show_guided_troubleshooting()
