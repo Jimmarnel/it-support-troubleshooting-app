@@ -2727,6 +2727,37 @@ def show_admin_dashboard():
     st.title("📊 Admin Dashboard")
 
     tickets = st.session_state.get("tickets", [])
+    # 🔍 Search & Filters
+    keyword = st.text_input("🔍 Search tickets",
+                            placeholder="Search by issue or description")
+
+    status_filter = st.selectbox(
+        "Status Filter",
+        ["All", "Open", "Assigned", "In Progress", "Waiting on User",
+         "Resolved", "Closed"]
+    )
+
+    priority_filter = st.selectbox(
+        "Priority Filter",
+        ["All", "Critical", "High", "Medium", "Low"]
+    )
+
+    if keyword or status_filter != "All" or priority_filter != "All":
+        filtered_tickets = []
+        for t in tickets:
+            text = f"{t.get('issue', '')} {t.get('description', '')}".lower()
+
+            if keyword and keyword.lower() not in text:
+                continue
+            if status_filter != "All" and t.get("status") != status_filter:
+                continue
+            if priority_filter != "All" and t.get(
+                    "priority") != priority_filter:
+                continue
+
+            filtered_tickets.append(t)
+
+        tickets = filtered_tickets
 
     total_tickets = len(tickets)
     open_tickets = sum(1 for ticket in tickets if ticket.get("status", "Open") == "Open")
@@ -2858,6 +2889,37 @@ def show_my_tickets():
 
     tickets = st.session_state.get("tickets", [])
     username = st.session_state.get("username")
+    # 🔍 Search & Filters
+    keyword = st.text_input("🔍 Search tickets",
+                            placeholder="Search by issue or description")
+
+    status_filter = st.selectbox(
+        "Status Filter",
+        ["All", "Open", "Assigned", "In Progress", "Waiting on User",
+         "Resolved", "Closed"]
+    )
+
+    priority_filter = st.selectbox(
+        "Priority Filter",
+        ["All", "Critical", "High", "Medium", "Low"]
+    )
+
+    if keyword or status_filter != "All" or priority_filter != "All":
+        filtered_tickets = []
+        for t in tickets:
+            text = f"{t.get('issue', '')} {t.get('description', '')}".lower()
+
+            if keyword and keyword.lower() not in text:
+                continue
+            if status_filter != "All" and t.get("status") != status_filter:
+                continue
+            if priority_filter != "All" and t.get(
+                    "priority") != priority_filter:
+                continue
+
+            filtered_tickets.append(t)
+
+        tickets = filtered_tickets
 
     user_tickets = [
         ticket for ticket in tickets
@@ -2930,6 +2992,31 @@ Use this system to:
         st.info("💡 Start with the Dashboard to review critical tickets, unread comments, and ticket trends.")
     else:
         st.info("💡 Start with Guided Troubleshooting before creating a ticket.")
+
+
+
+# -----------------------------
+# SEARCH & FILTER HELPERS
+# -----------------------------
+def filter_tickets(tickets, keyword="", status="All", priority="All"):
+    results = []
+    keyword = keyword.lower().strip()
+
+    for t in tickets:
+        if keyword:
+            text = f"{t.get('issue','')} {t.get('description','')}".lower()
+            if keyword not in text:
+                continue
+
+        if status != "All" and t.get("status") != status:
+            continue
+
+        if priority != "All" and t.get("priority") != priority:
+            continue
+
+        results.append(t)
+
+    return results
 
 # -----------------------------
 # MAIN APP
