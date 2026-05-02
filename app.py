@@ -2727,37 +2727,6 @@ def show_admin_dashboard():
     st.title("📊 Admin Dashboard")
 
     tickets = st.session_state.get("tickets", [])
-    # 🔍 Search & Filters
-    keyword = st.text_input("🔍 Search tickets",
-                            placeholder="Search by issue or description")
-
-    status_filter = st.selectbox(
-        "Status Filter",
-        ["All", "Open", "Assigned", "In Progress", "Waiting on User",
-         "Resolved", "Closed"]
-    )
-
-    priority_filter = st.selectbox(
-        "Priority Filter",
-        ["All", "Critical", "High", "Medium", "Low"]
-    )
-
-    if keyword or status_filter != "All" or priority_filter != "All":
-        filtered_tickets = []
-        for t in tickets:
-            text = f"{t.get('issue', '')} {t.get('description', '')}".lower()
-
-            if keyword and keyword.lower() not in text:
-                continue
-            if status_filter != "All" and t.get("status") != status_filter:
-                continue
-            if priority_filter != "All" and t.get(
-                    "priority") != priority_filter:
-                continue
-
-            filtered_tickets.append(t)
-
-        tickets = filtered_tickets
 
     total_tickets = len(tickets)
     open_tickets = sum(1 for ticket in tickets if ticket.get("status", "Open") == "Open")
@@ -2889,37 +2858,6 @@ def show_my_tickets():
 
     tickets = st.session_state.get("tickets", [])
     username = st.session_state.get("username")
-    # 🔍 Search & Filters
-    keyword = st.text_input("🔍 Search tickets",
-                            placeholder="Search by issue or description")
-
-    status_filter = st.selectbox(
-        "Status Filter",
-        ["All", "Open", "Assigned", "In Progress", "Waiting on User",
-         "Resolved", "Closed"]
-    )
-
-    priority_filter = st.selectbox(
-        "Priority Filter",
-        ["All", "Critical", "High", "Medium", "Low"]
-    )
-
-    if keyword or status_filter != "All" or priority_filter != "All":
-        filtered_tickets = []
-        for t in tickets:
-            text = f"{t.get('issue', '')} {t.get('description', '')}".lower()
-
-            if keyword and keyword.lower() not in text:
-                continue
-            if status_filter != "All" and t.get("status") != status_filter:
-                continue
-            if priority_filter != "All" and t.get(
-                    "priority") != priority_filter:
-                continue
-
-            filtered_tickets.append(t)
-
-        tickets = filtered_tickets
 
     user_tickets = [
         ticket for ticket in tickets
@@ -2996,27 +2934,49 @@ Use this system to:
 
 
 # -----------------------------
-# SEARCH & FILTER HELPERS
+# NOTIFICATION HELPERS
 # -----------------------------
-def filter_tickets(tickets, keyword="", status="All", priority="All"):
-    results = []
-    keyword = keyword.lower().strip()
+def get_admin_notification_counts(tickets):
+    """Return admin notification counts."""
+    critical_count = sum(1 for ticket in tickets if ticket.get("priority") == "Critical")
+    unread_updates = sum(1 for ticket in tickets if ticket.get("unread_for_admin"))
+    overdue_count = sum(1 for ticket in tickets if get_sla_status(ticket)[0] == "Overdue")
 
-    for t in tickets:
-        if keyword:
-            text = f"{t.get('issue','')} {t.get('description','')}".lower()
-            if keyword not in text:
-                continue
+    return {
+        "critical": critical_count,
+        "unread_updates": unread_updates,
+        "overdue": overdue_count,
+        "total": critical_count + unread_updates + overdue_count,
+    }
 
-        if status != "All" and t.get("status") != status:
-            continue
 
-        if priority != "All" and t.get("priority") != priority:
-            continue
+def get_user_notification_counts(tickets, username):
+    """Return notification counts for the logged-in user."""
+    user_tickets = [
+        ticket for ticket in tickets
+        if ticket.get("username") == username
+        or ticket.get("name") == username
+        or ticket.get("email") == username
+    ]
 
-        results.append(t)
+    unread_updates = sum(1 for ticket in user_tickets if ticket.get("unread_for_user"))
 
-    return results
+    return {
+        "unread_updates": unread_updates,
+        "total": unread_updates,
+    }
+
+
+def build_menu_label(base_label, count=0):
+    """Add a notification badge to a menu label."""
+    if count and count > 0:
+        return f"{base_label} 🔔 {count}"
+    return base_label
+
+
+def normalize_menu_choice(label):
+    """Remove notification badge from menu label before routing."""
+    return label.split(" 🔔 ")[0]
 
 # -----------------------------
 # MAIN APP
@@ -3038,29 +2998,49 @@ def main():
         logout_user()
         st.rerun()
 
+    tickets = st.session_state.get("tickets", [])
+
     if st.session_state.get("role") == "Admin":
+        admin_notifications = get_admin_notification_counts(tickets)
+
+        if admin_notifications["total"] > 0:
+            st.sidebar.warning(
+                f"🔔 {admin_notifications['total']} admin alert(s): "
+                f"{admin_notifications['critical']} critical, "
+                f"{admin_notifications['overdue']} overdue, "
+                f"{admin_notifications['unread_updates']} unread update(s)"
+            )
+
         menu_options = [
             "🏠 Home",
-            "📊 Dashboard",
+            build_menu_label("📊 Dashboard", admin_notifications["total"]),
             "🧭 Guided Troubleshooting",
             "🔍 Knowledge Base",
             "🎫 Create Ticket",
-            "📋 View Tickets",
+            build_menu_label("📋 View Tickets", admin_notifications["unread_updates"]),
             "🛠 Manage Knowledge Base",
         ]
     else:
+        username = st.session_state.get("username")
+        user_notifications = get_user_notification_counts(tickets, username)
+
+        if user_notifications["total"] > 0:
+            st.sidebar.warning(f"🔔 You have {user_notifications['total']} unread ticket update(s).")
+
         menu_options = [
             "🏠 Home",
             "🧭 Guided Troubleshooting",
             "🔍 Knowledge Base",
             "🎫 Create Ticket",
-            "🎟 My Tickets",
+            build_menu_label("🎟 My Tickets", user_notifications["unread_updates"]),
         ]
 
-    mode = st.sidebar.radio(
+    selected_mode = st.sidebar.radio(
         "Select Mode",
         menu_options,
     )
+
+    mode = normalize_menu_choice(selected_mode)
 
     if mode == "🏠 Home":
         show_home_page()
