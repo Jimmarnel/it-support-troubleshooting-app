@@ -3190,6 +3190,97 @@ def show_unread_notice(ticket, audience):
     else:
         st.warning(label)
 
+
+
+# -----------------------------
+# ABOUT PAGE
+# -----------------------------
+def show_about_page():
+    """Display a portfolio-friendly explanation of the project."""
+    st.title("ℹ️ About This App")
+
+    st.markdown("""
+## Intelligent IT Support & Troubleshooting Portal
+
+This application is a portfolio project designed to simulate a real-world IT helpdesk workflow.
+It combines a Knowledge Base, guided troubleshooting, ticket management, attachments, comments,
+notifications, SLA tracking, and an admin dashboard.
+
+The goal is to demonstrate practical IT Support / Help Desk skills and show how common support
+processes can be organized into a working web application.
+""")
+
+    st.divider()
+
+    st.subheader("🧩 Main Features")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("""
+### 👤 User Features
+- Guided troubleshooting for common IT issues
+- Searchable Knowledge Base
+- Support ticket creation
+- Screenshot/log attachment upload
+- Ticket tracking through My Tickets
+- Comment-based communication with IT
+- Notifications for ticket updates
+""")
+
+    with col2:
+        st.markdown("""
+### 👨‍💼 Admin Features
+- Ticket dashboard with analytics
+- Priority and SLA tracking
+- Ticket assignment and lifecycle management
+- Activity timeline for audit/history
+- Resolution templates
+- Knowledge Base management
+- CSV ticket export
+""")
+
+    st.divider()
+
+    st.subheader("🛠 Tech Stack")
+
+    st.markdown("""
+- **Python** — backend logic
+- **Streamlit** — web application interface
+- **SQLite** — local database persistence
+- **Session State** — user interaction and state handling
+- **File Uploads / Base64** — attachment preview and storage support
+- **Charts** — dashboard analytics and ticket trends
+""")
+
+    st.divider()
+
+    st.subheader("✅ Skills Demonstrated")
+
+    st.markdown("""
+- IT troubleshooting methodology
+- Helpdesk ticket lifecycle design
+- Role-based access control
+- CRUD operations
+- Database-backed application design
+- User/admin workflow separation
+- Dashboard analytics
+- SLA and priority logic
+- Attachment handling
+- Audit-style activity timelines
+""")
+
+    st.divider()
+
+    st.subheader("⚠️ Demo Notice")
+
+    st.warning(
+        "This is a portfolio demo application. Do not enter real passwords, confidential company data, "
+        "or sensitive support information."
+    )
+
+    st.caption("Built as a practical IT Support / Help Desk portfolio project.")
+
 # -----------------------------
 # MAIN APP
 # -----------------------------
@@ -3224,6 +3315,7 @@ def main():
             )
 
         menu_options = [
+            "ℹ️ About This App",
             "🏠 Home",
             build_menu_label("📊 Dashboard", admin_notifications["total"]),
             "🧭 Guided Troubleshooting",
@@ -3231,6 +3323,7 @@ def main():
             "🎫 Create Ticket",
             build_menu_label("📋 View Tickets", admin_notifications["unread_updates"]),
             "🛠 Manage Knowledge Base",
+
         ]
     else:
         username = st.session_state.get("username")
@@ -3240,11 +3333,13 @@ def main():
             st.sidebar.warning(f"🔔 You have {user_notifications['total']} unread ticket update(s).")
 
         menu_options = [
+            "ℹ️ About This App",
             "🏠 Home",
             "🧭 Guided Troubleshooting",
             "🔍 Knowledge Base",
             "🎫 Create Ticket",
             build_menu_label("🎟 My Tickets", user_notifications["unread_updates"]),
+
         ]
 
     selected_mode = st.sidebar.radio(
@@ -3270,6 +3365,10 @@ def main():
         show_ticket_list()
     elif mode == "🛠 Manage Knowledge Base":
         show_admin_kb_editor()
+    elif mode == "ℹ️ About This App":
+        show_about_page()
+    elif mode == "ℹ️ About This App":
+        show_about_page()
 
 
 if __name__ == "__main__":
