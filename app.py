@@ -2820,6 +2820,116 @@ def load_sample_tickets():
 
     return added_count
 
+
+
+# -----------------------------
+# DASHBOARD VIEW HELPERS
+# -----------------------------
+def show_dashboard_ticket_summary(ticket):
+    """Display a compact ticket summary for dashboard tabs."""
+    status = ticket.get("status", "Open")
+    priority = ticket.get("priority", "Medium")
+    sla_status, sla_detail = get_sla_status(ticket)
+
+    unread_label = get_unread_label(ticket, "admin") if ticket.get("unread_for_admin") else ""
+
+    with st.expander(f"{ticket.get('issue', 'Unknown issue')} — {status} — {priority} — SLA: {sla_status}{unread_label}"):
+        st.write(f"**User:** {ticket.get('username') or ticket.get('name', 'Unknown')}")
+        st.write(f"**Email:** {ticket.get('email', '')}")
+        st.write(f"**Assigned To:** {ticket.get('assigned_to', 'Unassigned')}")
+        st.write(f"**Created:** {ticket.get('created_at', 'N/A')}")
+        st.write(f"**Updated:** {ticket.get('updated_at', 'N/A')}")
+        st.write(f"**SLA:** {sla_status} — {sla_detail}")
+        st.write("**Description:**")
+        st.write(ticket.get("description", ""))
+
+        if ticket.get("likely_infrastructure"):
+            st.warning("🚨 Escalation recommended: possible wider IT/infrastructure issue.")
+
+
+def show_dashboard_ticket_tabs(tickets):
+    """Display dashboard tickets in clear tab-based sections."""
+    st.subheader("📋 Ticket Views")
+
+    all_tickets = tickets
+    critical_tickets = [ticket for ticket in tickets if ticket.get("priority") == "Critical"]
+    unread_tickets = [ticket for ticket in tickets if ticket.get("unread_for_admin")]
+    sla_tickets = [ticket for ticket in tickets if get_sla_status(ticket)[0] == "Overdue"]
+
+    tabs = st.tabs([
+        f"📋 All Tickets ({len(all_tickets)})",
+        f"🚨 Critical ({len(critical_tickets)})",
+        f"🔔 Unread ({len(unread_tickets)})",
+        f"⏱ SLA Issues ({len(sla_tickets)})",
+    ])
+
+    tab_data = [
+        (tabs[0], all_tickets, "tickets"),
+        (tabs[1], critical_tickets, "critical tickets"),
+        (tabs[2], unread_tickets, "unread updates"),
+        (tabs[3], sla_tickets, "SLA overdue tickets"),
+    ]
+
+    for tab, ticket_list, empty_label in tab_data:
+        with tab:
+            if not ticket_list:
+                st.info(f"No {empty_label} found.")
+            else:
+                for ticket in ticket_list:
+                    show_dashboard_ticket_summary(ticket)
+
+
+def show_dashboard_analytics(tickets):
+    """Display dashboard analytics and trends."""
+    st.subheader("📊 Ticket Analytics")
+
+    if not tickets:
+        st.info("No analytics available yet.")
+        return
+
+    status_counts = {}
+    priority_counts = {}
+    category_counts = {}
+    sla_counts = {"On Track": 0, "Due Soon": 0, "Overdue": 0, "Completed": 0, "Unknown": 0}
+    created_by_day = {}
+
+    for ticket in tickets:
+        status = ticket.get("status", "Open")
+        priority = ticket.get("priority", "Medium")
+        issue_category = "Uncategorized"
+
+        matching_issue = find_issue_by_title(ticket.get("issue", ""))
+        if matching_issue:
+            issue_category = matching_issue.get("category", "Uncategorized")
+
+        sla_status, _ = get_sla_status(ticket)
+        created_day = ticket.get("created_at", "")[:10] if ticket.get("created_at") else "Unknown"
+
+        status_counts[status] = status_counts.get(status, 0) + 1
+        priority_counts[priority] = priority_counts.get(priority, 0) + 1
+        category_counts[issue_category] = category_counts.get(issue_category, 0) + 1
+        sla_counts[sla_status] = sla_counts.get(sla_status, 0) + 1
+        created_by_day[created_day] = created_by_day.get(created_day, 0) + 1
+
+    col_chart1, col_chart2 = st.columns(2)
+
+    with col_chart1:
+        st.markdown("### Tickets by Status")
+        st.bar_chart(status_counts)
+
+        st.markdown("### Tickets by SLA Status")
+        st.bar_chart(sla_counts)
+
+    with col_chart2:
+        st.markdown("### Tickets by Priority")
+        st.bar_chart(priority_counts)
+
+        st.markdown("### Tickets by Category")
+        st.bar_chart(category_counts)
+
+    st.markdown("### Tickets Created by Day")
+    st.line_chart(dict(sorted(created_by_day.items())))
+
 # -----------------------------
 # ADMIN DASHBOARD
 # -----------------------------
@@ -2907,48 +3017,11 @@ def show_admin_dashboard():
             for ticket in unread_comment_items:
                 st.write(f"- **{ticket.get('issue', 'Unknown issue')}** — {ticket.get('status', 'Open')}")
 
-    st.subheader("Tickets by Status")
-    status_counts = {
-        "Open": open_tickets,
-        "Assigned": assigned_tickets,
-        "In Progress": in_progress_tickets,
-        "Waiting on User": waiting_tickets,
-        "Resolved": resolved_tickets,
-        "Closed": closed_tickets,
-    }
-    st.bar_chart(status_counts)
+    show_dashboard_ticket_tabs(tickets)
 
-    st.subheader("Tickets by Priority")
-    priority_counts = {"Critical": 0, "High": 0, "Medium": 0, "Low": 0}
-    for ticket in tickets:
-        priority = ticket.get("priority", calculate_ticket_priority(ticket.get("description", ""), ticket.get("severity", "Medium")))
-        priority_counts[priority] = priority_counts.get(priority, 0) + 1
-    st.bar_chart(priority_counts)
+    st.divider()
 
-    st.subheader("Tickets by SLA Status")
-    sla_counts = {"On Track": 0, "Due Soon": 0, "Overdue": 0, "Completed": 0, "Unknown": 0}
-    for ticket in tickets:
-        sla_status, _ = get_sla_status(ticket)
-        sla_counts[sla_status] = sla_counts.get(sla_status, 0) + 1
-    st.bar_chart(sla_counts)
-
-    st.subheader("Tickets by Severity")
-    severity_counts = {"Low": 0, "Medium": 0, "High": 0}
-    for ticket in tickets:
-        severity = ticket.get("severity", "Medium")
-        severity_counts[severity] = severity_counts.get(severity, 0) + 1
-    st.bar_chart(severity_counts)
-
-    st.subheader("Most Common Ticket Titles")
-    issue_counts = {}
-    for ticket in tickets:
-        issue_title = ticket.get("issue", "Unknown")
-        issue_counts[issue_title] = issue_counts.get(issue_title, 0) + 1
-
-    sorted_issues = sorted(issue_counts.items(), key=lambda item: item[1], reverse=True)
-
-    for issue_title, count in sorted_issues[:5]:
-        st.write(f"- **{issue_title}**: {count}")
+    show_dashboard_analytics(tickets)
 
 
 # -----------------------------
