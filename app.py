@@ -18,6 +18,7 @@ DATABASE_FILE = "it_support.db"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
+
 # -----------------------------
 # GLOBAL UI STYLING
 # -----------------------------
@@ -163,7 +164,6 @@ def format_priority_text(priority):
     color = colors.get(priority, "#6c757d")
     return f"<span style='color:{color}; font-weight:700;'>{priority}</span>"
 
-
 # -----------------------------
 # DATABASE SETUP
 # -----------------------------
@@ -269,8 +269,7 @@ def initialize_database():
 
     for column_name, column_definition in issue_quality_columns.items():
         if column_name not in issue_columns:
-            cursor.execute(
-                f"ALTER TABLE issues ADD COLUMN {column_name} {column_definition}")
+            cursor.execute(f"ALTER TABLE issues ADD COLUMN {column_name} {column_definition}")
 
     connection.commit()
     connection.close()
@@ -427,7 +426,6 @@ def format_priority_text(priority):
     color = colors.get(priority, "#6c757d")
     return f"<span style='color:{color}; font-weight:700;'>{priority}</span>"
 
-
 # -----------------------------
 # DATA
 # -----------------------------
@@ -475,8 +473,7 @@ issues = [
         "tags": ["smtp", "email"],
         "symptoms": ["Emails stuck in outbox", "Send failure"],
         "causes": ["SMTP misconfig", "Auth failure"],
-        "steps": ["Check SMTP settings", "Re-login account",
-                  "Test mail server"]
+        "steps": ["Check SMTP settings", "Re-login account", "Test mail server"]
     },
     {
         "title": "Email Not Receiving",
@@ -595,10 +592,8 @@ issues = [
 # SIMPLE LOGIN CONFIG
 # -----------------------------
 users = {
-    "user": {"password": "user123", "role": "User",
-             "email": "user@example.com"},
-    "admin": {"password": "admin123", "role": "Admin",
-              "email": "admin@example.com"},
+    "user": {"password": "user123", "role": "User", "email": "user@example.com"},
+    "admin": {"password": "admin123", "role": "Admin", "email": "admin@example.com"},
 }
 
 
@@ -835,8 +830,7 @@ def show_login_page():
     with tab_login:
         with st.form("login_form"):
             username = st.text_input("Username", key="login_username")
-            password = st.text_input("Password", type="password",
-                                     key="login_password")
+            password = st.text_input("Password", type="password", key="login_password")
             submitted = st.form_submit_button("Login")
 
             if submitted:
@@ -870,14 +864,10 @@ def show_login_page():
 
     with tab_register:
         with st.form("register_form"):
-            new_username = st.text_input("Choose a username",
-                                         key="register_username")
+            new_username = st.text_input("Choose a username", key="register_username")
             new_email = st.text_input("Email", key="register_email")
-            new_password = st.text_input("Password", type="password",
-                                         key="register_password")
-            confirm_password = st.text_input("Confirm password",
-                                             type="password",
-                                             key="confirm_password")
+            new_password = st.text_input("Password", type="password", key="register_password")
+            confirm_password = st.text_input("Confirm password", type="password", key="confirm_password")
             submitted_register = st.form_submit_button("Create Account")
 
             if submitted_register:
@@ -900,8 +890,7 @@ def show_login_page():
                     if created:
                         st.success("✅ Account created. You can now log in.")
                     else:
-                        st.error(
-                            "Could not create account. Please try another username.")
+                        st.error("Could not create account. Please try another username.")
 
 
 def require_admin():
@@ -984,9 +973,7 @@ def calculate_search_score(issue, search_query):
 
     query_words = [
         word
-        for word in
-        normalize_search_text(search_query).replace(".", " ").replace(",",
-                                                                      " ").split()
+        for word in normalize_search_text(search_query).replace(".", " ").replace(",", " ").split()
         if word not in stop_words and len(word) > 2
     ]
 
@@ -999,14 +986,11 @@ def calculate_search_score(issue, search_query):
     category = normalize_search_text(issue["category"])
     severity = normalize_search_text(issue["severity"])
     tags = [normalize_search_text(tag) for tag in issue.get("tags", [])]
-    symptoms = [normalize_search_text(symptom) for symptom in
-                issue.get("symptoms", [])]
-    causes = [normalize_search_text(cause) for cause in
-              issue.get("causes", [])]
+    symptoms = [normalize_search_text(symptom) for symptom in issue.get("symptoms", [])]
+    causes = [normalize_search_text(cause) for cause in issue.get("causes", [])]
     steps = [normalize_search_text(step) for step in issue.get("steps", [])]
 
-    full_text = " ".join(
-        [title, category, severity] + tags + symptoms + causes + steps)
+    full_text = " ".join([title, category, severity] + tags + symptoms + causes + steps)
     exact_query = normalize_search_text(search_query)
 
     if exact_query in title:
@@ -1029,8 +1013,7 @@ def calculate_search_score(issue, search_query):
             score += 8
 
     # Boost very specific real-world partial connectivity cases
-    partial_website_words = {"website", "websites", "page", "load", "loading",
-                             "internet"}
+    partial_website_words = {"website", "websites", "page", "load", "loading", "internet"}
     if partial_website_words.intersection(query_words):
         if issue["title"] == "Some Websites Not Loading":
             score += 100
@@ -1042,8 +1025,7 @@ def calculate_search_score(issue, search_query):
     return score
 
 
-def issue_matches_filters(issue, selected_category, selected_severity,
-                          search_query):
+def issue_matches_filters(issue, selected_category, selected_severity, search_query):
     """Apply category, severity, and search filters."""
     if selected_category != "All" and issue["category"] != selected_category:
         return False
@@ -1054,15 +1036,14 @@ def issue_matches_filters(issue, selected_category, selected_severity,
     return calculate_search_score(issue, search_query) > 0
 
 
+
 def show_issue_metadata(issue):
     """Display professional Knowledge Base article metadata."""
     meta_col1, meta_col2, meta_col3 = st.columns(3)
 
     meta_col1.write(f"**Difficulty:** {issue.get('difficulty', 'Beginner')}")
-    meta_col2.write(
-        f"**Estimated Time:** {issue.get('estimated_time', '5 minutes')}")
-    meta_col3.write(
-        f"**Escalation Required:** {'Yes' if issue.get('escalation_required') else 'No'}")
+    meta_col2.write(f"**Estimated Time:** {issue.get('estimated_time', '5 minutes')}")
+    meta_col3.write(f"**Escalation Required:** {'Yes' if issue.get('escalation_required') else 'No'}")
 
     applies_to = issue.get("applies_to", [])
     if applies_to:
@@ -1070,7 +1051,6 @@ def show_issue_metadata(issue):
 
     if issue.get("last_updated"):
         st.caption(f"Last updated: {issue.get('last_updated')}")
-
 
 def show_severity(severity):
     """Display severity using Streamlit status styles."""
@@ -1320,8 +1300,7 @@ guided_flows = {
                     "No": {
                         "result": "👉 Router or Wi-Fi connection issue",
                         "type": "error",
-                        "actions": ["Forget and reconnect Wi-Fi",
-                                    "Restart router"],
+                        "actions": ["Forget and reconnect Wi-Fi", "Restart router"],
                     },
                     "Yes": {"next": "q2"},
                 },
@@ -1371,11 +1350,13 @@ def run_guided_flow(flow_name):
 
         answer = st.radio(
             question["text"],
-            ["Select"] + question["options"],
+            question["options"],
+            index=None,
             key=f"{flow_name}_{current_question_id}",
         )
 
-        if answer == "Select":
+        if answer is None:
+            st.info("Select an option to continue.")
             st.stop()
 
         answer_config = question["answers"][answer]
@@ -1396,19 +1377,30 @@ def run_auto_guided_flow(issue):
     """Create a simple guided flow automatically from knowledge base issue data."""
     st.subheader(f"🧭 {issue['title']} Guided Flow")
 
-    st.info("This guided flow is auto-generated from the Knowledge Base data.")
+    st.info("Review the symptoms first, then answer the question below.")
+
+    st.write("**Category:**", issue["category"])
+    show_severity(issue["severity"])
+    if "show_issue_metadata" in globals():
+        show_issue_metadata(issue)
+
+    with st.expander("👁 View Symptoms", expanded=True):
+        symptoms = issue.get("symptoms", [])
+        if symptoms:
+            for symptom in symptoms:
+                st.write("-", symptom)
+        else:
+            st.write("No symptoms listed for this issue.")
 
     has_symptoms = st.radio(
         "Is the user experiencing one or more of these symptoms?",
-        ["Select", "Yes", "No"],
+        ["Yes", "No"],
+        index=None,
         key=f"auto_{issue['title']}_symptoms",
     )
 
-    with st.expander("View symptoms"):
-        for symptom in issue["symptoms"]:
-            st.write("-", symptom)
-
-    if has_symptoms == "Select":
+    if has_symptoms is None:
+        st.info("Select Yes or No to continue.")
         st.stop()
 
     if has_symptoms == "No":
@@ -1417,23 +1409,22 @@ def run_auto_guided_flow(issue):
             "info",
             [
                 "Do not worry if you are unsure about the exact symptoms",
-                "Create a support ticket and describe what happened in your own words",
-                "Include details such as when it started, what you were trying to do, and any error message you saw",
-                "An IT technician can review the ticket and identify the correct issue",
+                "Return to the issue list and choose a closer match",
+                "Create a support ticket and describe what happened in your own words if you are not sure",
+                "Include when it started, what you were trying to do, and any error message you saw",
             ],
         )
         return
 
     confirmed_scope = st.radio(
-        "Does the issue match this category and severity?",
-        ["Select", "Yes", "No / Not sure"],
+        "Does this issue category and severity look correct?",
+        ["Yes", "No / Not sure"],
+        index=None,
         key=f"auto_{issue['title']}_scope",
     )
 
-    st.write("**Category:**", issue["category"])
-    show_severity(issue["severity"])
-
-    if confirmed_scope == "Select":
+    if confirmed_scope is None:
+        st.info("Select Yes or No / Not sure to continue.")
         st.stop()
 
     if confirmed_scope == "No / Not sure":
@@ -1444,6 +1435,7 @@ def run_auto_guided_flow(issue):
                 "Confirm when the issue started",
                 "Check whether one user or multiple users are affected",
                 "Review recent changes, updates, or outages",
+                "Create a support ticket if you are unsure how to proceed",
             ],
         )
         return
@@ -1466,8 +1458,12 @@ def run_auto_guided_flow(issue):
         )
 
     with st.expander("Possible causes"):
-        for cause in issue["causes"]:
-            st.write("-", cause)
+        causes = issue.get("causes", [])
+        if causes:
+            for cause in causes:
+                st.write("-", cause)
+        else:
+            st.write("No possible causes listed for this issue.")
 
 
 def show_guided_troubleshooting():
@@ -1476,12 +1472,13 @@ def show_guided_troubleshooting():
     issue_titles = [issue["title"] for issue in issues]
 
     selected_issue = st.selectbox(
-        "Select an issue to troubleshoot:",
-        ["None"] + issue_titles,
+        "Select an issue",
+        ["Other"] + issue_titles,
+        help="Choose the issue that best matches your problem.",
     )
 
-    if selected_issue == "None":
-        st.info("Select an issue to begin guided troubleshooting.")
+    if selected_issue == "Other":
+        st.info("Select a known issue from the list, or create a support ticket if your issue is not listed.")
         return
 
     if selected_issue in guided_flows:
@@ -1610,18 +1607,11 @@ def load_issues_from_db():
             "user_steps": deserialize_list(row["user_steps"]),
             "it_steps": deserialize_list(row["it_steps"]),
             "steps": deserialize_list(row["steps"]),
-            "difficulty": row["difficulty"] if "difficulty" in row.keys() and
-                                               row[
-                                                   "difficulty"] else "Beginner",
-            "estimated_time": row[
-                "estimated_time"] if "estimated_time" in row.keys() and row[
-                "estimated_time"] else "5 minutes",
-            "applies_to": deserialize_list(
-                row["applies_to"]) if "applies_to" in row.keys() else [],
-            "escalation_required": bool(row[
-                                            "escalation_required"]) if "escalation_required" in row.keys() else False,
-            "last_updated": row[
-                "last_updated"] if "last_updated" in row.keys() else "",
+            "difficulty": row["difficulty"] if "difficulty" in row.keys() and row["difficulty"] else "Beginner",
+            "estimated_time": row["estimated_time"] if "estimated_time" in row.keys() and row["estimated_time"] else "5 minutes",
+            "applies_to": deserialize_list(row["applies_to"]) if "applies_to" in row.keys() else [],
+            "escalation_required": bool(row["escalation_required"]) if "escalation_required" in row.keys() else False,
+            "last_updated": row["last_updated"] if "last_updated" in row.keys() else "",
         }
         for row in rows
     ]
@@ -1677,8 +1667,7 @@ def show_knowledge_base():
         "DNS Resolution Failure",
     ]
 
-    common_issues = [issue for issue in issues if
-                     issue["title"] in common_titles]
+    common_issues = [issue for issue in issues if issue["title"] in common_titles]
 
     if common_issues:
         common_cols = st.columns(min(3, len(common_issues)))
@@ -1688,8 +1677,7 @@ def show_knowledge_base():
                     st.write(f"**{issue['title']}**")
                     st.caption(issue["category"])
                     show_severity(issue["severity"])
-                    if st.button("View Details",
-                                 key=f"common_{issue['title']}"):
+                    if st.button("View Details", key=f"common_{issue['title']}"):
                         st.session_state["kb_search_focus"] = issue["title"]
                         st.rerun()
     else:
@@ -1704,14 +1692,12 @@ def show_knowledge_base():
     )
 
     selected_category = st.selectbox("Filter by Category", get_categories())
-    selected_severity = st.selectbox("Filter by Severity",
-                                     ["All", "Low", "Medium", "High"])
+    selected_severity = st.selectbox("Filter by Severity", ["All", "Low", "Medium", "High"])
 
     matching_issues = []
 
     for issue in issues:
-        if issue_matches_filters(issue, selected_category, selected_severity,
-                                 search_query):
+        if issue_matches_filters(issue, selected_category, selected_severity, search_query):
             search_score = calculate_search_score(issue, search_query)
             matching_issues.append((issue, search_score))
 
@@ -1720,8 +1706,7 @@ def show_knowledge_base():
     st.write(f"**Results found:** {len(matching_issues)}")
 
     if search_query:
-        st.caption(
-            "Results are sorted by relevance: title matches rank highest, then tags, category, symptoms, causes, and steps.")
+        st.caption("Results are sorted by relevance: title matches rank highest, then tags, category, symptoms, causes, and steps.")
 
     if not matching_issues:
         st.warning("No matching issues found. Try another keyword or filter.")
@@ -1737,8 +1722,7 @@ def show_knowledge_base():
     for category in sorted(grouped_issues.keys()):
         category_issues = grouped_issues[category]
 
-        with st.expander(f"📂 {category} ({len(category_issues)} issues)",
-                         expanded=bool(search_query)):
+        with st.expander(f"📂 {category} ({len(category_issues)} issues)", expanded=bool(search_query)):
             for issue, search_score in category_issues:
                 issue_title = issue["title"]
                 if search_query:
@@ -1811,44 +1795,26 @@ def show_admin_kb_editor():
 
     with st.form("add_issue_form", clear_on_submit=True):
         title = st.text_input("Issue Title", key="kb_title")
-        category = st.text_input("Category",
-                                 placeholder="Network, DNS, Email, System...",
-                                 key="kb_category")
-        severity = st.selectbox("Severity", ["Low", "Medium", "High"], index=1,
-                                key="kb_severity")
-        difficulty = st.selectbox("Difficulty",
-                                  ["Beginner", "Intermediate", "Advanced"],
-                                  key="kb_difficulty")
-        estimated_time = st.text_input("Estimated Fix Time", value="5 minutes",
-                                       key="kb_estimated_time")
-        applies_to_text = st.text_input("Applies To",
-                                        placeholder="Windows, macOS, VPN, Email, Network...",
-                                        key="kb_applies_to")
-        escalation_required = st.checkbox("Escalation Required",
-                                          key="kb_escalation_required")
-        tags_text = st.text_input("Tags",
-                                  placeholder="Separate tags with commas",
-                                  key="kb_tags")
-        symptoms_text = st.text_area("Symptoms",
-                                     placeholder="Enter one symptom per line",
-                                     key="kb_symptoms")
-        causes_text = st.text_area("Possible Causes",
-                                   placeholder="Enter one cause per line",
-                                   key="kb_causes")
+        category = st.text_input("Category", placeholder="Network, DNS, Email, System...", key="kb_category")
+        severity = st.selectbox("Severity", ["Low", "Medium", "High"], index=1, key="kb_severity")
+        difficulty = st.selectbox("Difficulty", ["Beginner", "Intermediate", "Advanced"], key="kb_difficulty")
+        estimated_time = st.text_input("Estimated Fix Time", value="5 minutes", key="kb_estimated_time")
+        applies_to_text = st.text_input("Applies To", placeholder="Windows, macOS, VPN, Email, Network...", key="kb_applies_to")
+        escalation_required = st.checkbox("Escalation Required", key="kb_escalation_required")
+        tags_text = st.text_input("Tags", placeholder="Separate tags with commas", key="kb_tags")
+        symptoms_text = st.text_area("Symptoms", placeholder="Enter one symptom per line", key="kb_symptoms")
+        causes_text = st.text_area("Possible Causes", placeholder="Enter one cause per line", key="kb_causes")
         user_steps_text = st.text_area(
             "User-Friendly Steps",
             placeholder="Enter simple steps users can safely do, one per line",
             key="kb_user_steps",
         )
-        steps_text = st.text_area("Advanced IT Steps",
-                                  placeholder="Enter technical admin steps, one per line",
-                                  key="kb_steps")
+        steps_text = st.text_area("Advanced IT Steps", placeholder="Enter technical admin steps, one per line", key="kb_steps")
 
         submitted = st.form_submit_button("Add Issue")
 
     if submitted:
-        errors = validate_issue_form(title, category, symptoms_text,
-                                     steps_text)
+        errors = validate_issue_form(title, category, symptoms_text, steps_text)
 
         if errors:
             st.error("Please fix the following before adding the issue:")
@@ -1862,29 +1828,21 @@ def show_admin_kb_editor():
             "severity": severity,
             "difficulty": difficulty,
             "estimated_time": estimated_time.strip() or "5 minutes",
-            "applies_to": [item.strip() for item in applies_to_text.split(",")
-                           if item.strip()],
+            "applies_to": [item.strip() for item in applies_to_text.split(",") if item.strip()],
             "escalation_required": escalation_required,
             "last_updated": get_current_timestamp(),
-            "tags": [tag.strip() for tag in tags_text.split(",") if
-                     tag.strip()],
-            "symptoms": [line.strip() for line in symptoms_text.splitlines() if
-                         line.strip()],
-            "causes": [line.strip() for line in causes_text.splitlines() if
-                       line.strip()],
-            "user_steps": [line.strip() for line in
-                           user_steps_text.splitlines() if line.strip()],
-            "it_steps": [line.strip() for line in steps_text.splitlines() if
-                         line.strip()],
-            "steps": [line.strip() for line in steps_text.splitlines() if
-                      line.strip()],
+            "tags": [tag.strip() for tag in tags_text.split(",") if tag.strip()],
+            "symptoms": [line.strip() for line in symptoms_text.splitlines() if line.strip()],
+            "causes": [line.strip() for line in causes_text.splitlines() if line.strip()],
+            "user_steps": [line.strip() for line in user_steps_text.splitlines() if line.strip()],
+            "it_steps": [line.strip() for line in steps_text.splitlines() if line.strip()],
+            "steps": [line.strip() for line in steps_text.splitlines() if line.strip()],
         }
 
         issues.append(new_issue)
 
         save_issues()
-        st.session_state[
-            "issue_added_message"] = f"✅ Issue added successfully: {new_issue['title']}"
+        st.session_state["issue_added_message"] = f"✅ Issue added successfully: {new_issue['title']}"
         st.rerun()
 
     st.divider()
@@ -1906,10 +1864,8 @@ def show_admin_kb_editor():
             st.divider()
             st.subheader("✏️ Edit Issue")
 
-            edit_title = st.text_input("Title", value=issue["title"],
-                                       key=f"edit_title_{idx}")
-            edit_category = st.text_input("Category", value=issue["category"],
-                                          key=f"edit_cat_{idx}")
+            edit_title = st.text_input("Title", value=issue["title"], key=f"edit_title_{idx}")
+            edit_category = st.text_input("Category", value=issue["category"], key=f"edit_cat_{idx}")
             edit_severity = st.selectbox(
                 "Severity",
                 ["Low", "Medium", "High"],
@@ -1919,8 +1875,7 @@ def show_admin_kb_editor():
             edit_difficulty = st.selectbox(
                 "Difficulty",
                 ["Beginner", "Intermediate", "Advanced"],
-                index=["Beginner", "Intermediate", "Advanced"].index(
-                    issue.get("difficulty", "Beginner")),
+                index=["Beginner", "Intermediate", "Advanced"].index(issue.get("difficulty", "Beginner")),
                 key=f"edit_difficulty_{idx}",
             )
             edit_estimated_time = st.text_input(
@@ -1945,19 +1900,21 @@ def show_admin_kb_editor():
             )
             edit_symptoms = st.text_area(
                 "Symptoms (one per line)",
-                value="\n".join(issue.get("symptoms", [])),
+                value = "\n".join(issue.get("symptoms", [])),
                 key=f"edit_symptoms_{idx}",
             )
             edit_user_steps = st.text_area(
                 "User-Friendly Steps (one per line)",
-                value="\n".join(get_user_friendly_steps(issue)),
+                value = "\n".join(get_user_friendly_steps(issue)),
                 key=f"edit_user_steps_{idx}",
             )
             edit_steps = st.text_area(
                 "Advanced IT Steps (one per line)",
-                value="\n".join(get_it_steps(issue)),
+                value = "\n".join(get_it_steps(issue)),
                 key=f"edit_steps_{idx}",
             )
+
+
 
             col1, col2 = st.columns(2)
 
@@ -1967,25 +1924,15 @@ def show_admin_kb_editor():
                     issue["category"] = edit_category.strip()
                     issue["severity"] = edit_severity
                     issue["difficulty"] = edit_difficulty
-                    issue[
-                        "estimated_time"] = edit_estimated_time.strip() or "5 minutes"
-                    issue["applies_to"] = [item.strip() for item in
-                                           edit_applies_to.split(",") if
-                                           item.strip()]
+                    issue["estimated_time"] = edit_estimated_time.strip() or "5 minutes"
+                    issue["applies_to"] = [item.strip() for item in edit_applies_to.split(",") if item.strip()]
                     issue["escalation_required"] = edit_escalation_required
                     issue["last_updated"] = get_current_timestamp()
-                    issue["tags"] = [t.strip() for t in edit_tags.split(",") if
-                                     t.strip()]
-                    issue["symptoms"] = [s.strip() for s in
-                                         edit_symptoms.splitlines() if
-                                         s.strip()]
-                    issue["user_steps"] = [s.strip() for s in
-                                           edit_user_steps.splitlines() if
-                                           s.strip()]
-                    issue["it_steps"] = [s.strip() for s in
-                                         edit_steps.splitlines() if s.strip()]
-                    issue["steps"] = [s.strip() for s in
-                                      edit_steps.splitlines() if s.strip()]
+                    issue["tags"] = [t.strip() for t in edit_tags.split(",") if t.strip()]
+                    issue["symptoms"] = [s.strip() for s in edit_symptoms.splitlines() if s.strip()]
+                    issue["user_steps"] = [s.strip() for s in edit_user_steps.splitlines() if s.strip()]
+                    issue["it_steps"] = [s.strip() for s in edit_steps.splitlines() if s.strip()]
+                    issue["steps"] = [s.strip() for s in edit_steps.splitlines() if s.strip()]
 
                     save_issues()
 
@@ -2002,6 +1949,10 @@ def show_admin_kb_editor():
 
                     st.warning("🗑 Issue deleted")
                     st.rerun()
+
+
+
+
 
 
 # -----------------------------
@@ -2037,7 +1988,6 @@ def is_ticket_completed(status):
     """Return True if a ticket should no longer count against active SLA."""
     return status in ["Resolved", "Closed"]
 
-
 # -----------------------------
 # SLA HELPERS
 # -----------------------------
@@ -2046,11 +1996,10 @@ def get_current_timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
+
 def get_demo_timestamp(days_ago=0, hours_ago=0, minutes_ago=0):
     """Return a realistic historical timestamp for sample/demo tickets."""
-    return (datetime.now() - timedelta(days=days_ago, hours=hours_ago,
-                                       minutes=minutes_ago)).strftime(
-        "%Y-%m-%d %H:%M:%S")
+    return (datetime.now() - timedelta(days=days_ago, hours=hours_ago, minutes=minutes_ago)).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def parse_timestamp(value):
@@ -2131,7 +2080,6 @@ def show_sla_badge(ticket):
     else:
         st.info(f"ℹ️ SLA: Unknown — {detail}")
 
-
 # -----------------------------
 # TICKET PRIORITY HELPERS
 # -----------------------------
@@ -2180,8 +2128,7 @@ def calculate_ticket_priority(description, severity):
     if severity == "High" or any(keyword in text for keyword in high_keywords):
         return "High"
 
-    if severity == "Medium" or any(
-            keyword in text for keyword in medium_keywords):
+    if severity == "Medium" or any(keyword in text for keyword in medium_keywords):
         return "Medium"
 
     return "Low"
@@ -2279,8 +2226,7 @@ def load_tickets():
             "status": row_dict.get("status", "Open"),
             "assigned_to": row_dict.get("assigned_to", "Unassigned"),
             "resolution_notes": row_dict.get("resolution_notes", ""),
-            "likely_infrastructure": bool(
-                row_dict.get("likely_infrastructure", 0)),
+            "likely_infrastructure": bool(row_dict.get("likely_infrastructure", 0)),
             "unread_for_admin": bool(row_dict.get("unread_for_admin", 0)),
             "unread_for_user": bool(row_dict.get("unread_for_user", 0)),
             "comments": [],
@@ -2392,8 +2338,7 @@ def show_ticket_form():
             accept_multiple_files=True,
         )
 
-        st.info(
-            "💡 If you are not sure how to fix the issue, try Guided Troubleshooting before creating a ticket.")
+        st.info("💡 If you are not sure how to fix the issue, try Guided Troubleshooting before creating a ticket.")
 
         submitted = st.form_submit_button("Create Ticket")
 
@@ -2420,8 +2365,7 @@ def show_ticket_form():
                 "waiting_on_user_at": "",
                 "closed_at": "",
                 "suggestions": [],
-                "likely_infrastructure": is_likely_infrastructure_issue(
-                    description),
+                "likely_infrastructure": is_likely_infrastructure_issue(description),
                 "attachments": attachments,
                 "comments": [],
                 "unread_for_admin": True,
@@ -2441,14 +2385,14 @@ def show_ticket_form():
             st.success("✅ Ticket created successfully")
 
             if attachments:
-                st.info(
-                    f"📎 {len(attachments)} attachment(s) saved with this ticket")
+                st.info(f"📎 {len(attachments)} attachment(s) saved with this ticket")
 
             show_priority_badge(priority)
 
             if is_likely_infrastructure_issue(description):
-                st.warning(
-                    "This looks like a possible wider IT or infrastructure issue.")
+                st.warning("This looks like a possible wider IT or infrastructure issue.")
+
+
 
 
 def get_priority_rank(priority):
@@ -2487,19 +2431,16 @@ def show_ticket_list():
         key=lambda ticket: get_priority_rank(
             ticket.get(
                 "priority",
-                calculate_ticket_priority(ticket.get("description", ""),
-                                          ticket.get("severity", "Medium")),
+                calculate_ticket_priority(ticket.get("description", ""), ticket.get("severity", "Medium")),
             )
         ),
     )
 
     for i, ticket in enumerate(sorted_tickets, 1):
-        if status_filter != "All" and ticket.get("status",
-                                                 "Open") != status_filter:
+        if status_filter != "All" and ticket.get("status", "Open") != status_filter:
             continue
 
-        priority = ticket.get("priority", calculate_ticket_priority(
-            ticket.get("description", ""), ticket.get("severity", "Medium")))
+        priority = ticket.get("priority", calculate_ticket_priority(ticket.get("description", ""), ticket.get("severity", "Medium")))
         if priority_filter != "All" and priority != priority_filter:
             continue
 
@@ -2513,17 +2454,13 @@ def show_ticket_list():
 
         sla_status, _ = get_sla_status(ticket)
         sla_label = f" — SLA: {sla_status}"
-        unread_label = get_unread_label(ticket, "admin") if ticket.get(
-            "unread_for_admin") else ""
-        with st.expander(
-                f"Ticket {i}: {ticket['issue']} — {status} — {priority}{sla_label}{unread_label}"):
+        unread_label = get_unread_label(ticket, "admin") if ticket.get("unread_for_admin") else ""
+        with st.expander(f"Ticket {i}: {ticket['issue']} — {status} — {priority}{sla_label}{unread_label}"):
             st.write(f"**Name:** {ticket['name']}")
             st.write(f"**Email:** {ticket['email']}")
             st.write(f"**Severity:** {ticket['severity']}")
             show_priority_badge(priority)
-            st.markdown(
-                f"**Priority Label:** {format_priority_text(priority)}",
-                unsafe_allow_html=True)
+            st.markdown(f"**Priority Label:** {format_priority_text(priority)}", unsafe_allow_html=True)
             show_sla_badge(ticket)
             st.write(f"**Status:** {status}")
             if ticket.get("created_at"):
@@ -2531,8 +2468,7 @@ def show_ticket_list():
             if ticket.get("assigned_at"):
                 st.write(f"**Assigned At:** {ticket.get('assigned_at')}")
             if ticket.get("waiting_on_user_at"):
-                st.write(
-                    f"**Waiting on User Since:** {ticket.get('waiting_on_user_at')}")
+                st.write(f"**Waiting on User Since:** {ticket.get('waiting_on_user_at')}")
             if ticket.get("resolved_at"):
                 st.write(f"**Resolved At:** {ticket.get('resolved_at')}")
             if ticket.get("closed_at"):
@@ -2569,15 +2505,13 @@ def show_ticket_list():
 
                     if not resolved_path or not os.path.exists(resolved_path):
                         if saved_name:
-                            fallback_path = os.path.join(UPLOAD_FOLDER,
-                                                         saved_name)
+                            fallback_path = os.path.join(UPLOAD_FOLDER, saved_name)
                             if os.path.exists(fallback_path):
                                 resolved_path = fallback_path
 
                     if attachment_bytes:
                         if file_type.startswith("image"):
-                            st.image(attachment_bytes, caption=file_name,
-                                     use_container_width=True)
+                            st.image(attachment_bytes, caption=file_name, use_container_width=True)
                         else:
                             st.download_button(
                                 label=f"⬇️ Download {file_name}",
@@ -2587,8 +2521,7 @@ def show_ticket_list():
                             )
                     elif resolved_path and os.path.exists(resolved_path):
                         if file_type.startswith("image"):
-                            st.image(resolved_path, caption=file_name,
-                                     use_container_width=True)
+                            st.image(resolved_path, caption=file_name, use_container_width=True)
                         else:
                             with open(resolved_path, "rb") as file:
                                 st.download_button(
@@ -2599,8 +2532,7 @@ def show_ticket_list():
                                 )
                     else:
                         st.warning("Attachment file was not found.")
-                        st.caption(
-                            "The ticket has attachment metadata, but no file content or saved file was available.")
+                        st.caption("The ticket has attachment metadata, but no file content or saved file was available.")
 
             suggestions = ticket.get("suggestions", [])
             if suggestions:
@@ -2645,8 +2577,7 @@ def show_ticket_list():
             notes_key = f"resolution_{i}"
             previous_template_key = f"previous_resolution_template_{i}"
 
-            stored_template = ticket.get("selected_resolution_template",
-                                         "Select a template")
+            stored_template = ticket.get("selected_resolution_template", "Select a template")
             if stored_template not in RESOLUTION_TEMPLATES:
                 stored_template = "Select a template"
 
@@ -2663,19 +2594,17 @@ def show_ticket_list():
             if notes_key not in st.session_state:
                 st.session_state[notes_key] = current_resolution_notes
 
-            previous_template = st.session_state.get(previous_template_key,
-                                                     stored_template)
+            previous_template = st.session_state.get(previous_template_key, stored_template)
             if (
-                    selected_template != "Select a template"
-                    and selected_template != previous_template
-                    and template_text
+                selected_template != "Select a template"
+                and selected_template != previous_template
+                and template_text
             ):
                 existing_notes = st.session_state.get(notes_key, "").strip()
                 if not existing_notes:
                     st.session_state[notes_key] = template_text
                 elif template_text not in existing_notes:
-                    st.session_state[
-                        notes_key] = existing_notes + "" + template_text
+                    st.session_state[notes_key] = existing_notes + "" + template_text
 
             st.session_state[previous_template_key] = selected_template
 
@@ -2689,8 +2618,7 @@ def show_ticket_list():
                 previous_assigned_to = ticket.get("assigned_to", "Unassigned")
                 previous_priority = ticket.get("priority", "Medium")
                 previous_resolution_notes = ticket.get("resolution_notes", "")
-                previous_template = ticket.get("selected_resolution_template",
-                                               "Select a template")
+                previous_template = ticket.get("selected_resolution_template", "Select a template")
 
                 ticket["status"] = new_status
                 ticket["priority"] = new_priority
@@ -2701,8 +2629,7 @@ def show_ticket_list():
 
                 if new_status == "Assigned" and not ticket.get("assigned_at"):
                     ticket["assigned_at"] = get_current_timestamp()
-                if new_status == "Waiting on User" and not ticket.get(
-                        "waiting_on_user_at"):
+                if new_status == "Waiting on User" and not ticket.get("waiting_on_user_at"):
                     ticket["waiting_on_user_at"] = get_current_timestamp()
                 if new_status == "Resolved" and not ticket.get("resolved_at"):
                     ticket["resolved_at"] = get_current_timestamp()
@@ -2768,13 +2695,13 @@ def show_ticket_list():
 
             if ticket.get("resolution_notes"):
                 st.write("**Saved Resolution Notes:**")
-                if ticket.get("selected_resolution_template") and ticket.get(
-                        "selected_resolution_template") != "Select a template":
-                    st.caption(
-                        f"Template used: {ticket.get('selected_resolution_template')}")
+                if ticket.get("selected_resolution_template") and ticket.get("selected_resolution_template") != "Select a template":
+                    st.caption(f"Template used: {ticket.get('selected_resolution_template')}")
                 st.write(ticket["resolution_notes"])
 
             show_ticket_comments(ticket, i)
+
+
 
 
 # -----------------------------
@@ -2818,8 +2745,7 @@ def get_ticket_timeline(ticket):
 
     for comment in ticket.get("comments", []):
         timeline.append({
-            "timestamp": comment.get("timestamp") or ticket.get("created_at",
-                                                                ""),
+            "timestamp": comment.get("timestamp") or ticket.get("created_at", ""),
             "actor": comment.get("author", "Unknown"),
             "role": comment.get("role", "User"),
             "type": "comment",
@@ -2865,6 +2791,7 @@ def show_ticket_timeline(ticket):
         st.divider()
 
 
+
 # -----------------------------
 # RESOLUTION TEMPLATE HELPERS
 # -----------------------------
@@ -2885,7 +2812,6 @@ RESOLUTION_TEMPLATES = {
 def get_resolution_template_text(template_name):
     """Return resolution text for a selected template."""
     return RESOLUTION_TEMPLATES.get(template_name, "")
-
 
 # -----------------------------
 # TICKET COMMENTS
@@ -2959,6 +2885,10 @@ def show_ticket_comments(ticket, ticket_index):
             st.rerun()
         else:
             st.error("Comment cannot be empty")
+
+
+
+
 
 
 def reset_demo_tickets():
@@ -3061,9 +2991,7 @@ def show_export_tools(tickets):
         mime="text/csv",
     )
 
-    st.caption(
-        "CSV export includes ticket status, priority, SLA status, comments count, and attachments count.")
-
+    st.caption("CSV export includes ticket status, priority, SLA status, comments count, and attachments count.")
 
 # -----------------------------
 # SAMPLE DEMO DATA
@@ -3191,16 +3119,13 @@ def load_sample_tickets():
     if "tickets" not in st.session_state:
         st.session_state["tickets"] = []
 
-    existing_issues = {ticket.get("issue") for ticket in
-                       st.session_state["tickets"]}
+    existing_issues = {ticket.get("issue") for ticket in st.session_state["tickets"]}
 
     added_count = 0
     for sample_ticket in get_sample_tickets():
         if sample_ticket["issue"] not in existing_issues:
             sample_ticket.setdefault("created_at", get_demo_timestamp())
-            sample_ticket.setdefault("updated_at",
-                                     sample_ticket.get("created_at",
-                                                       get_demo_timestamp()))
+            sample_ticket.setdefault("updated_at", sample_ticket.get("created_at", get_demo_timestamp()))
             sample_ticket.setdefault("assigned_at", "")
             sample_ticket.setdefault("waiting_on_user_at", "")
             sample_ticket.setdefault("resolved_at", "")
@@ -3215,6 +3140,7 @@ def load_sample_tickets():
     return added_count
 
 
+
 # -----------------------------
 # DASHBOARD VIEW HELPERS
 # -----------------------------
@@ -3224,13 +3150,10 @@ def show_dashboard_ticket_summary(ticket):
     priority = ticket.get("priority", "Medium")
     sla_status, sla_detail = get_sla_status(ticket)
 
-    unread_label = get_unread_label(ticket, "admin") if ticket.get(
-        "unread_for_admin") else ""
+    unread_label = get_unread_label(ticket, "admin") if ticket.get("unread_for_admin") else ""
 
-    with st.expander(
-            f"{ticket.get('issue', 'Unknown issue')} — {status} — {priority} — SLA: {sla_status}{unread_label}"):
-        st.write(
-            f"**User:** {ticket.get('username') or ticket.get('name', 'Unknown')}")
+    with st.expander(f"{ticket.get('issue', 'Unknown issue')} — {status} — {priority} — SLA: {sla_status}{unread_label}"):
+        st.write(f"**User:** {ticket.get('username') or ticket.get('name', 'Unknown')}")
         st.write(f"**Email:** {ticket.get('email', '')}")
         st.write(f"**Assigned To:** {ticket.get('assigned_to', 'Unassigned')}")
         st.write(f"**Created:** {ticket.get('created_at', 'N/A')}")
@@ -3240,8 +3163,7 @@ def show_dashboard_ticket_summary(ticket):
         render_description_box(ticket.get("description", ""))
 
         if ticket.get("likely_infrastructure"):
-            st.warning(
-                "🚨 Escalation recommended: possible wider IT/infrastructure issue.")
+            st.warning("🚨 Escalation recommended: possible wider IT/infrastructure issue.")
 
 
 def show_dashboard_ticket_tabs(tickets):
@@ -3249,12 +3171,9 @@ def show_dashboard_ticket_tabs(tickets):
     st.subheader("📋 Ticket Views")
 
     all_tickets = tickets
-    critical_tickets = [ticket for ticket in tickets if
-                        ticket.get("priority") == "Critical"]
-    unread_tickets = [ticket for ticket in tickets if
-                      ticket.get("unread_for_admin")]
-    sla_tickets = [ticket for ticket in tickets if
-                   get_sla_status(ticket)[0] == "Overdue"]
+    critical_tickets = [ticket for ticket in tickets if ticket.get("priority") == "Critical"]
+    unread_tickets = [ticket for ticket in tickets if ticket.get("unread_for_admin")]
+    sla_tickets = [ticket for ticket in tickets if get_sla_status(ticket)[0] == "Overdue"]
 
     tabs = st.tabs([
         f"📋 All Tickets ({len(all_tickets)})",
@@ -3290,8 +3209,7 @@ def show_dashboard_analytics(tickets):
     status_counts = {}
     priority_counts = {}
     category_counts = {}
-    sla_counts = {"On Track": 0, "Due Soon": 0, "Overdue": 0, "Completed": 0,
-                  "Unknown": 0}
+    sla_counts = {"On Track": 0, "Due Soon": 0, "Overdue": 0, "Completed": 0, "Unknown": 0}
     created_by_day = {}
 
     for ticket in tickets:
@@ -3304,13 +3222,11 @@ def show_dashboard_analytics(tickets):
             issue_category = matching_issue.get("category", "Uncategorized")
 
         sla_status, _ = get_sla_status(ticket)
-        created_day = ticket.get("created_at", "")[:10] if ticket.get(
-            "created_at") else "Unknown"
+        created_day = ticket.get("created_at", "")[:10] if ticket.get("created_at") else "Unknown"
 
         status_counts[status] = status_counts.get(status, 0) + 1
         priority_counts[priority] = priority_counts.get(priority, 0) + 1
-        category_counts[issue_category] = category_counts.get(issue_category,
-                                                              0) + 1
+        category_counts[issue_category] = category_counts.get(issue_category, 0) + 1
         sla_counts[sla_status] = sla_counts.get(sla_status, 0) + 1
         created_by_day[created_day] = created_by_day.get(created_day, 0) + 1
 
@@ -3333,7 +3249,6 @@ def show_dashboard_analytics(tickets):
     st.markdown("### Tickets Created by Day")
     st.line_chart(dict(sorted(created_by_day.items())))
 
-
 # -----------------------------
 # ADMIN DASHBOARD
 # -----------------------------
@@ -3344,24 +3259,15 @@ def show_admin_dashboard():
     tickets = st.session_state.get("tickets", [])
 
     total_tickets = len(tickets)
-    open_tickets = sum(
-        1 for ticket in tickets if ticket.get("status", "Open") == "Open")
-    assigned_tickets = sum(
-        1 for ticket in tickets if ticket.get("status") == "Assigned")
-    in_progress_tickets = sum(
-        1 for ticket in tickets if ticket.get("status") == "In Progress")
-    waiting_tickets = sum(
-        1 for ticket in tickets if ticket.get("status") == "Waiting on User")
-    resolved_tickets = sum(
-        1 for ticket in tickets if ticket.get("status") == "Resolved")
-    closed_tickets = sum(
-        1 for ticket in tickets if ticket.get("status") == "Closed")
-    critical_tickets = sum(
-        1 for ticket in tickets if ticket.get("priority") == "Critical")
-    unread_admin_comments = sum(
-        1 for ticket in tickets if ticket.get("unread_for_admin"))
-    overdue_tickets = sum(
-        1 for ticket in tickets if get_sla_status(ticket)[0] == "Overdue")
+    open_tickets = sum(1 for ticket in tickets if ticket.get("status", "Open") == "Open")
+    assigned_tickets = sum(1 for ticket in tickets if ticket.get("status") == "Assigned")
+    in_progress_tickets = sum(1 for ticket in tickets if ticket.get("status") == "In Progress")
+    waiting_tickets = sum(1 for ticket in tickets if ticket.get("status") == "Waiting on User")
+    resolved_tickets = sum(1 for ticket in tickets if ticket.get("status") == "Resolved")
+    closed_tickets = sum(1 for ticket in tickets if ticket.get("status") == "Closed")
+    critical_tickets = sum(1 for ticket in tickets if ticket.get("priority") == "Critical")
+    unread_admin_comments = sum(1 for ticket in tickets if ticket.get("unread_for_admin"))
+    overdue_tickets = sum(1 for ticket in tickets if get_sla_status(ticket)[0] == "Overdue")
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Total Tickets", total_tickets)
@@ -3375,8 +3281,7 @@ def show_admin_dashboard():
     col7.metric("Critical", critical_tickets)
     col8.metric("SLA Overdue", overdue_tickets)
 
-    st.caption(
-        f"Closed tickets: {closed_tickets} | Unread comments: {unread_admin_comments}")
+    st.caption(f"Closed tickets: {closed_tickets} | Unread comments: {unread_admin_comments}")
 
     st.divider()
 
@@ -3400,8 +3305,7 @@ def show_admin_dashboard():
         with col_demo2:
             if st.button("♻️ Reset demo tickets"):
                 added_count = reset_demo_tickets()
-                st.success(
-                    f"✅ Demo reset complete. Loaded {added_count} sample ticket(s).")
+                st.success(f"✅ Demo reset complete. Loaded {added_count} sample ticket(s).")
                 st.rerun()
 
         return
@@ -3423,12 +3327,10 @@ def show_admin_dashboard():
         with col_demo2:
             if st.button("♻️ Reset demo tickets"):
                 added_count = reset_demo_tickets()
-                st.success(
-                    f"✅ Demo reset complete. Loaded {added_count} sample ticket(s).")
+                st.success(f"✅ Demo reset complete. Loaded {added_count} sample ticket(s).")
                 st.rerun()
 
-        st.warning(
-            "Reset demo tickets removes all current tickets from this local demo database.")
+        st.warning("Reset demo tickets removes all current tickets from this local demo database.")
 
     critical_items = [
         ticket for ticket in tickets
@@ -3436,32 +3338,25 @@ def show_admin_dashboard():
     ]
 
     if critical_items:
-        st.error(
-            f"🚨 {len(critical_items)} critical ticket(s) need immediate attention.")
+        st.error(f"🚨 {len(critical_items)} critical ticket(s) need immediate attention.")
         with st.expander("View critical tickets"):
             for ticket in critical_items:
-                st.write(
-                    f"- **{ticket.get('issue', 'Unknown issue')}** — {ticket.get('status', 'Open')}")
+                st.write(f"- **{ticket.get('issue', 'Unknown issue')}** — {ticket.get('status', 'Open')}")
 
-    overdue_items = [ticket for ticket in tickets if
-                     get_sla_status(ticket)[0] == "Overdue"]
+    overdue_items = [ticket for ticket in tickets if get_sla_status(ticket)[0] == "Overdue"]
     if overdue_items:
         st.error(f"⏰ {len(overdue_items)} ticket(s) are SLA overdue.")
         with st.expander("View SLA overdue tickets"):
             for ticket in overdue_items:
                 sla_status, detail = get_sla_status(ticket)
-                st.write(
-                    f"- **{ticket.get('issue', 'Unknown issue')}** — {detail}")
+                st.write(f"- **{ticket.get('issue', 'Unknown issue')}** — {detail}")
 
-    unread_comment_items = [ticket for ticket in tickets if
-                            ticket.get("unread_for_admin")]
+    unread_comment_items = [ticket for ticket in tickets if ticket.get("unread_for_admin")]
     if unread_comment_items:
-        st.warning(
-            f"🔔 {len(unread_comment_items)} ticket(s) have unread comments for admin.")
+        st.warning(f"🔔 {len(unread_comment_items)} ticket(s) have unread comments for admin.")
         with st.expander("View tickets with unread comments"):
             for ticket in unread_comment_items:
-                st.write(
-                    f"- **{ticket.get('issue', 'Unknown issue')}** — {ticket.get('status', 'Open')}")
+                st.write(f"- **{ticket.get('issue', 'Unknown issue')}** — {ticket.get('status', 'Open')}")
 
     show_dashboard_ticket_tabs(tickets)
 
@@ -3482,8 +3377,8 @@ def show_my_tickets():
     user_tickets = [
         ticket for ticket in tickets
         if ticket.get("username") == username
-           or ticket.get("name") == username
-           or ticket.get("email") == username
+        or ticket.get("name") == username
+        or ticket.get("email") == username
     ]
 
     if not user_tickets:
@@ -3491,15 +3386,11 @@ def show_my_tickets():
         return
 
     for i, ticket in enumerate(user_tickets, 1):
-        unread_label = get_unread_label(ticket, "user") if ticket.get(
-            "unread_for_user") else ""
-        with st.expander(
-                f"Ticket {i}: {ticket.get('issue')} — {ticket.get('status', 'Open')}{unread_label}"):
+        unread_label = get_unread_label(ticket, "user") if ticket.get("unread_for_user") else ""
+        with st.expander(f"Ticket {i}: {ticket.get('issue')} — {ticket.get('status', 'Open')}{unread_label}"):
             st.write(f"**Severity:** {ticket.get('severity')}")
             show_priority_badge(ticket.get("priority", "Medium"))
-            st.markdown(
-                f"**Priority Label:** {format_priority_text(ticket.get('priority', 'Medium'))}",
-                unsafe_allow_html=True)
+            st.markdown(f"**Priority Label:** {format_priority_text(ticket.get('priority', 'Medium'))}", unsafe_allow_html=True)
             show_sla_badge(ticket)
             st.write(f"**Status:** {ticket.get('status', 'Open')}")
             if ticket.get("created_at"):
@@ -3516,6 +3407,8 @@ def show_my_tickets():
                 st.write(ticket["resolution_notes"])
 
             show_ticket_comments(ticket, f"user_{i}")
+
+
 
 
 # -----------------------------
@@ -3550,11 +3443,10 @@ Use this system to:
 """)
 
     if role == "Admin":
-        st.info(
-            "💡 Start with the Dashboard to review critical tickets, unread comments, and ticket trends.")
+        st.info("💡 Start with the Dashboard to review critical tickets, unread comments, and ticket trends.")
     else:
-        st.info(
-            "💡 Start with Guided Troubleshooting before creating a ticket.")
+        st.info("💡 Start with Guided Troubleshooting before creating a ticket.")
+
 
 
 # -----------------------------
@@ -3562,12 +3454,9 @@ Use this system to:
 # -----------------------------
 def get_admin_notification_counts(tickets):
     """Return admin notification counts."""
-    critical_count = sum(
-        1 for ticket in tickets if ticket.get("priority") == "Critical")
-    unread_updates = sum(
-        1 for ticket in tickets if ticket.get("unread_for_admin"))
-    overdue_count = sum(
-        1 for ticket in tickets if get_sla_status(ticket)[0] == "Overdue")
+    critical_count = sum(1 for ticket in tickets if ticket.get("priority") == "Critical")
+    unread_updates = sum(1 for ticket in tickets if ticket.get("unread_for_admin"))
+    overdue_count = sum(1 for ticket in tickets if get_sla_status(ticket)[0] == "Overdue")
 
     return {
         "critical": critical_count,
@@ -3582,12 +3471,11 @@ def get_user_notification_counts(tickets, username):
     user_tickets = [
         ticket for ticket in tickets
         if ticket.get("username") == username
-           or ticket.get("name") == username
-           or ticket.get("email") == username
+        or ticket.get("name") == username
+        or ticket.get("email") == username
     ]
 
-    unread_updates = sum(
-        1 for ticket in user_tickets if ticket.get("unread_for_user"))
+    unread_updates = sum(1 for ticket in user_tickets if ticket.get("unread_for_user"))
 
     return {
         "unread_updates": unread_updates,
@@ -3643,6 +3531,7 @@ def show_unread_notice(ticket, audience):
         st.warning(label)
     else:
         st.warning(label)
+
 
 
 # -----------------------------
@@ -3737,9 +3626,7 @@ processes can be organized into a working web application.
         "This keeps the application clean and easy to review."
     )
 
-    st.caption(
-        "Built as a practical IT Support / Help Desk portfolio project.")
-
+    st.caption("Built as a practical IT Support / Help Desk portfolio project.")
 
 # -----------------------------
 # MAIN APP
@@ -3782,10 +3669,8 @@ def main():
             "🧭 Guided Troubleshooting",
             "🔍 Knowledge Base",
             "🎫 Create Ticket",
-            build_menu_label("📋 View Tickets",
-                             admin_notifications["unread_updates"]),
+            build_menu_label("📋 View Tickets", admin_notifications["unread_updates"]),
             "🛠 Manage Knowledge Base",
-
         ]
     else:
         username = st.session_state.get("username")
@@ -3793,7 +3678,8 @@ def main():
 
         if user_notifications["total"] > 0:
             st.sidebar.warning(
-                f"🔔 You have {user_notifications['total']} unread ticket update(s).")
+                f"🔔 You have {user_notifications['total']} unread ticket update(s)."
+            )
 
         menu_options = [
             "ℹ️ About This App",
@@ -3801,8 +3687,7 @@ def main():
             "🧭 Guided Troubleshooting",
             "🔍 Knowledge Base",
             "🎫 Create Ticket",
-            build_menu_label("🎟 My Tickets",
-                             user_notifications["unread_updates"]),
+            build_menu_label("🎟 My Tickets", user_notifications["unread_updates"]),
         ]
 
     selected_mode = st.sidebar.radio(
@@ -3822,7 +3707,9 @@ def main():
         unsafe_allow_html=True,
     )
 
-    if mode == "🏠 Home":
+    if mode == "ℹ️ About This App":
+        show_about_page()
+    elif mode == "🏠 Home":
         show_home_page()
     elif mode == "📊 Dashboard":
         show_admin_dashboard()
@@ -3838,8 +3725,6 @@ def main():
         show_ticket_list()
     elif mode == "🛠 Manage Knowledge Base":
         show_admin_kb_editor()
-    elif mode == "ℹ️ About This App":
-        show_about_page()
 
 
 if __name__ == "__main__":
