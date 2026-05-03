@@ -1686,6 +1686,12 @@ def get_current_timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
+
+def get_demo_timestamp(days_ago=0, hours_ago=0, minutes_ago=0):
+    """Return a realistic historical timestamp for sample/demo tickets."""
+    return (datetime.now() - timedelta(days=days_ago, hours=hours_ago, minutes=minutes_ago)).strftime("%Y-%m-%d %H:%M:%S")
+
+
 def parse_timestamp(value):
     """Parse stored timestamp safely."""
     if not value:
@@ -1924,6 +1930,9 @@ def load_tickets():
             "resolved_at": "",
             "closed_at": "",
             "activity_log": [],
+            "selected_resolution_template": "Select a template",
+            "admin_unread_type": "new_ticket",
+            "user_unread_type": "",
         })
 
     st.session_state["tickets"] = loaded_tickets
@@ -2051,19 +2060,12 @@ def show_ticket_form():
                 "comments": [],
                 "unread_for_admin": True,
                 "unread_for_user": False,
+                "admin_unread_type": "new_ticket",
+                "user_unread_type": "",
                 "created_at": get_current_timestamp(),
                 "updated_at": get_current_timestamp(),
                 "activity_log": [],
             }
-
-            add_ticket_activity(
-                ticket,
-                "created",
-                "Ticket created by user",
-                actor=current_username,
-                role="User",
-            )
-
             if "tickets" not in st.session_state:
                 st.session_state["tickets"] = []
 
@@ -2142,7 +2144,7 @@ def show_ticket_list():
 
         sla_status, _ = get_sla_status(ticket)
         sla_label = f" — SLA: {sla_status}"
-        unread_label = " 🔔 New comment" if ticket.get("unread_for_admin") else ""
+        unread_label = get_unread_label(ticket, "admin") if ticket.get("unread_for_admin") else ""
         with st.expander(f"Ticket {i}: {ticket['issue']} — {status} — {priority}{sla_label}{unread_label}"):
             st.write(f"**Name:** {ticket['name']}")
             st.write(f"**Email:** {ticket['email']}")
@@ -2260,19 +2262,58 @@ def show_ticket_list():
                 key=f"priority_{i}",
             )
 
+            template_key = f"resolution_template_{i}"
+            notes_key = f"resolution_{i}"
+            previous_template_key = f"previous_resolution_template_{i}"
+
+            stored_template = ticket.get("selected_resolution_template", "Select a template")
+            if stored_template not in RESOLUTION_TEMPLATES:
+                stored_template = "Select a template"
+
+            selected_template = st.selectbox(
+                "Resolution Template",
+                list(RESOLUTION_TEMPLATES.keys()),
+                index=list(RESOLUTION_TEMPLATES.keys()).index(stored_template),
+                key=template_key,
+            )
+
+            template_text = get_resolution_template_text(selected_template)
+            current_resolution_notes = ticket.get("resolution_notes", "")
+
+            if notes_key not in st.session_state:
+                st.session_state[notes_key] = current_resolution_notes
+
+            previous_template = st.session_state.get(previous_template_key, stored_template)
+            if (
+                selected_template != "Select a template"
+                and selected_template != previous_template
+                and template_text
+            ):
+                existing_notes = st.session_state.get(notes_key, "").strip()
+                if not existing_notes:
+                    st.session_state[notes_key] = template_text
+                elif template_text not in existing_notes:
+                    st.session_state[notes_key] = existing_notes + "" + template_text
+
+            st.session_state[previous_template_key] = selected_template
+
             new_resolution_notes = st.text_area(
                 "Resolution Notes",
-                value=ticket.get("resolution_notes", ""),
-                key=f"resolution_{i}",
+                key=notes_key,
             )
 
             if st.button("Save Ticket Updates", key=f"save_ticket_{i}"):
                 previous_status = ticket.get("status", "Open")
+                previous_assigned_to = ticket.get("assigned_to", "Unassigned")
+                previous_priority = ticket.get("priority", "Medium")
+                previous_resolution_notes = ticket.get("resolution_notes", "")
+                previous_template = ticket.get("selected_resolution_template", "Select a template")
 
                 ticket["status"] = new_status
                 ticket["priority"] = new_priority
                 ticket["assigned_to"] = new_assigned_to
                 ticket["resolution_notes"] = new_resolution_notes
+                ticket["selected_resolution_template"] = selected_template
                 ticket["updated_at"] = get_current_timestamp()
 
                 if new_status == "Assigned" and not ticket.get("assigned_at"):
@@ -2293,31 +2334,58 @@ def show_ticket_list():
                         role=st.session_state.get("role", "Admin"),
                     )
                     ticket["unread_for_user"] = True
+                    ticket["user_unread_type"] = "status_change"
 
-                if assigned_to != new_assigned_to:
+                if previous_assigned_to != new_assigned_to:
                     add_ticket_activity(
                         ticket,
                         "assignment",
-                        f"Assignment changed from {assigned_to} to {new_assigned_to}.",
+                        f"Assignment changed from {previous_assigned_to} to {new_assigned_to}.",
                         actor=st.session_state.get("username", "Unknown"),
                         role=st.session_state.get("role", "Admin"),
                     )
                     ticket["unread_for_user"] = True
+                    ticket["user_unread_type"] = "assignment"
 
-                if priority != new_priority:
+                if previous_priority != new_priority:
                     add_ticket_activity(
                         ticket,
                         "priority",
-                        f"Priority changed from {priority} to {new_priority}.",
+                        f"Priority changed from {previous_priority} to {new_priority}.",
                         actor=st.session_state.get("username", "Unknown"),
                         role=st.session_state.get("role", "Admin"),
                     )
                     ticket["unread_for_user"] = True
+                    ticket["user_unread_type"] = "priority"
+
+                if previous_resolution_notes != new_resolution_notes:
+                    add_ticket_activity(
+                        ticket,
+                        "resolution",
+                        "Resolution notes updated.",
+                        actor=st.session_state.get("username", "Unknown"),
+                        role=st.session_state.get("role", "Admin"),
+                    )
+                    ticket["unread_for_user"] = True
+                    ticket["user_unread_type"] = "resolution"
+
+                if previous_template != selected_template:
+                    add_ticket_activity(
+                        ticket,
+                        "resolution",
+                        f"Resolution template changed from {previous_template} to {selected_template}.",
+                        actor=st.session_state.get("username", "Unknown"),
+                        role=st.session_state.get("role", "Admin"),
+                    )
+                    ticket["unread_for_user"] = True
+                    ticket["user_unread_type"] = "resolution"
                 save_tickets()
                 st.success("✅ Ticket updated successfully")
 
             if ticket.get("resolution_notes"):
                 st.write("**Saved Resolution Notes:**")
+                if ticket.get("selected_resolution_template") and ticket.get("selected_resolution_template") != "Select a template":
+                    st.caption(f"Template used: {ticket.get('selected_resolution_template')}")
                 st.write(ticket["resolution_notes"])
 
             show_ticket_comments(ticket, i)
@@ -2350,10 +2418,12 @@ def get_ticket_timeline(ticket):
             "actor": ticket.get("username") or ticket.get("name", "User"),
             "role": "User",
             "type": "created",
-            "message": "Ticket created",
+            "message": "Ticket created by user",
         })
 
     for activity in ticket.get("activity_log", []):
+        if activity.get("type") == "created":
+            continue
         timeline.append({
             "timestamp": activity.get("timestamp", ""),
             "actor": activity.get("actor", "System"),
@@ -2364,7 +2434,7 @@ def get_ticket_timeline(ticket):
 
     for comment in ticket.get("comments", []):
         timeline.append({
-            "timestamp": comment.get("timestamp", ""),
+            "timestamp": comment.get("timestamp") or ticket.get("created_at", ""),
             "actor": comment.get("author", "Unknown"),
             "role": comment.get("role", "User"),
             "type": "comment",
@@ -2394,6 +2464,7 @@ def show_ticket_timeline(ticket):
         "assignment": "👤",
         "priority": "🚦",
         "comment": "💬",
+        "resolution": "📌",
         "activity": "📌",
     }
 
@@ -2407,6 +2478,29 @@ def show_ticket_timeline(ticket):
         st.markdown(f"**{icon} {timestamp} — {actor} ({role})**")
         st.write(message)
         st.divider()
+
+
+
+# -----------------------------
+# RESOLUTION TEMPLATE HELPERS
+# -----------------------------
+RESOLUTION_TEMPLATES = {
+    "Select a template": "",
+    "Password reset completed": "Resolved by resetting the user's password and confirming successful login.",
+    "Account unlocked": "Resolved by unlocking the user account and asking the user to try signing in again.",
+    "DNS cache flushed": "Resolved by flushing DNS cache and confirming website access was restored.",
+    "Application reinstalled": "Resolved by reinstalling the affected application and confirming it launches correctly.",
+    "Printer queue cleared": "Resolved by clearing the print queue and restarting the printer spooler service.",
+    "VPN access restored": "Resolved by verifying VPN access and confirming the user can connect successfully.",
+    "Escalated to Network Team": "Escalated to the Network Team for further investigation.",
+    "Escalated to Systems Team": "Escalated to the Systems Team for further investigation.",
+    "Pending user confirmation": "Waiting for the user to confirm whether the issue is resolved.",
+}
+
+
+def get_resolution_template_text(template_name):
+    """Return resolution text for a selected template."""
+    return RESOLUTION_TEMPLATES.get(template_name, "")
 
 # -----------------------------
 # TICKET COMMENTS
@@ -2438,8 +2532,10 @@ def add_ticket_comment(ticket, comment_text):
 
     if author_role == "Admin":
         ticket["unread_for_user"] = True
+        ticket["user_unread_type"] = "comment"
     else:
         ticket["unread_for_admin"] = True
+        ticket["admin_unread_type"] = "comment"
 
     save_tickets()
     return True
@@ -2451,9 +2547,14 @@ def show_ticket_comments(ticket, ticket_index):
     unread_key = "unread_for_admin" if role == "Admin" else "unread_for_user"
 
     if ticket.get(unread_key):
-        st.warning("🔔 New unread update(s)")
+        audience = "admin" if role == "Admin" else "user"
+        show_unread_notice(ticket, audience)
         if st.button("Mark updates as read", key=f"mark_read_{ticket_index}"):
             ticket[unread_key] = False
+            if role == "Admin":
+                ticket["admin_unread_type"] = ""
+            else:
+                ticket["user_unread_type"] = ""
             save_tickets()
             st.success("Updates marked as read")
             st.rerun()
@@ -2704,8 +2805,8 @@ def load_sample_tickets():
     added_count = 0
     for sample_ticket in get_sample_tickets():
         if sample_ticket["issue"] not in existing_issues:
-            sample_ticket.setdefault("created_at", get_current_timestamp())
-            sample_ticket.setdefault("updated_at", get_current_timestamp())
+            sample_ticket.setdefault("created_at", get_demo_timestamp())
+            sample_ticket.setdefault("updated_at", sample_ticket.get("created_at", get_demo_timestamp()))
             sample_ticket.setdefault("assigned_at", "")
             sample_ticket.setdefault("waiting_on_user_at", "")
             sample_ticket.setdefault("resolved_at", "")
@@ -2871,7 +2972,7 @@ def show_my_tickets():
         return
 
     for i, ticket in enumerate(user_tickets, 1):
-        unread_label = " 🔔 New comment" if ticket.get("unread_for_user") else ""
+        unread_label = get_unread_label(ticket, "user") if ticket.get("unread_for_user") else ""
         with st.expander(f"Ticket {i}: {ticket.get('issue')} — {ticket.get('status', 'Open')}{unread_label}"):
             st.write(f"**Severity:** {ticket.get('severity')}")
             show_priority_badge(ticket.get("priority", "Medium"))
@@ -2977,6 +3078,44 @@ def build_menu_label(base_label, count=0):
 def normalize_menu_choice(label):
     """Remove notification badge from menu label before routing."""
     return label.split(" 🔔 ")[0]
+
+
+def get_unread_label(ticket, audience):
+    """Return a clear unread notification label for admin or user."""
+    if audience == "admin":
+        notification_type = ticket.get("admin_unread_type", "")
+        if notification_type == "new_ticket":
+            return " 🆕 New ticket"
+        if notification_type == "comment":
+            return " 💬 New user comment"
+        if notification_type == "update":
+            return " 🔄 Ticket update"
+        return " 🔔 New update"
+
+    notification_type = ticket.get("user_unread_type", "")
+    if notification_type == "comment":
+        return " 💬 New admin comment"
+    if notification_type == "status_change":
+        return " 🔄 Status update"
+    if notification_type == "assignment":
+        return " 👤 Assignment update"
+    if notification_type == "priority":
+        return " 🚦 Priority update"
+    if notification_type == "resolution":
+        return " 📌 Resolution update"
+    return " 🔔 New update"
+
+
+def show_unread_notice(ticket, audience):
+    """Display a clear unread notice inside the ticket."""
+    label = get_unread_label(ticket, audience).strip()
+
+    if "New ticket" in label:
+        st.info(label)
+    elif "comment" in label.lower():
+        st.warning(label)
+    else:
+        st.warning(label)
 
 # -----------------------------
 # MAIN APP
