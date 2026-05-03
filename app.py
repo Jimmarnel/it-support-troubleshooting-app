@@ -18,6 +18,152 @@ DATABASE_FILE = "it_support.db"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
+
+# -----------------------------
+# GLOBAL UI STYLING
+# -----------------------------
+def apply_global_styles():
+    """Apply app-wide visual polish."""
+    st.markdown("""
+    <style>
+    /* Main app spacing */
+    .block-container {
+        padding-top: 1.25rem;
+        padding-bottom: 2rem;
+        max-width: 1200px;
+    }
+
+    /* Sidebar */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #f8f9fb 0%, #eef2f7 100%);
+        border-right: 1px solid #d9dee8;
+    }
+
+    section[data-testid="stSidebar"] .stRadio label {
+        font-weight: 500;
+    }
+
+    /* Dashboard metrics */
+    [data-testid="metric-container"] {
+        background: #ffffff;
+        border: 1px solid #d8dee9;
+        padding: 14px;
+        border-radius: 14px;
+        box-shadow: 0 2px 8px rgba(31, 41, 55, 0.08);
+    }
+
+    [data-testid="metric-container"] label {
+        color: #4b5563 !important;
+        font-weight: 600;
+    }
+
+    [data-testid="metric-container"] div[data-testid="stMetricValue"] {
+        color: #111827;
+        font-weight: 700;
+    }
+
+    /* Expanders as cards */
+    div[data-testid="stExpander"] {
+        background: #ffffff;
+        border: 1px solid #d8dee9;
+        border-radius: 14px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 6px rgba(31, 41, 55, 0.05);
+    }
+
+    div[data-testid="stExpander"] details summary {
+        font-weight: 600;
+    }
+
+    /* Buttons */
+    .stButton > button {
+        border-radius: 10px;
+        padding: 0.45rem 1rem;
+        font-weight: 600;
+        border: 1px solid #cfd6e4;
+    }
+
+    .stButton > button:hover {
+        border-color: #4e89ff;
+        color: #1d4ed8;
+    }
+
+    /* Inputs */
+    .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
+        border-radius: 10px;
+    }
+
+    /* Alerts */
+    .stAlert {
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    /* Custom cards */
+    .app-card {
+        padding: 1rem;
+        background: #ffffff;
+        border: 1px solid #d8dee9;
+        border-radius: 14px;
+        box-shadow: 0 2px 8px rgba(31, 41, 55, 0.06);
+        margin-bottom: 1rem;
+    }
+
+    .description-box {
+        padding: 14px;
+        background: #f8fafc;
+        border-left: 5px solid #4e89ff;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        line-height: 1.5;
+    }
+
+    .sidebar-footer {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background: #ffffff;
+        border: 1px solid #d8dee9;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        color: #4b5563;
+    }
+
+    h1 {
+        color: #172033;
+    }
+
+    h2, h3 {
+        color: #1f2937;
+        letter-spacing: -0.02em;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def render_description_box(text):
+    """Render ticket descriptions in a readable box."""
+    safe_text = str(text or "No description provided.")
+    st.markdown(
+        f"""
+        <div class="description-box">
+            {safe_text}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def format_priority_text(priority):
+    """Return colored HTML for priority labels."""
+    colors = {
+        "Critical": "#dc3545",
+        "High": "#fd7e14",
+        "Medium": "#0d6efd",
+        "Low": "#198754",
+    }
+    color = colors.get(priority, "#6c757d")
+    return f"<span style='color:{color}; font-weight:700;'>{priority}</span>"
+
 # -----------------------------
 # DATABASE SETUP
 # -----------------------------
@@ -133,6 +279,152 @@ def initialize_database():
 # PAGE CONFIG
 # -----------------------------
 st.set_page_config(page_title="IT Troubleshooting Tool", layout="wide")
+
+
+# -----------------------------
+# GLOBAL UI STYLING
+# -----------------------------
+def apply_global_styles():
+    """Apply app-wide visual polish."""
+    st.markdown("""
+    <style>
+    /* Main app spacing */
+    .block-container {
+        padding-top: 1.25rem;
+        padding-bottom: 2rem;
+        max-width: 1200px;
+    }
+
+    /* Sidebar */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #f8f9fb 0%, #eef2f7 100%);
+        border-right: 1px solid #d9dee8;
+    }
+
+    section[data-testid="stSidebar"] .stRadio label {
+        font-weight: 500;
+    }
+
+    /* Dashboard metrics */
+    [data-testid="metric-container"] {
+        background: #ffffff;
+        border: 1px solid #d8dee9;
+        padding: 14px;
+        border-radius: 14px;
+        box-shadow: 0 2px 8px rgba(31, 41, 55, 0.08);
+    }
+
+    [data-testid="metric-container"] label {
+        color: #4b5563 !important;
+        font-weight: 600;
+    }
+
+    [data-testid="metric-container"] div[data-testid="stMetricValue"] {
+        color: #111827;
+        font-weight: 700;
+    }
+
+    /* Expanders as cards */
+    div[data-testid="stExpander"] {
+        background: #ffffff;
+        border: 1px solid #d8dee9;
+        border-radius: 14px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 6px rgba(31, 41, 55, 0.05);
+    }
+
+    div[data-testid="stExpander"] details summary {
+        font-weight: 600;
+    }
+
+    /* Buttons */
+    .stButton > button {
+        border-radius: 10px;
+        padding: 0.45rem 1rem;
+        font-weight: 600;
+        border: 1px solid #cfd6e4;
+    }
+
+    .stButton > button:hover {
+        border-color: #4e89ff;
+        color: #1d4ed8;
+    }
+
+    /* Inputs */
+    .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
+        border-radius: 10px;
+    }
+
+    /* Alerts */
+    .stAlert {
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    /* Custom cards */
+    .app-card {
+        padding: 1rem;
+        background: #ffffff;
+        border: 1px solid #d8dee9;
+        border-radius: 14px;
+        box-shadow: 0 2px 8px rgba(31, 41, 55, 0.06);
+        margin-bottom: 1rem;
+    }
+
+    .description-box {
+        padding: 14px;
+        background: #f8fafc;
+        border-left: 5px solid #4e89ff;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        line-height: 1.5;
+    }
+
+    .sidebar-footer {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background: #ffffff;
+        border: 1px solid #d8dee9;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        color: #4b5563;
+    }
+
+    h1 {
+        color: #172033;
+    }
+
+    h2, h3 {
+        color: #1f2937;
+        letter-spacing: -0.02em;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def render_description_box(text):
+    """Render ticket descriptions in a readable box."""
+    safe_text = str(text or "No description provided.")
+    st.markdown(
+        f"""
+        <div class="description-box">
+            {safe_text}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def format_priority_text(priority):
+    """Return colored HTML for priority labels."""
+    colors = {
+        "Critical": "#dc3545",
+        "High": "#fd7e14",
+        "Medium": "#0d6efd",
+        "Low": "#198754",
+    }
+    color = colors.get(priority, "#6c757d")
+    return f"<span style='color:{color}; font-weight:700;'>{priority}</span>"
 
 # -----------------------------
 # DATA
@@ -2150,6 +2442,7 @@ def show_ticket_list():
             st.write(f"**Email:** {ticket['email']}")
             st.write(f"**Severity:** {ticket['severity']}")
             show_priority_badge(priority)
+            st.markdown(f"**Priority Label:** {format_priority_text(priority)}", unsafe_allow_html=True)
             show_sla_badge(ticket)
             st.write(f"**Status:** {status}")
             if ticket.get("created_at"):
@@ -2163,8 +2456,8 @@ def show_ticket_list():
             if ticket.get("closed_at"):
                 st.write(f"**Closed At:** {ticket.get('closed_at')}")
             st.write(f"**Assigned To:** {assigned_to}")
-            st.write("**Description:**")
-            st.write(ticket["description"])
+            st.markdown("**📝 Description**")
+            render_description_box(ticket.get("description", ""))
 
             if ticket.get("likely_infrastructure"):
                 st.warning("Possible wider IT/infrastructure issue")
@@ -2840,8 +3133,8 @@ def show_dashboard_ticket_summary(ticket):
         st.write(f"**Created:** {ticket.get('created_at', 'N/A')}")
         st.write(f"**Updated:** {ticket.get('updated_at', 'N/A')}")
         st.write(f"**SLA:** {sla_status} — {sla_detail}")
-        st.write("**Description:**")
-        st.write(ticket.get("description", ""))
+        st.markdown("**📝 Description**")
+        render_description_box(ticket.get("description", ""))
 
         if ticket.get("likely_infrastructure"):
             st.warning("🚨 Escalation recommended: possible wider IT/infrastructure issue.")
@@ -3049,6 +3342,7 @@ def show_my_tickets():
         with st.expander(f"Ticket {i}: {ticket.get('issue')} — {ticket.get('status', 'Open')}{unread_label}"):
             st.write(f"**Severity:** {ticket.get('severity')}")
             show_priority_badge(ticket.get("priority", "Medium"))
+            st.markdown(f"**Priority Label:** {format_priority_text(ticket.get('priority', 'Medium'))}", unsafe_allow_html=True)
             show_sla_badge(ticket)
             st.write(f"**Status:** {ticket.get('status', 'Open')}")
             if ticket.get("created_at"):
@@ -3057,8 +3351,8 @@ def show_my_tickets():
                 st.write(f"**Resolved At:** {ticket.get('resolved_at')}")
             if ticket.get("closed_at"):
                 st.write(f"**Closed At:** {ticket.get('closed_at')}")
-            st.write("**Description:**")
-            st.write(ticket.get("description", ""))
+            st.markdown("**📝 Description**")
+            render_description_box(ticket.get("description", ""))
 
             if ticket.get("resolution_notes"):
                 st.write("**Resolution Notes:**")
@@ -3285,6 +3579,7 @@ processes can be organized into a working web application.
 # MAIN APP
 # -----------------------------
 def main():
+    apply_global_styles()
     initialize_database()
     load_users()
     load_issues()
@@ -3300,6 +3595,7 @@ def main():
     if st.sidebar.button("Logout"):
         logout_user()
         st.rerun()
+
 
     tickets = st.session_state.get("tickets", [])
 
@@ -3339,7 +3635,6 @@ def main():
             "🔍 Knowledge Base",
             "🎫 Create Ticket",
             build_menu_label("🎟 My Tickets", user_notifications["unread_updates"]),
-
         ]
 
     selected_mode = st.sidebar.radio(
@@ -3348,6 +3643,16 @@ def main():
     )
 
     mode = normalize_menu_choice(selected_mode)
+
+    st.sidebar.markdown(
+        """
+        <div class="sidebar-footer">
+            <strong>Portfolio Demo</strong><br>
+            Built with Python, Streamlit, and SQLite.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     if mode == "🏠 Home":
         show_home_page()
@@ -3365,8 +3670,6 @@ def main():
         show_ticket_list()
     elif mode == "🛠 Manage Knowledge Base":
         show_admin_kb_editor()
-    elif mode == "ℹ️ About This App":
-        show_about_page()
     elif mode == "ℹ️ About This App":
         show_about_page()
 
