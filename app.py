@@ -656,6 +656,1387 @@ def seed_diagnostic_node_data(cursor):
     cursor.executescript(DIAGNOSTIC_NODE_SEED_SQL)
 
 
+# -----------------------------
+# RELATIONAL ROLE-SPECIFIC DIAGNOSTIC SEED DATA
+# -----------------------------
+TECHNICIAN_DIAGNOSTIC_TREE_SEED_DATA = {
+    "NO_INTERNET_CONNECTION": {
+        "title": "No Internet Connection - Technician Diagnostic",
+        "description": "Technician-level diagnostic path for internet connectivity failures.",
+        "sort_order": 101,
+        "nodes": [
+            {
+                "node_key": "ROOT_NO_INTERNET_TECH",
+                "parent_key": None,
+                "node_type": "category",
+                "title": "No Internet Connection - Technician Diagnostic",
+                "description": "Confirm whether the issue is client-side, network-side, or infrastructure-wide.",
+                "prompt_text": None,
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_IP_CONFIG_VALID",
+                "parent_key": "ROOT_NO_INTERNET_TECH",
+                "node_type": "question",
+                "title": "Validate IP Configuration",
+                "description": "Check the wireless or Ethernet adapter using ipconfig /all.",
+                "prompt_text": "Does the client have a valid IP address, subnet mask, default gateway, and DNS server?",
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_RECONNECT_NETWORK_TECH",
+                "parent_key": "Q_IP_CONFIG_VALID",
+                "node_type": "solution",
+                "title": "Reconnect or Renew Network Configuration",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Does the client have a valid IP address, subnet mask, default gateway, and DNS server?",
+                "condition_value": "No",
+                "solution_code": "FIX_RECONNECT_NETWORK",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_GATEWAY_REACHABLE",
+                "parent_key": "Q_IP_CONFIG_VALID",
+                "node_type": "question",
+                "title": "Test Default Gateway",
+                "description": "Ping the default gateway from the affected client.",
+                "prompt_text": "Can the client ping the default gateway?",
+                "condition_label": "Does the client have a valid IP address, subnet mask, default gateway, and DNS server?",
+                "condition_value": "Yes",
+                "solution_code": None,
+                "sort_order": 2,
+            },
+            {
+                "node_key": "S_RESTART_NETWORK_EQUIPMENT_TECH",
+                "parent_key": "Q_GATEWAY_REACHABLE",
+                "node_type": "solution",
+                "title": "Restart Local Network Path",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Can the client ping the default gateway?",
+                "condition_value": "No",
+                "solution_code": "FIX_RESTART_NETWORK_EQUIPMENT",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_MULTIPLE_USERS_AFFECTED_TECH",
+                "parent_key": "Q_GATEWAY_REACHABLE",
+                "node_type": "question",
+                "title": "Check Scope",
+                "description": "Determine whether this is isolated or a wider incident.",
+                "prompt_text": "Are multiple users, devices, or locations affected?",
+                "condition_label": "Can the client ping the default gateway?",
+                "condition_value": "Yes",
+                "solution_code": None,
+                "sort_order": 2,
+            },
+            {
+                "node_key": "S_ESCALATE_NETWORK_OUTAGE_TECH",
+                "parent_key": "Q_MULTIPLE_USERS_AFFECTED_TECH",
+                "node_type": "solution",
+                "title": "Escalate Possible Network Outage",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Are multiple users, devices, or locations affected?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_ESCALATE_NETWORK_OUTAGE",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_CHECK_DNS_BROWSER_TECH",
+                "parent_key": "Q_MULTIPLE_USERS_AFFECTED_TECH",
+                "node_type": "solution",
+                "title": "Check DNS or Browser Layer",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Are multiple users, devices, or locations affected?",
+                "condition_value": "No",
+                "solution_code": "FIX_CHECK_DNS_BROWSER",
+                "sort_order": 2,
+            },
+        ],
+    },
+    "SOME_WEBSITES_NOT_LOADING": {
+        "title": "Some Websites Not Loading - Technician Diagnostic",
+        "description": "Technician-level diagnostic path for partial website access issues.",
+        "sort_order": 102,
+        "nodes": [
+            {
+                "node_key": "ROOT_SOME_WEBSITES_TECH",
+                "parent_key": None,
+                "node_type": "category",
+                "title": "Some Websites Not Loading - Technician Diagnostic",
+                "description": "Differentiate browser, DNS, filtering, and website availability issues.",
+                "prompt_text": None,
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_REPRO_OTHER_BROWSER",
+                "parent_key": "ROOT_SOME_WEBSITES_TECH",
+                "node_type": "question",
+                "title": "Reproduce Across Browsers",
+                "description": "Test the URL in another browser or private/incognito mode.",
+                "prompt_text": "Does the website fail in multiple browsers or private mode?",
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_CHECK_DNS_BROWSER_CACHE_TECH",
+                "parent_key": "Q_REPRO_OTHER_BROWSER",
+                "node_type": "solution",
+                "title": "Clear Browser Cache and Check DNS",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Does the website fail in multiple browsers or private mode?",
+                "condition_value": "No",
+                "solution_code": "FIX_CHECK_DNS_BROWSER",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_SECURITY_BLOCK",
+                "parent_key": "Q_REPRO_OTHER_BROWSER",
+                "node_type": "question",
+                "title": "Check Security Filtering",
+                "description": "Look for proxy, firewall, DNS filtering, or browser security warnings.",
+                "prompt_text": "Is there a blocked-site, certificate, firewall, proxy, or security warning?",
+                "condition_label": "Does the website fail in multiple browsers or private mode?",
+                "condition_value": "Yes",
+                "solution_code": None,
+                "sort_order": 2,
+            },
+            {
+                "node_key": "S_ESCALATE_BLOCKED_WEBSITE_TECH",
+                "parent_key": "Q_SECURITY_BLOCK",
+                "node_type": "solution",
+                "title": "Escalate Possible Blocked Website",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Is there a blocked-site, certificate, firewall, proxy, or security warning?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_ESCALATE_BLOCKED_WEBSITE",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_CHECK_DNS_BROWSER_TECH",
+                "parent_key": "Q_SECURITY_BLOCK",
+                "node_type": "solution",
+                "title": "Check DNS Resolution and Browser State",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Is there a blocked-site, certificate, firewall, proxy, or security warning?",
+                "condition_value": "No",
+                "solution_code": "FIX_CHECK_DNS_BROWSER",
+                "sort_order": 2,
+            },
+        ],
+    },
+    "WIFI_DROPS_FREQUENTLY": {
+        "title": "Wi-Fi Drops Frequently - Technician Diagnostic",
+        "description": "Technician-level diagnostic path for unstable Wi-Fi connections.",
+        "sort_order": 103,
+        "nodes": [
+            {
+                "node_key": "ROOT_WIFI_DROPS_TECH",
+                "parent_key": None,
+                "node_type": "category",
+                "title": "Wi-Fi Drops Frequently - Technician Diagnostic",
+                "description": "Check signal, client profile, access point, roaming, and local interference.",
+                "prompt_text": None,
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_RSSI_SNR_POOR",
+                "parent_key": "ROOT_WIFI_DROPS_TECH",
+                "node_type": "question",
+                "title": "Review Signal Quality",
+                "description": "Check RSSI, SNR, distance from AP, and interference if tools are available.",
+                "prompt_text": "Is signal quality poor or does the issue happen far from the access point?",
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_MOVE_CLOSER_TO_AP_TECH",
+                "parent_key": "Q_RSSI_SNR_POOR",
+                "node_type": "solution",
+                "title": "Improve Wi-Fi Signal Strength",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Is signal quality poor or does the issue happen far from the access point?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_MOVE_CLOSER_TO_AP",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_AREA_USERS_AFFECTED",
+                "parent_key": "Q_RSSI_SNR_POOR",
+                "node_type": "question",
+                "title": "Check Area Impact",
+                "description": "Determine whether the issue follows the user/device or a specific office area.",
+                "prompt_text": "Are other users in the same area also experiencing Wi-Fi drops?",
+                "condition_label": "Is signal quality poor or does the issue happen far from the access point?",
+                "condition_value": "No",
+                "solution_code": None,
+                "sort_order": 2,
+            },
+            {
+                "node_key": "S_ESCALATE_WIFI_INFRA_TECH",
+                "parent_key": "Q_AREA_USERS_AFFECTED",
+                "node_type": "solution",
+                "title": "Escalate Wi-Fi Infrastructure Issue",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Are other users in the same area also experiencing Wi-Fi drops?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_ESCALATE_WIFI_INFRASTRUCTURE",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_FORGET_REJOIN_WIFI_TECH",
+                "parent_key": "Q_AREA_USERS_AFFECTED",
+                "node_type": "solution",
+                "title": "Forget and Rejoin Wi-Fi Network",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Are other users in the same area also experiencing Wi-Fi drops?",
+                "condition_value": "No",
+                "solution_code": "FIX_FORGET_REJOIN_WIFI",
+                "sort_order": 2,
+            },
+        ],
+    },
+    "SLOW_INTERNET": {
+        "title": "Slow Internet - Technician Diagnostic",
+        "description": "Technician-level diagnostic path for slow internet performance.",
+        "sort_order": 104,
+        "nodes": [
+            {
+                "node_key": "ROOT_SLOW_INTERNET_TECH",
+                "parent_key": None,
+                "node_type": "category",
+                "title": "Slow Internet - Technician Diagnostic",
+                "description": "Check endpoint load, bandwidth usage, scope, and speed-test evidence.",
+                "prompt_text": None,
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_LOCAL_BANDWIDTH_USAGE",
+                "parent_key": "ROOT_SLOW_INTERNET_TECH",
+                "node_type": "question",
+                "title": "Check Local Bandwidth Usage",
+                "description": "Review video calls, cloud sync, downloads, and local network usage.",
+                "prompt_text": "Is the device running bandwidth-heavy applications or downloads?",
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_CLOSE_BANDWIDTH_APPS_TECH",
+                "parent_key": "Q_LOCAL_BANDWIDTH_USAGE",
+                "node_type": "solution",
+                "title": "Close Bandwidth-Heavy Applications",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Is the device running bandwidth-heavy applications or downloads?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_CLOSE_BANDWIDTH_APPS",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_MULTIPLE_USERS_SLOW_TECH",
+                "parent_key": "Q_LOCAL_BANDWIDTH_USAGE",
+                "node_type": "question",
+                "title": "Check Scope of Slowdown",
+                "description": "Ask whether multiple users, locations, or devices report slowness.",
+                "prompt_text": "Are multiple users or devices experiencing slow internet?",
+                "condition_label": "Is the device running bandwidth-heavy applications or downloads?",
+                "condition_value": "No",
+                "solution_code": None,
+                "sort_order": 2,
+            },
+            {
+                "node_key": "S_ESCALATE_NETWORK_SLOW_TECH",
+                "parent_key": "Q_MULTIPLE_USERS_SLOW_TECH",
+                "node_type": "solution",
+                "title": "Escalate Possible Network Outage",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Are multiple users or devices experiencing slow internet?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_ESCALATE_NETWORK_OUTAGE",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_RUN_SPEED_TEST_TECH",
+                "parent_key": "Q_MULTIPLE_USERS_SLOW_TECH",
+                "node_type": "solution",
+                "title": "Document Speed Test and Escalate",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Are multiple users or devices experiencing slow internet?",
+                "condition_value": "No",
+                "solution_code": "FIX_RUN_SPEED_TEST_ESCALATE",
+                "sort_order": 2,
+            },
+        ],
+    },
+    "APPLICATION_CRASHING": {
+        "title": "Application Crashing - Technician Diagnostic",
+        "description": "Technician-level diagnostic path for crashing or freezing applications.",
+        "sort_order": 105,
+        "nodes": [
+            {
+                "node_key": "ROOT_APP_CRASH_TECH",
+                "parent_key": None,
+                "node_type": "category",
+                "title": "Application Crashing - Technician Diagnostic",
+                "description": "Check whether the crash is temporary, version-related, or requires escalation.",
+                "prompt_text": None,
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_CRASH_REPRODUCIBLE",
+                "parent_key": "ROOT_APP_CRASH_TECH",
+                "node_type": "question",
+                "title": "Check Reproducibility",
+                "description": "Ask when the crash occurs and whether it repeats after restart.",
+                "prompt_text": "Does the application crash repeatedly after restarting the app?",
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_RESTART_APP_TECH",
+                "parent_key": "Q_CRASH_REPRODUCIBLE",
+                "node_type": "solution",
+                "title": "Restart the Application",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Does the application crash repeatedly after restarting the app?",
+                "condition_value": "No",
+                "solution_code": "FIX_RESTART_APPLICATION",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_APP_VERSION_CURRENT",
+                "parent_key": "Q_CRASH_REPRODUCIBLE",
+                "node_type": "question",
+                "title": "Check Version and Repair Options",
+                "description": "Check application version, updates, repair option, and installation source.",
+                "prompt_text": "Is the application current and repaired/reinstalled from the approved source?",
+                "condition_label": "Does the application crash repeatedly after restarting the app?",
+                "condition_value": "Yes",
+                "solution_code": None,
+                "sort_order": 2,
+            },
+            {
+                "node_key": "S_UPDATE_APP_TECH",
+                "parent_key": "Q_APP_VERSION_CURRENT",
+                "node_type": "solution",
+                "title": "Update or Repair the Application",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Is the application current and repaired/reinstalled from the approved source?",
+                "condition_value": "No",
+                "solution_code": "FIX_UPDATE_APPLICATION",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_ESCALATE_APP_CRASH_TECH",
+                "parent_key": "Q_APP_VERSION_CURRENT",
+                "node_type": "solution",
+                "title": "Escalate Application Crash",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Is the application current and repaired/reinstalled from the approved source?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_ESCALATE_APP_CRASH",
+                "sort_order": 2,
+            },
+        ],
+    },
+    "SOFTWARE_INSTALLATION_FAILURE": {
+        "title": "Software Installation Failure - Technician Diagnostic",
+        "description": "Technician-level diagnostic path for failed software installations.",
+        "sort_order": 106,
+        "nodes": [
+            {
+                "node_key": "ROOT_INSTALL_FAIL_TECH",
+                "parent_key": None,
+                "node_type": "category",
+                "title": "Software Installation Failure - Technician Diagnostic",
+                "description": "Check installer source, disk space, privileges, licensing, and endpoint controls.",
+                "prompt_text": None,
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_APPROVED_INSTALLER",
+                "parent_key": "ROOT_INSTALL_FAIL_TECH",
+                "node_type": "question",
+                "title": "Validate Installer Source",
+                "description": "Confirm whether the user is using an approved company installer or software portal.",
+                "prompt_text": "Is the user using the approved software installer or portal?",
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_USE_APPROVED_INSTALLER_TECH",
+                "parent_key": "Q_APPROVED_INSTALLER",
+                "node_type": "solution",
+                "title": "Use Approved Software Installer",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Is the user using the approved software installer or portal?",
+                "condition_value": "No",
+                "solution_code": "FIX_USE_APPROVED_INSTALLER",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_DISK_SPACE_FOR_INSTALL",
+                "parent_key": "Q_APPROVED_INSTALLER",
+                "node_type": "question",
+                "title": "Check Disk Space",
+                "description": "Confirm available storage before retrying installation.",
+                "prompt_text": "Is there enough free disk space for the installation?",
+                "condition_label": "Is the user using the approved software installer or portal?",
+                "condition_value": "Yes",
+                "solution_code": None,
+                "sort_order": 2,
+            },
+            {
+                "node_key": "S_FREE_SPACE_INSTALL_TECH",
+                "parent_key": "Q_DISK_SPACE_FOR_INSTALL",
+                "node_type": "solution",
+                "title": "Free Disk Space and Retry Installation",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Is there enough free disk space for the installation?",
+                "condition_value": "No",
+                "solution_code": "FIX_FREE_SPACE_FOR_INSTALL",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_ESCALATE_INSTALL_ADMIN_TECH",
+                "parent_key": "Q_DISK_SPACE_FOR_INSTALL",
+                "node_type": "solution",
+                "title": "Escalate Installation Requiring Admin Rights",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Is there enough free disk space for the installation?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_ESCALATE_INSTALL_ADMIN",
+                "sort_order": 2,
+            },
+        ],
+    },
+    "COMPUTER_RUNNING_SLOW": {
+        "title": "Computer Running Slow - Technician Diagnostic",
+        "description": "Technician-level diagnostic path for endpoint performance issues.",
+        "sort_order": 107,
+        "nodes": [
+            {
+                "node_key": "ROOT_COMPUTER_SLOW_TECH",
+                "parent_key": None,
+                "node_type": "category",
+                "title": "Computer Running Slow - Technician Diagnostic",
+                "description": "Check restart state, startup load, CPU, memory, disk, and hardware indicators.",
+                "prompt_text": None,
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_RESTARTED_RECENTLY",
+                "parent_key": "ROOT_COMPUTER_SLOW_TECH",
+                "node_type": "question",
+                "title": "Check Restart State",
+                "description": "Confirm uptime and pending restart/update state.",
+                "prompt_text": "Has the computer been restarted recently?",
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_RESTART_COMPUTER_TECH",
+                "parent_key": "Q_RESTARTED_RECENTLY",
+                "node_type": "solution",
+                "title": "Restart the Computer",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Has the computer been restarted recently?",
+                "condition_value": "No",
+                "solution_code": "FIX_RESTART_COMPUTER",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_STARTUP_OR_BACKGROUND_LOAD",
+                "parent_key": "Q_RESTARTED_RECENTLY",
+                "node_type": "question",
+                "title": "Check Startup and Background Load",
+                "description": "Review startup applications, memory use, and user background applications.",
+                "prompt_text": "Are many startup apps or background processes using resources?",
+                "condition_label": "Has the computer been restarted recently?",
+                "condition_value": "Yes",
+                "solution_code": None,
+                "sort_order": 2,
+            },
+            {
+                "node_key": "S_DISABLE_STARTUP_APPS_TECH",
+                "parent_key": "Q_STARTUP_OR_BACKGROUND_LOAD",
+                "node_type": "solution",
+                "title": "Reduce Startup Applications",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Are many startup apps or background processes using resources?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_DISABLE_STARTUP_APPS",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_ESCALATE_HARDWARE_PERF_TECH",
+                "parent_key": "Q_STARTUP_OR_BACKGROUND_LOAD",
+                "node_type": "solution",
+                "title": "Escalate Possible Hardware Performance Issue",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Are many startup apps or background processes using resources?",
+                "condition_value": "No",
+                "solution_code": "FIX_ESCALATE_HARDWARE_PERFORMANCE",
+                "sort_order": 2,
+            },
+        ],
+    },
+    "DISK_SPACE_FULL": {
+        "title": "Disk Space Full - Technician Diagnostic",
+        "description": "Technician-level diagnostic path for storage capacity issues.",
+        "sort_order": 108,
+        "nodes": [
+            {
+                "node_key": "ROOT_DISK_FULL_TECH",
+                "parent_key": None,
+                "node_type": "category",
+                "title": "Disk Space Full - Technician Diagnostic",
+                "description": "Check available storage, user files, temporary files, and capacity needs.",
+                "prompt_text": None,
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_USER_FILES_CAN_REMOVE",
+                "parent_key": "ROOT_DISK_FULL_TECH",
+                "node_type": "question",
+                "title": "Check Removable User Files",
+                "description": "Review downloads, recycle bin, duplicate files, and approved cloud/network storage.",
+                "prompt_text": "Can unnecessary user files, downloads, or recycle bin contents be removed?",
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_EMPTY_TRASH_DOWNLOADS_TECH",
+                "parent_key": "Q_USER_FILES_CAN_REMOVE",
+                "node_type": "solution",
+                "title": "Remove Unneeded Files",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Can unnecessary user files, downloads, or recycle bin contents be removed?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_EMPTY_TRASH_DOWNLOADS",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_TEMP_FILES_OR_UPDATES",
+                "parent_key": "Q_USER_FILES_CAN_REMOVE",
+                "node_type": "question",
+                "title": "Check Temporary/System Files",
+                "description": "Check temporary files, update cache, logs, and approved cleanup tools.",
+                "prompt_text": "Can temporary files or old update files be safely cleaned?",
+                "condition_label": "Can unnecessary user files, downloads, or recycle bin contents be removed?",
+                "condition_value": "No",
+                "solution_code": None,
+                "sort_order": 2,
+            },
+            {
+                "node_key": "S_CLEAN_TEMP_FILES_TECH",
+                "parent_key": "Q_TEMP_FILES_OR_UPDATES",
+                "node_type": "solution",
+                "title": "Clean Temporary Files",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Can temporary files or old update files be safely cleaned?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_CLEAN_TEMP_FILES",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_ESCALATE_STORAGE_TECH",
+                "parent_key": "Q_TEMP_FILES_OR_UPDATES",
+                "node_type": "solution",
+                "title": "Escalate Storage Capacity Issue",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Can temporary files or old update files be safely cleaned?",
+                "condition_value": "No",
+                "solution_code": "FIX_ESCALATE_STORAGE_EXPANSION",
+                "sort_order": 2,
+            },
+        ],
+    },
+    "HIGH_CPU_USAGE": {
+        "title": "High CPU Usage - Technician Diagnostic",
+        "description": "Technician-level diagnostic path for CPU spikes and suspicious processes.",
+        "sort_order": 109,
+        "nodes": [
+            {
+                "node_key": "ROOT_HIGH_CPU_TECH",
+                "parent_key": None,
+                "node_type": "category",
+                "title": "High CPU Usage - Technician Diagnostic",
+                "description": "Check process ownership, restart state, endpoint health, and suspicious activity.",
+                "prompt_text": None,
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_IDENTIFIED_HIGH_CPU_APP",
+                "parent_key": "ROOT_HIGH_CPU_TECH",
+                "node_type": "question",
+                "title": "Identify High CPU Process",
+                "description": "Use Task Manager or endpoint tooling to identify the top CPU consumer.",
+                "prompt_text": "Is a known user application consuming most of the CPU?",
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_CLOSE_HIGH_CPU_APP_TECH",
+                "parent_key": "Q_IDENTIFIED_HIGH_CPU_APP",
+                "node_type": "solution",
+                "title": "Close High CPU Application",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Is a known user application consuming most of the CPU?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_CLOSE_HIGH_CPU_PROCESS",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_SUSPICIOUS_OR_SYSTEM_PROCESS",
+                "parent_key": "Q_IDENTIFIED_HIGH_CPU_APP",
+                "node_type": "question",
+                "title": "Check Suspicious/System Process",
+                "description": "Determine whether the process is unknown, security-related, or a system service.",
+                "prompt_text": "Is the high CPU process unknown, suspicious, security software, or a system service?",
+                "condition_label": "Is a known user application consuming most of the CPU?",
+                "condition_value": "No",
+                "solution_code": None,
+                "sort_order": 2,
+            },
+            {
+                "node_key": "S_ESCALATE_MALWARE_ENDPOINT_TECH",
+                "parent_key": "Q_SUSPICIOUS_OR_SYSTEM_PROCESS",
+                "node_type": "solution",
+                "title": "Escalate Possible Malware or Endpoint Issue",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Is the high CPU process unknown, suspicious, security software, or a system service?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_ESCALATE_MALWARE_OR_ENDPOINT",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_REBOOT_HIGH_CPU_TECH",
+                "parent_key": "Q_SUSPICIOUS_OR_SYSTEM_PROCESS",
+                "node_type": "solution",
+                "title": "Restart After High CPU Usage",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Is the high CPU process unknown, suspicious, security software, or a system service?",
+                "condition_value": "No",
+                "solution_code": "FIX_REBOOT_AFTER_HIGH_CPU",
+                "sort_order": 2,
+            },
+        ],
+    },
+    "VPN_CONNECTION_FAILURE": {
+        "title": "VPN Connection Failure - Technician Diagnostic",
+        "description": "Technician-level diagnostic path for VPN authentication, client, and network issues.",
+        "sort_order": 110,
+        "nodes": [
+            {
+                "node_key": "ROOT_VPN_FAILURE_TECH",
+                "parent_key": None,
+                "node_type": "category",
+                "title": "VPN Connection Failure - Technician Diagnostic",
+                "description": "Check internet, credentials/MFA, network restrictions, client version, and escalation triggers.",
+                "prompt_text": None,
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_NORMAL_INTERNET_WORKS",
+                "parent_key": "ROOT_VPN_FAILURE_TECH",
+                "node_type": "question",
+                "title": "Verify Base Internet",
+                "description": "Confirm internet works outside of VPN before troubleshooting VPN-specific causes.",
+                "prompt_text": "Does normal internet access work without VPN?",
+                "condition_label": None,
+                "condition_value": None,
+                "solution_code": None,
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_RESTART_NETWORK_BEFORE_VPN_TECH",
+                "parent_key": "Q_NORMAL_INTERNET_WORKS",
+                "node_type": "solution",
+                "title": "Restart Device and Network Equipment",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Does normal internet access work without VPN?",
+                "condition_value": "No",
+                "solution_code": "FIX_RESTART_NETWORK_EQUIPMENT",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_VPN_AUTH_MFA",
+                "parent_key": "Q_NORMAL_INTERNET_WORKS",
+                "node_type": "question",
+                "title": "Check Authentication and MFA",
+                "description": "Confirm password, account status, MFA prompt, and error text.",
+                "prompt_text": "Does the error suggest credentials, account lockout, password expiry, or MFA failure?",
+                "condition_label": "Does normal internet access work without VPN?",
+                "condition_value": "Yes",
+                "solution_code": None,
+                "sort_order": 2,
+            },
+            {
+                "node_key": "S_CHECK_VPN_CREDENTIALS_TECH",
+                "parent_key": "Q_VPN_AUTH_MFA",
+                "node_type": "solution",
+                "title": "Check VPN Credentials and MFA",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Does the error suggest credentials, account lockout, password expiry, or MFA failure?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_CHECK_VPN_CREDENTIALS_MFA",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_NETWORK_BLOCKING_VPN",
+                "parent_key": "Q_VPN_AUTH_MFA",
+                "node_type": "question",
+                "title": "Check Network Path",
+                "description": "Ask the user to test another trusted network or hotspot if available.",
+                "prompt_text": "Does VPN work from another network or mobile hotspot?",
+                "condition_label": "Does the error suggest credentials, account lockout, password expiry, or MFA failure?",
+                "condition_value": "No",
+                "solution_code": None,
+                "sort_order": 2,
+            },
+            {
+                "node_key": "S_CHANGE_NETWORK_VPN_TECH",
+                "parent_key": "Q_NETWORK_BLOCKING_VPN",
+                "node_type": "solution",
+                "title": "Try Another Network for VPN",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Does VPN work from another network or mobile hotspot?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_CHANGE_NETWORK_RETRY_VPN",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "Q_VPN_CLIENT_CURRENT",
+                "parent_key": "Q_NETWORK_BLOCKING_VPN",
+                "node_type": "question",
+                "title": "Check VPN Client",
+                "description": "Review VPN client version, update status, and configuration.",
+                "prompt_text": "Is the VPN client updated and correctly installed?",
+                "condition_label": "Does VPN work from another network or mobile hotspot?",
+                "condition_value": "No",
+                "solution_code": None,
+                "sort_order": 2,
+            },
+            {
+                "node_key": "S_UPDATE_VPN_CLIENT_TECH",
+                "parent_key": "Q_VPN_CLIENT_CURRENT",
+                "node_type": "solution",
+                "title": "Update or Reinstall VPN Client",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Is the VPN client updated and correctly installed?",
+                "condition_value": "No",
+                "solution_code": "FIX_UPDATE_VPN_CLIENT",
+                "sort_order": 1,
+            },
+            {
+                "node_key": "S_ESCALATE_VPN_SUPPORT_TECH",
+                "parent_key": "Q_VPN_CLIENT_CURRENT",
+                "node_type": "solution",
+                "title": "Escalate VPN Connection Failure",
+                "description": None,
+                "prompt_text": None,
+                "condition_label": "Is the VPN client updated and correctly installed?",
+                "condition_value": "Yes",
+                "solution_code": "FIX_ESCALATE_VPN_SUPPORT",
+                "sort_order": 2,
+            },
+        ],
+    },
+}
+
+ROLE_SPECIFIC_SOLUTION_STEPS = {
+    "FIX_RECONNECT_NETWORK": {
+        "technician": [
+            "Verify Wi-Fi/Ethernet adapter status and confirm the correct SSID or cable connection.",
+            "Check IP configuration using ipconfig /all and confirm IP address, gateway, and DNS values.",
+            "Renew the DHCP lease if needed using ipconfig /release and ipconfig /renew.",
+            "Confirm connectivity by pinging the default gateway and then an external IP.",
+        ],
+        "admin": [
+            "Review the ticket for affected user, device, location, and connection type.",
+            "Confirm whether the technician verified adapter state, IP configuration, gateway reachability, and DNS.",
+            "Escalate to Network Team if the issue is not isolated to one device.",
+        ],
+    },
+    "FIX_RESTART_NETWORK_EQUIPMENT": {
+        "technician": [
+            "Confirm whether the affected device, local router, modem, docking station, or access point may be causing the issue.",
+            "Restart the client device and ask the user to reconnect.",
+            "For remote/home users, ask them to power-cycle router/modem if appropriate.",
+            "Retest gateway, DNS, and external connectivity after restart.",
+        ],
+        "admin": [
+            "Confirm whether restarting local network equipment restored service.",
+            "If repeated restarts are needed, document recurrence and escalate for infrastructure review.",
+        ],
+    },
+    "FIX_ESCALATE_NETWORK_OUTAGE": {
+        "technician": [
+            "Collect affected location, number of impacted users, device names, start time, and error messages.",
+            "Check whether gateway, DHCP, DNS, or upstream internet is unavailable.",
+            "Review monitoring or network controller status if available.",
+            "Escalate to Network Team with collected evidence.",
+        ],
+        "admin": [
+            "Treat as possible incident if multiple users, departments, or business-critical services are affected.",
+            "Prioritize as High or Critical depending on scope and business impact.",
+            "Ensure escalation notes include impact, start time, affected systems, and troubleshooting already completed.",
+        ],
+    },
+    "FIX_CHECK_DNS_BROWSER": {
+        "technician": [
+            "Test the affected website in another browser and private/incognito mode.",
+            "Run nslookup for the affected domain and compare with known-good DNS.",
+            "Flush DNS cache using ipconfig /flushdns.",
+            "Clear browser cache/cookies or reset browser profile if only one browser is affected.",
+            "Document affected URLs and error messages.",
+        ],
+        "admin": [
+            "Confirm whether the issue is browser-specific, DNS-specific, or site-specific.",
+            "Escalate if multiple users cannot access the same site or DNS failures continue.",
+        ],
+    },
+    "FIX_ESCALATE_BLOCKED_WEBSITE": {
+        "technician": [
+            "Capture the full URL, screenshot, block message, certificate warning, and user location.",
+            "Check whether the block appears in different browsers and networks.",
+            "Do not bypass content filtering or security controls.",
+            "Escalate to IT Security or Network Team with business justification.",
+        ],
+        "admin": [
+            "Review business justification before approving any allow-list request.",
+            "Route to Security/Network according to policy.",
+            "Keep the ticket open until policy decision is confirmed.",
+        ],
+    },
+    "FIX_MOVE_CLOSER_TO_AP": {
+        "technician": [
+            "Check signal quality, RSSI/SNR if tools are available, and distance from the access point.",
+            "Ask user to test closer to the AP or in another known-good location.",
+            "Check for interference, physical obstructions, or overloaded APs.",
+            "Escalate if the location has repeated Wi-Fi coverage complaints.",
+        ],
+        "admin": [
+            "Review whether the issue indicates a coverage gap or repeated location-based complaint.",
+            "Escalate to Network Team if multiple tickets originate from the same area.",
+        ],
+    },
+    "FIX_FORGET_REJOIN_WIFI": {
+        "technician": [
+            "Remove the saved Wi-Fi profile from the device.",
+            "Reconnect to the correct SSID and verify credentials or certificate authentication.",
+            "Confirm the device obtains a valid IP address and stable connection.",
+            "Check MDM/NAC compliance if reconnection fails.",
+        ],
+        "admin": [
+            "Confirm whether the issue was isolated to a corrupted wireless profile.",
+            "If repeated profile resets are needed, review wireless policy or credential changes.",
+        ],
+    },
+    "FIX_ESCALATE_WIFI_INFRASTRUCTURE": {
+        "technician": [
+            "Collect location, AP name/BSSID if available, affected users, device models, and timestamps.",
+            "Check controller logs for association, authentication, roaming, or deauthentication events.",
+            "Review channel utilization, AP client count, RSSI, and SNR.",
+            "Escalate to Network Team with evidence.",
+        ],
+        "admin": [
+            "Classify as infrastructure issue if multiple users or one area is affected.",
+            "Prioritize according to business impact and number of affected users.",
+        ],
+    },
+    "FIX_CLOSE_BANDWIDTH_APPS": {
+        "technician": [
+            "Review active downloads, cloud sync, streaming, and video conference usage.",
+            "Ask the user to pause bandwidth-heavy activity and retest.",
+            "Check whether performance improves on Ethernet or another network.",
+            "Document before/after speed or latency results if available.",
+        ],
+        "admin": [
+            "Confirm whether slowdown is user/device-specific or wider network congestion.",
+            "Escalate if multiple users report performance degradation.",
+        ],
+    },
+    "FIX_RUN_SPEED_TEST_ESCALATE": {
+        "technician": [
+            "Run a speed test from the affected device and record download/upload/latency.",
+            "Compare Wi-Fi vs Ethernet if possible.",
+            "Record location, SSID, device name, and time of test.",
+            "Escalate if results are significantly below expected baseline.",
+        ],
+        "admin": [
+            "Review speed-test evidence and affected scope.",
+            "Escalate to Network Team if performance is below SLA or impacts multiple users.",
+        ],
+    },
+    "FIX_RESTART_APPLICATION": {
+        "technician": [
+            "Ask user to save work if possible and fully close the application.",
+            "Check Task Manager/Activity Monitor to ensure the process is closed.",
+            "Restart the application and reproduce the user action.",
+            "Document whether the crash returns.",
+        ],
+        "admin": [
+            "If restart resolves the issue, close as transient application issue.",
+            "If crashes recur, request logs and move to repair/update path.",
+        ],
+    },
+    "FIX_UPDATE_APPLICATION": {
+        "technician": [
+            "Check application version and compare with approved/current version.",
+            "Use approved software portal or installer to update or repair.",
+            "Review application logs or Windows Event Viewer if available.",
+            "Reproduce the crash after update/repair.",
+        ],
+        "admin": [
+            "Confirm software source is approved and licensing is valid.",
+            "Escalate to Application Support if update/repair does not resolve the issue.",
+        ],
+    },
+    "FIX_ESCALATE_APP_CRASH": {
+        "technician": [
+            "Collect application name, version, crash message, screenshot, logs, and reproduction steps.",
+            "Check if other users or devices experience the same crash.",
+            "Verify recent updates, plugins, or configuration changes.",
+            "Escalate to Application Support or vendor support.",
+        ],
+        "admin": [
+            "Prioritize as High if the application is business-critical.",
+            "Ensure escalation includes logs, version, affected users, and exact reproduction steps.",
+        ],
+    },
+    "FIX_USE_APPROVED_INSTALLER": {
+        "technician": [
+            "Confirm the installer source and software name/version.",
+            "Direct the user to the approved software portal or managed deployment tool.",
+            "Remove untrusted installer copies if appropriate.",
+            "Retry installation from the approved source.",
+        ],
+        "admin": [
+            "Confirm business approval and licensing before installation.",
+            "Do not authorize software from untrusted sources.",
+        ],
+    },
+    "FIX_FREE_SPACE_FOR_INSTALL": {
+        "technician": [
+            "Check available disk space and installation requirements.",
+            "Remove temporary files, recycle bin contents, or unnecessary downloads if allowed.",
+            "Restart if cleanup tools require it.",
+            "Retry installation and document result.",
+        ],
+        "admin": [
+            "Review whether storage shortage is recurring or device requires capacity planning.",
+            "Escalate if the device cannot maintain sufficient free space.",
+        ],
+    },
+    "FIX_ESCALATE_INSTALL_ADMIN": {
+        "technician": [
+            "Collect software name, version, installer source, error message, and business reason.",
+            "Confirm whether admin rights, licensing, or endpoint policy blocks installation.",
+            "Escalate to Endpoint Management or IT Support lead.",
+        ],
+        "admin": [
+            "Validate business need, license availability, and policy compliance.",
+            "Approve or reject installation according to company policy.",
+        ],
+    },
+    "FIX_RESTART_COMPUTER": {
+        "technician": [
+            "Check device uptime and pending restart status.",
+            "Ask user to save work and restart the computer.",
+            "After restart, check CPU, memory, disk usage, and responsiveness.",
+        ],
+        "admin": [
+            "Close if performance returns to normal after restart.",
+            "If issue repeats, continue with startup/process/hardware review.",
+        ],
+    },
+    "FIX_DISABLE_STARTUP_APPS": {
+        "technician": [
+            "Review startup applications and background processes.",
+            "Disable only non-essential startup items according to policy.",
+            "Restart the device and compare boot time/performance.",
+            "Document changes made.",
+        ],
+        "admin": [
+            "Ensure startup changes follow policy and do not disable required security or management tools.",
+            "Escalate recurring performance complaints for endpoint review.",
+        ],
+    },
+    "FIX_ESCALATE_HARDWARE_PERFORMANCE": {
+        "technician": [
+            "Collect device model, asset tag, uptime, CPU, memory, disk health, and available storage.",
+            "Check event logs and recent updates.",
+            "Document examples of slow behavior and frequency.",
+            "Escalate to Desktop Support for hardware or endpoint review.",
+        ],
+        "admin": [
+            "Review whether replacement, memory upgrade, disk replacement, or reimage is appropriate.",
+            "Prioritize according to productivity impact.",
+        ],
+    },
+    "FIX_EMPTY_TRASH_DOWNLOADS": {
+        "technician": [
+            "Check largest user folders such as Downloads, Desktop, Videos, and Recycle Bin.",
+            "Confirm with user before deleting personal or business files.",
+            "Move approved files to cloud or network storage if appropriate.",
+            "Retest available disk space.",
+        ],
+        "admin": [
+            "Confirm user approval before file removal.",
+            "Escalate if storage shortage affects updates or business applications.",
+        ],
+    },
+    "FIX_CLEAN_TEMP_FILES": {
+        "technician": [
+            "Run approved disk cleanup tools.",
+            "Remove temporary files, browser cache, and old update files where safe.",
+            "Restart device and verify free space.",
+            "Check if space fills again quickly.",
+        ],
+        "admin": [
+            "If temporary files return quickly, investigate logs, sync tools, or misconfigured applications.",
+            "Escalate if cleanup requires elevated access or recurring investigation.",
+        ],
+    },
+    "FIX_ESCALATE_STORAGE_EXPANSION": {
+        "technician": [
+            "Record available free space, largest folders if known, and disk capacity.",
+            "Check whether business files can be moved to approved storage.",
+            "Escalate to Desktop Support for storage expansion, cleanup, or replacement review.",
+        ],
+        "admin": [
+            "Review device lifecycle, storage capacity, and business justification.",
+            "Approve replacement or expansion according to policy.",
+        ],
+    },
+    "FIX_CLOSE_HIGH_CPU_PROCESS": {
+        "technician": [
+            "Identify the high CPU process in Task Manager or endpoint tool.",
+            "Confirm whether it is a known user application.",
+            "Restart the application and monitor CPU usage.",
+            "Do not terminate security or system processes without approval.",
+        ],
+        "admin": [
+            "If a business app repeatedly causes high CPU, route to Application Support.",
+            "If a system/security process is involved, escalate to Endpoint/Security.",
+        ],
+    },
+    "FIX_REBOOT_AFTER_HIGH_CPU": {
+        "technician": [
+            "Ask the user to save work and restart the device.",
+            "Monitor CPU after restart.",
+            "Check if pending updates or stuck processes clear after reboot.",
+        ],
+        "admin": [
+            "Close as transient only if CPU remains normal after restart.",
+            "If recurring, escalate with process and event log details.",
+        ],
+    },
+    "FIX_ESCALATE_MALWARE_OR_ENDPOINT": {
+        "technician": [
+            "Collect process name, screenshots, security alerts, recent downloads, and device name.",
+            "Do not disable endpoint protection.",
+            "Disconnect from network only if instructed by Security policy.",
+            "Escalate to Security or Endpoint Support immediately.",
+        ],
+        "admin": [
+            "Treat suspicious behavior as security-sensitive.",
+            "Ensure escalation contains evidence and affected asset information.",
+            "Follow incident response procedures if malware is suspected.",
+        ],
+    },
+    "FIX_CHECK_VPN_CREDENTIALS_MFA": {
+        "technician": [
+            "Confirm username format, password status, account lockout, and MFA prompt delivery.",
+            "Ask the user to approve MFA and retry.",
+            "Check identity provider or VPN logs if available.",
+            "Escalate if MFA is not received or authentication fails repeatedly.",
+        ],
+        "admin": [
+            "Review whether the issue is account-specific or affects multiple VPN users.",
+            "Prioritize if the user is blocked from critical remote work.",
+        ],
+    },
+    "FIX_CHANGE_NETWORK_RETRY_VPN": {
+        "technician": [
+            "Ask the user to test VPN from another trusted network or mobile hotspot.",
+            "Check whether the current network blocks VPN ports/protocols.",
+            "Document network type and whether the alternate network succeeds.",
+        ],
+        "admin": [
+            "If VPN works on another network, document likely local ISP/router/firewall restriction.",
+            "Escalate if company-managed network is blocking VPN.",
+        ],
+    },
+    "FIX_UPDATE_VPN_CLIENT": {
+        "technician": [
+            "Check VPN client version and configuration profile.",
+            "Update or reinstall VPN client from approved source.",
+            "Confirm certificates/configuration are present if applicable.",
+            "Retest connection and collect error logs if failure continues.",
+        ],
+        "admin": [
+            "Verify endpoint management or software deployment status.",
+            "Escalate if installation requires elevated rights or client configuration package is missing.",
+        ],
+    },
+    "FIX_ESCALATE_VPN_SUPPORT": {
+        "technician": [
+            "Collect username, device name, VPN client version, error code, network type, MFA status, and screenshots.",
+            "Check if multiple users are affected.",
+            "Escalate to Network/VPN Support with all evidence.",
+        ],
+        "admin": [
+            "Prioritize as High if multiple remote users are blocked.",
+            "Ensure escalation includes authentication state, client version, and network test results.",
+        ],
+    },
+}
+
+
+def get_solution_id_by_code(cursor, solution_code):
+    """Return solution_id for a stable solution_code."""
+    cursor.execute(
+        "SELECT solution_id FROM solution WHERE solution_code = ?",
+        (solution_code,),
+    )
+    row = cursor.fetchone()
+    return row["solution_id"] if row else None
+
+
+def get_diagnostic_tree_id_by_code(cursor, diagnostic_tree_code):
+    """Return diagnostic_tree_id for a stable diagnostic_tree_code."""
+    cursor.execute(
+        "SELECT diagnostic_tree_id FROM diagnostic_tree WHERE diagnostic_tree_code = ?",
+        (diagnostic_tree_code,),
+    )
+    row = cursor.fetchone()
+    return row["diagnostic_tree_id"] if row else None
+
+
+def get_diagnostic_node_id_by_tree_and_key(cursor, diagnostic_tree_id, node_key):
+    """Return diagnostic_node_id for a node inside a diagnostic tree."""
+    cursor.execute(
+        """
+        SELECT diagnostic_node_id
+        FROM diagnostic_node
+        WHERE diagnostic_tree_id = ?
+          AND node_key = ?
+        """,
+        (diagnostic_tree_id, node_key),
+    )
+    row = cursor.fetchone()
+    return row["diagnostic_node_id"] if row else None
+
+
+def seed_role_specific_solution_steps(cursor):
+    """Seed technician/admin solution steps for all demo solutions."""
+    for solution_code, audience_steps in ROLE_SPECIFIC_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+
+        for audience, steps in audience_steps.items():
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS count
+                FROM solution_step
+                WHERE solution_id = ?
+                  AND audience = ?
+                """,
+                (solution_id, audience),
+            )
+
+            if cursor.fetchone()["count"] > 0:
+                continue
+
+            cursor.executemany(
+                """
+                INSERT INTO solution_step (
+                    solution_id,
+                    audience,
+                    step_text,
+                    sort_order
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                [
+                    (solution_id, audience, step_text, index)
+                    for index, step_text in enumerate(steps, start=1)
+                ],
+            )
+
+
+def seed_technician_diagnostic_tree(cursor, base_tree_code, tree_config):
+    """Seed one technician diagnostic tree and its nodes."""
+    problem_id = get_problem_id_for_tree_code(cursor, base_tree_code)
+    diagnostic_tree_code = f"{base_tree_code}_TECHNICIAN"
+
+    cursor.execute(
+        """
+        INSERT OR IGNORE INTO diagnostic_tree (
+            problem_id,
+            diagnostic_tree_code,
+            base_tree_code,
+            audience,
+            title,
+            description
+        )
+        VALUES (?, ?, ?, 'technician', ?, ?)
+        """,
+        (
+            problem_id,
+            diagnostic_tree_code,
+            base_tree_code,
+            tree_config["title"],
+            tree_config.get("description", ""),
+        ),
+    )
+
+    diagnostic_tree_id = get_diagnostic_tree_id_by_code(cursor, diagnostic_tree_code)
+
+    if not diagnostic_tree_id:
+        return
+
+    for node in tree_config["nodes"]:
+        parent_id = None
+        if node["parent_key"]:
+            parent_id = get_diagnostic_node_id_by_tree_and_key(
+                cursor,
+                diagnostic_tree_id,
+                node["parent_key"],
+            )
+
+        solution_id = None
+        if node.get("solution_code"):
+            solution_id = get_solution_id_by_code(cursor, node["solution_code"])
+
+        cursor.execute(
+            """
+            INSERT OR IGNORE INTO diagnostic_node (
+                diagnostic_tree_id,
+                parent_diagnostic_node_id,
+                problem_id,
+                diagnostic_tree_code,
+                node_key,
+                node_type,
+                title,
+                description,
+                prompt_text,
+                condition_label,
+                condition_value,
+                solution_id,
+                sort_order
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                diagnostic_tree_id,
+                parent_id,
+                problem_id,
+                diagnostic_tree_code,
+                node["node_key"],
+                node["node_type"],
+                node["title"],
+                node.get("description"),
+                node.get("prompt_text"),
+                node.get("condition_label"),
+                node.get("condition_value"),
+                solution_id,
+                node.get("sort_order", 0),
+            ),
+        )
+
+
+def seed_role_specific_diagnostic_content(cursor):
+    """Seed technician diagnostic trees and technician/admin solution steps."""
+    seed_role_specific_solution_steps(cursor)
+
+    for base_tree_code, tree_config in TECHNICIAN_DIAGNOSTIC_TREE_SEED_DATA.items():
+        seed_technician_diagnostic_tree(cursor, base_tree_code, tree_config)
+
+
 def initialize_database():
     """Create SQLite tables if they do not already exist."""
     connection = get_db_connection()
@@ -666,6 +2047,7 @@ def initialize_database():
     seed_diagnostic_node_data(cursor)
     seed_relational_kb_articles(cursor)
     seed_audience_diagnostic_support(cursor)
+    seed_role_specific_diagnostic_content(cursor)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
