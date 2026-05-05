@@ -1350,13 +1350,11 @@ def run_guided_flow(flow_name):
 
         answer = st.radio(
             question["text"],
-            question["options"],
-            index=None,
+            ["Select"] + question["options"],
             key=f"{flow_name}_{current_question_id}",
         )
 
-        if answer is None:
-            st.info("Select an option to continue.")
+        if answer == "Select":
             st.stop()
 
         answer_config = question["answers"][answer]
@@ -1377,30 +1375,19 @@ def run_auto_guided_flow(issue):
     """Create a simple guided flow automatically from knowledge base issue data."""
     st.subheader(f"🧭 {issue['title']} Guided Flow")
 
-    st.info("Review the symptoms first, then answer the question below.")
-
-    st.write("**Category:**", issue["category"])
-    show_severity(issue["severity"])
-    if "show_issue_metadata" in globals():
-        show_issue_metadata(issue)
-
-    with st.expander("👁 View Symptoms", expanded=True):
-        symptoms = issue.get("symptoms", [])
-        if symptoms:
-            for symptom in symptoms:
-                st.write("-", symptom)
-        else:
-            st.write("No symptoms listed for this issue.")
+    st.info("This guided flow is auto-generated from the Knowledge Base data.")
 
     has_symptoms = st.radio(
         "Is the user experiencing one or more of these symptoms?",
-        ["Yes", "No"],
-        index=None,
+        ["Select", "Yes", "No"],
         key=f"auto_{issue['title']}_symptoms",
     )
 
-    if has_symptoms is None:
-        st.info("Select Yes or No to continue.")
+    with st.expander("View symptoms"):
+        for symptom in issue["symptoms"]:
+            st.write("-", symptom)
+
+    if has_symptoms == "Select":
         st.stop()
 
     if has_symptoms == "No":
@@ -1409,22 +1396,23 @@ def run_auto_guided_flow(issue):
             "info",
             [
                 "Do not worry if you are unsure about the exact symptoms",
-                "Return to the issue list and choose a closer match",
-                "Create a support ticket and describe what happened in your own words if you are not sure",
-                "Include when it started, what you were trying to do, and any error message you saw",
+                "Create a support ticket and describe what happened in your own words",
+                "Include details such as when it started, what you were trying to do, and any error message you saw",
+                "An IT technician can review the ticket and identify the correct issue",
             ],
         )
         return
 
     confirmed_scope = st.radio(
-        "Does this issue category and severity look correct?",
-        ["Yes", "No / Not sure"],
-        index=None,
+        "Does the issue match this category and severity?",
+        ["Select", "Yes", "No / Not sure"],
         key=f"auto_{issue['title']}_scope",
     )
 
-    if confirmed_scope is None:
-        st.info("Select Yes or No / Not sure to continue.")
+    st.write("**Category:**", issue["category"])
+    show_severity(issue["severity"])
+
+    if confirmed_scope == "Select":
         st.stop()
 
     if confirmed_scope == "No / Not sure":
@@ -1435,7 +1423,6 @@ def run_auto_guided_flow(issue):
                 "Confirm when the issue started",
                 "Check whether one user or multiple users are affected",
                 "Review recent changes, updates, or outages",
-                "Create a support ticket if you are unsure how to proceed",
             ],
         )
         return
@@ -1458,12 +1445,8 @@ def run_auto_guided_flow(issue):
         )
 
     with st.expander("Possible causes"):
-        causes = issue.get("causes", [])
-        if causes:
-            for cause in causes:
-                st.write("-", cause)
-        else:
-            st.write("No possible causes listed for this issue.")
+        for cause in issue["causes"]:
+            st.write("-", cause)
 
 
 def show_guided_troubleshooting():
@@ -1472,13 +1455,12 @@ def show_guided_troubleshooting():
     issue_titles = [issue["title"] for issue in issues]
 
     selected_issue = st.selectbox(
-        "Select an issue",
-        ["Other"] + issue_titles,
-        help="Choose the issue that best matches your problem.",
+        "Select an issue to troubleshoot:",
+        ["None"] + issue_titles,
     )
 
-    if selected_issue == "Other":
-        st.info("Select a known issue from the list, or create a support ticket if your issue is not listed.")
+    if selected_issue == "None":
+        st.info("Select an issue to begin guided troubleshooting.")
         return
 
     if selected_issue in guided_flows:
@@ -3649,6 +3631,7 @@ def main():
         logout_user()
         st.rerun()
 
+
     tickets = st.session_state.get("tickets", [])
 
     if st.session_state.get("role") == "Admin":
@@ -3671,15 +3654,14 @@ def main():
             "🎫 Create Ticket",
             build_menu_label("📋 View Tickets", admin_notifications["unread_updates"]),
             "🛠 Manage Knowledge Base",
+
         ]
     else:
         username = st.session_state.get("username")
         user_notifications = get_user_notification_counts(tickets, username)
 
         if user_notifications["total"] > 0:
-            st.sidebar.warning(
-                f"🔔 You have {user_notifications['total']} unread ticket update(s)."
-            )
+            st.sidebar.warning(f"🔔 You have {user_notifications['total']} unread ticket update(s).")
 
         menu_options = [
             "ℹ️ About This App",
@@ -3707,9 +3689,7 @@ def main():
         unsafe_allow_html=True,
     )
 
-    if mode == "ℹ️ About This App":
-        show_about_page()
-    elif mode == "🏠 Home":
+    if mode == "🏠 Home":
         show_home_page()
     elif mode == "📊 Dashboard":
         show_admin_dashboard()
@@ -3725,6 +3705,8 @@ def main():
         show_ticket_list()
     elif mode == "🛠 Manage Knowledge Base":
         show_admin_kb_editor()
+    elif mode == "ℹ️ About This App":
+        show_about_page()
 
 
 if __name__ == "__main__":
