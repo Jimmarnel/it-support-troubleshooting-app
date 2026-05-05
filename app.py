@@ -4,6 +4,7 @@ import io
 from datetime import datetime, timedelta
 import json
 import os
+import re
 import sqlite3
 import uuid
 
@@ -1927,6 +1928,292 @@ def show_guided_troubleshooting():
             st.error("Issue not found in the Knowledge Base.")
 
 
+
+
+# -----------------------------
+# RELATIONAL KNOWLEDGE BASE ACCESS
+# -----------------------------
+def make_problem_code(title):
+    """Create a stable fallback problem code from a title."""
+    clean_title = re.sub(r"[^A-Za-z0-9]+", "_", title or "").strip("_").upper()
+    return clean_title or "UNNAMED_PROBLEM"
+
+
+def get_kb_child_values(cursor, table_name, column_name, kb_article_id):
+    """Return ordered child values for a KB article."""
+    cursor.execute(
+        f"""
+        SELECT {column_name}
+        FROM {table_name}
+        WHERE kb_article_id = ?
+        ORDER BY sort_order, {column_name}
+        """,
+        (kb_article_id,),
+    )
+    return [row[column_name] for row in cursor.fetchall()]
+
+
+def load_issues_from_relational_kb():
+    """Load Knowledge Base articles from the normalized relational KB tables.
+
+    Returns issue dictionaries compatible with the existing UI.
+    """
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT
+            p.problem_id,
+            p.problem_code,
+            p.title AS problem_title,
+            p.category,
+            p.severity,
+            p.description AS problem_description,
+            kb.kb_article_id,
+            kb.title AS kb_title,
+            kb.summary,
+            kb.difficulty,
+            kb.estimated_time,
+            kb.escalation_required,
+            kb.escalation_notes,
+            kb.updated_at AS kb_updated_at
+        FROM kb_article kb
+        JOIN problem p
+            ON kb.problem_id = p.problem_id
+        WHERE p.is_active = 1
+          AND kb.is_active = 1
+        ORDER BY p.category, p.title
+        """
+    )
+
+    rows = cursor.fetchall()
+    relational_issues = []
+
+    for row in rows:
+        kb_article_id = row["kb_article_id"]
+
+        tags = get_kb_child_values(cursor, "kb_article_tag", "tag", kb_article_id)
+        symptoms = get_kb_child_values(cursor, "kb_article_symptom", "symptom", kb_article_id)
+        causes = get_kb_child_values(cursor, "kb_article_cause", "cause", kb_article_id)
+        user_steps = get_kb_child_values(cursor, "kb_article_user_step", "step_text", kb_article_id)
+        it_steps = get_kb_child_values(cursor, "kb_article_it_step", "step_text", kb_article_id)
+
+        relational_issues.append(
+            {
+                "problem_id": row["problem_id"],
+                "problem_code": row["problem_code"],
+                "title": row["problem_title"],
+                "category": row["category"],
+                "severity": row["severity"],
+                "summary": row["summary"],
+                "tags": tags,
+                "symptoms": symptoms,
+                "causes": causes,
+                "user_steps": user_steps,
+                "it_steps": it_steps,
+                "steps": it_steps or user_steps,
+                "difficulty": row["difficulty"] or "Beginner",
+                "estimated_time": row["estimated_time"] or "5 minutes",
+                "applies_to": tags,
+                "escalation_required": bool(row["escalation_required"]),
+                "escalation_notes": row["escalation_notes"] or "",
+                "last_updated": row["kb_updated_at"] or "",
+            }
+        )
+
+    connection.close()
+    return relational_issues
+
+
+def delete_kb_child_rows(cursor, kb_article_id):
+    """Delete child rows for a KB article before rewriting them."""
+    child_tables = [
+        "kb_article_tag",
+        "kb_article_symptom",
+        "kb_article_cause",
+        "kb_article_user_step",
+        "kb_article_it_step",
+    ]
+
+    for table_name in child_tables:
+        cursor.execute(
+            f"DELETE FROM {table_name} WHERE kb_article_id = ?",
+            (kb_article_id,),
+        )
+
+
+def insert_kb_child_rows(cursor, table_name, column_name, kb_article_id, values):
+    """Insert ordered child rows for a KB article."""
+    clean_values = [value.strip() for value in values if str(value).strip()]
+
+    cursor.executemany(
+        f"""
+        INSERT INTO {table_name} (
+            kb_article_id,
+            {column_name},
+            sort_order
+        )
+        VALUES (?, ?, ?)
+        """,
+        [
+            (kb_article_id, value, index)
+            for index, value in enumerate(clean_values, start=1)
+        ],
+    )
+
+
+def upsert_relational_kb_article(issue):
+    """Insert or update one issue in the normalized relational KB tables."""
+    title = issue.get("title", "").strip()
+    if not title:
+        return
+
+    problem_code = issue.get("problem_code") or PROBLEM_CODE_BY_ISSUE_TITLE.get(title) or make_problem_code(title)
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO problem (
+            problem_code,
+            title,
+            category,
+            severity,
+            description,
+            is_active,
+            updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title = excluded.title,
+            category = excluded.category,
+            severity = excluded.severity,
+            description = excluded.description,
+            is_active = 1,
+            updated_at = CURRENT_TIMESTAMP
+        """,
+        (
+            problem_code,
+            title,
+            issue.get("category", "Uncategorized"),
+            issue.get("severity", "Medium"),
+            issue.get("summary") or f"{title} troubleshooting article.",
+        ),
+    )
+
+    cursor.execute(
+        "SELECT problem_id FROM problem WHERE problem_code = ?",
+        (problem_code,),
+    )
+    problem_row = cursor.fetchone()
+
+    if not problem_row:
+        connection.close()
+        return
+
+    problem_id = problem_row["problem_id"]
+
+    cursor.execute(
+        """
+        INSERT INTO kb_article (
+            problem_id,
+            title,
+            summary,
+            difficulty,
+            estimated_time,
+            escalation_required,
+            escalation_notes,
+            is_active,
+            updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title = excluded.title,
+            summary = excluded.summary,
+            difficulty = excluded.difficulty,
+            estimated_time = excluded.estimated_time,
+            escalation_required = excluded.escalation_required,
+            escalation_notes = excluded.escalation_notes,
+            is_active = 1,
+            updated_at = CURRENT_TIMESTAMP
+        """,
+        (
+            problem_id,
+            title,
+            issue.get("summary") or f"{title} troubleshooting article.",
+            issue.get("difficulty", "Beginner"),
+            issue.get("estimated_time", "5 minutes"),
+            1 if issue.get("escalation_required") else 0,
+            issue.get("escalation_notes", ""),
+        ),
+    )
+
+    cursor.execute(
+        "SELECT kb_article_id FROM kb_article WHERE problem_id = ?",
+        (problem_id,),
+    )
+    article_row = cursor.fetchone()
+
+    if not article_row:
+        connection.close()
+        return
+
+    kb_article_id = article_row["kb_article_id"]
+
+    delete_kb_child_rows(cursor, kb_article_id)
+
+    insert_kb_child_rows(cursor, "kb_article_tag", "tag", kb_article_id, issue.get("tags", []))
+    insert_kb_child_rows(cursor, "kb_article_symptom", "symptom", kb_article_id, issue.get("symptoms", []))
+    insert_kb_child_rows(cursor, "kb_article_cause", "cause", kb_article_id, issue.get("causes", []))
+    insert_kb_child_rows(cursor, "kb_article_user_step", "step_text", kb_article_id, issue.get("user_steps", []))
+    insert_kb_child_rows(cursor, "kb_article_it_step", "step_text", kb_article_id, issue.get("it_steps") or issue.get("steps", []))
+
+    connection.commit()
+    connection.close()
+
+
+def deactivate_relational_kb_article(title):
+    """Deactivate a KB article/problem by title without deleting diagnostic history."""
+    problem_code = PROBLEM_CODE_BY_ISSUE_TITLE.get(title) or make_problem_code(title)
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        UPDATE kb_article
+        SET is_active = 0,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE problem_id = (
+            SELECT problem_id
+            FROM problem
+            WHERE problem_code = ?
+        )
+        """,
+        (problem_code,),
+    )
+
+    cursor.execute(
+        """
+        UPDATE problem
+        SET is_active = 0,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE problem_code = ?
+        """,
+        (problem_code,),
+    )
+
+    connection.commit()
+    connection.close()
+
+
+def sync_relational_kb_from_issues():
+    """Sync the current in-memory issues list into relational KB tables."""
+    for issue in issues:
+        upsert_relational_kb_article(issue)
+
 # -----------------------------
 # KNOWLEDGE BASE STORAGE
 # -----------------------------
@@ -2016,12 +2303,14 @@ def save_issue_to_db(issue):
 
 
 def delete_issue_from_db(title):
-    """Delete one issue from SQLite."""
+    """Delete one issue from the legacy table and deactivate it in relational KB."""
     connection = get_db_connection()
     cursor = connection.cursor()
     cursor.execute("DELETE FROM issues WHERE title = ?", (title,))
     connection.commit()
     connection.close()
+
+    deactivate_relational_kb_article(title)
 
 
 def load_issues_from_db():
@@ -2067,7 +2356,15 @@ def seed_issues_if_empty():
 
 
 def load_issues():
-    """Load Knowledge Base issues from SQLite into the app."""
+    """Load Knowledge Base issues from the normalized relational KB when available."""
+    relational_issues = load_issues_from_relational_kb()
+
+    if relational_issues:
+        issues.clear()
+        issues.extend(relational_issues)
+        return
+
+    # Fallback for older databases that do not have relational KB rows yet.
     seed_issues_if_empty()
     db_issues = load_issues_from_db()
 
@@ -2077,7 +2374,7 @@ def load_issues():
 
 
 def save_issues():
-    """Save the full Knowledge Base to SQLite."""
+    """Save the full Knowledge Base to legacy and relational SQLite tables."""
     connection = get_db_connection()
     cursor = connection.cursor()
     cursor.execute("DELETE FROM issues")
@@ -2086,6 +2383,8 @@ def save_issues():
 
     for issue in issues:
         save_issue_to_db(issue)
+
+    sync_relational_kb_from_issues()
 
 
 # -----------------------------
