@@ -171,13 +171,254 @@ def get_db_connection():
     """Create and return a SQLite database connection."""
     connection = sqlite3.connect(DATABASE_FILE)
     connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA foreign_keys = ON")
     return connection
+
+
+def initialize_relational_knowledge_schema(cursor):
+    """Create relational tables for problems, KB articles, solutions, and diagnostic trees.
+
+    This is the normalized foundation for the next upgrade.
+    The current UI continues to work while we migrate the Knowledge Base
+    and Guided Troubleshooting step by step.
+    """
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS problem (
+            problem_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            problem_code TEXT UNIQUE NOT NULL,
+            title TEXT NOT NULL,
+            category TEXT NOT NULL,
+            severity TEXT NOT NULL DEFAULT 'Medium',
+            description TEXT,
+            is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS solution (
+            solution_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            solution_code TEXT UNIQUE NOT NULL,
+            title TEXT NOT NULL,
+            summary TEXT,
+            resolution_steps TEXT NOT NULL,
+            escalation_required INTEGER NOT NULL DEFAULT 0 CHECK (escalation_required IN (0, 1)),
+            escalation_notes TEXT,
+            priority_recommendation TEXT CHECK (
+                priority_recommendation IN ('low', 'medium', 'high', 'critical')
+            ),
+            is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS diagnostic_node (
+            diagnostic_node_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            parent_diagnostic_node_id INTEGER,
+            problem_id INTEGER,
+            diagnostic_tree_code TEXT NOT NULL,
+            node_key TEXT NOT NULL,
+            node_type TEXT NOT NULL CHECK (
+                node_type IN ('category', 'question', 'check', 'instruction', 'solution')
+            ),
+            title TEXT NOT NULL,
+            description TEXT,
+            prompt_text TEXT,
+            condition_label TEXT,
+            condition_value TEXT,
+            solution_id INTEGER,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+            FOREIGN KEY (parent_diagnostic_node_id)
+                REFERENCES diagnostic_node(diagnostic_node_id)
+                ON DELETE CASCADE,
+
+            FOREIGN KEY (problem_id)
+                REFERENCES problem(problem_id)
+                ON DELETE SET NULL,
+
+            FOREIGN KEY (solution_id)
+                REFERENCES solution(solution_id),
+
+            CONSTRAINT chk_solution_node_requires_solution
+                CHECK (node_type <> 'solution' OR solution_id IS NOT NULL),
+
+            CONSTRAINT chk_non_solution_has_no_solution
+                CHECK (node_type = 'solution' OR solution_id IS NULL),
+
+            UNIQUE (diagnostic_tree_code, node_key)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS kb_article (
+            kb_article_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            problem_id INTEGER UNIQUE NOT NULL,
+            title TEXT NOT NULL,
+            summary TEXT,
+            difficulty TEXT DEFAULT 'Beginner' CHECK (
+                difficulty IN ('Beginner', 'Intermediate', 'Advanced')
+            ),
+            estimated_time TEXT DEFAULT '5 minutes',
+            escalation_required INTEGER NOT NULL DEFAULT 0 CHECK (escalation_required IN (0, 1)),
+            escalation_notes TEXT,
+            is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+            FOREIGN KEY (problem_id)
+                REFERENCES problem(problem_id)
+                ON DELETE CASCADE
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS kb_article_tag (
+            tag_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kb_article_id INTEGER NOT NULL,
+            tag TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+
+            FOREIGN KEY (kb_article_id)
+                REFERENCES kb_article(kb_article_id)
+                ON DELETE CASCADE,
+
+            UNIQUE (kb_article_id, tag)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS kb_article_symptom (
+            symptom_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kb_article_id INTEGER NOT NULL,
+            symptom TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+
+            FOREIGN KEY (kb_article_id)
+                REFERENCES kb_article(kb_article_id)
+                ON DELETE CASCADE
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS kb_article_cause (
+            cause_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kb_article_id INTEGER NOT NULL,
+            cause TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+
+            FOREIGN KEY (kb_article_id)
+                REFERENCES kb_article(kb_article_id)
+                ON DELETE CASCADE
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS kb_article_user_step (
+            user_step_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kb_article_id INTEGER NOT NULL,
+            step_text TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+
+            FOREIGN KEY (kb_article_id)
+                REFERENCES kb_article(kb_article_id)
+                ON DELETE CASCADE
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS kb_article_it_step (
+            it_step_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kb_article_id INTEGER NOT NULL,
+            step_text TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+
+            FOREIGN KEY (kb_article_id)
+                REFERENCES kb_article(kb_article_id)
+                ON DELETE CASCADE
+        )
+    """)
+
+    # Helpful indexes for search, joins, and diagnostic traversal.
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_problem_code ON problem(problem_code)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_problem_category ON problem(category)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_solution_code ON solution(solution_code)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_diagnostic_node_parent ON diagnostic_node(parent_diagnostic_node_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_diagnostic_node_tree ON diagnostic_node(diagnostic_tree_code)")
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_diagnostic_node_tree_parent_sort
+        ON diagnostic_node(diagnostic_tree_code, parent_diagnostic_node_id, sort_order)
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_diagnostic_node_solution ON diagnostic_node(solution_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_kb_article_problem ON kb_article(problem_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_kb_article_tag ON kb_article_tag(tag)")
+
+
+
+# -----------------------------
+# RELATIONAL SEED DATA
+# -----------------------------
+PROBLEM_SEED_DATA = [('NO_INTERNET_CONNECTION', 'No Internet Connection', 'Network', 'High', 'User cannot access the internet from their device.'), ('SOME_WEBSITES_NOT_LOADING', 'Some Websites Not Loading', 'Network', 'Medium', 'User can access the internet, but one or more websites fail to load.'), ('WIFI_DROPS_FREQUENTLY', 'Wi-Fi Drops Frequently', 'Network', 'Medium', 'User reports frequent wireless disconnections or weak signal.'), ('SLOW_INTERNET', 'Slow Internet', 'Performance', 'Medium', 'User reports that internet access works but is unusually slow.'), ('APPLICATION_CRASHING', 'Application Crashing', 'Software', 'High', 'User reports that an application closes unexpectedly, freezes, or displays a crash error.'), ('SOFTWARE_INSTALLATION_FAILURE', 'Software Installation Failure', 'Software', 'Medium', 'User cannot install software or the installer fails.'), ('COMPUTER_RUNNING_SLOW', 'Computer Running Slow', 'System', 'Medium', 'User reports general slowness, lag, or poor computer performance.'), ('DISK_SPACE_FULL', 'Disk Space Full', 'System', 'Medium', 'User reports that the device is out of storage or cannot save files or install updates.'), ('HIGH_CPU_USAGE', 'High CPU Usage', 'System', 'High', 'User reports fan noise, lag, high CPU usage, or system slowness.'), ('VPN_CONNECTION_FAILURE', 'VPN Connection Failure', 'VPN', 'High', 'User cannot connect to VPN or remote access.')]
+
+SOLUTION_SEED_DATA = [('FIX_RECONNECT_NETWORK', 'Reconnect to the Network', 'The device is not connected to Wi-Fi or Ethernet.', 'Ask the user to reconnect to the correct Wi-Fi network or plug in the Ethernet cable. Confirm the device shows an active network connection before testing internet access again.', 0, None, 'low'), ('FIX_RESTART_NETWORK_EQUIPMENT', 'Restart Device and Network Equipment', 'A temporary device, router, modem, or access point issue may be blocking internet access.', 'Ask the user to restart the computer. If working remotely or at home, ask them to restart the router or modem. After the restart, reconnect to the network and test internet access again.', 0, 'Escalate if multiple users are affected or restarting does not restore service.', 'medium'), ('FIX_ESCALATE_NETWORK_OUTAGE', 'Escalate Possible Network Outage', 'Multiple users or systems may be affected by a network outage.', 'Collect the affected location, number of users affected, device names, time the issue began, and any error messages. Escalate to the Network Team.', 1, 'Escalate immediately if multiple users, departments, or business-critical systems are affected.', 'high'), ('FIX_CHECK_DNS_BROWSER', 'Clear Browser Cache and Check DNS', 'The user may have a DNS, browser cache, or site-specific access issue.', 'Ask the user to try another browser, clear browser cache, restart the browser, and test multiple websites. If only specific websites fail, record the affected URLs.', 0, 'Escalate if DNS errors continue or multiple users cannot access the same websites.', 'medium'), ('FIX_ESCALATE_BLOCKED_WEBSITE', 'Escalate Possible Blocked Website', 'The website may be blocked by policy, firewall, DNS filtering, or content filtering.', 'Collect the full website URL, screenshot of the error, user location, network used, and business justification. Escalate to IT Security or Network Team.', 1, 'Do not bypass security filtering without approval.', 'medium'), ('FIX_MOVE_CLOSER_TO_AP', 'Improve Wi-Fi Signal Strength', 'The Wi-Fi connection may be weak or unstable due to distance, interference, or poor signal.', 'Ask the user to move closer to the access point, remove physical obstructions if possible, disconnect and reconnect to Wi-Fi, and test again.', 0, 'Escalate if the issue happens in a known office area or affects multiple users.', 'medium'), ('FIX_FORGET_REJOIN_WIFI', 'Forget and Rejoin Wi-Fi Network', 'The saved Wi-Fi profile may be corrupted or using outdated credentials.', 'Ask the user to forget the Wi-Fi network, reconnect to the correct network, re-enter credentials, and test stability.', 0, None, 'low'), ('FIX_ESCALATE_WIFI_INFRASTRUCTURE', 'Escalate Wi-Fi Infrastructure Issue', 'Wi-Fi drops may be caused by an access point, roaming, interference, or infrastructure issue.', 'Collect location, device name, time of drops, signal strength if available, whether other users are affected, and frequency of disconnects. Escalate to the Network Team.', 1, 'Escalate if multiple users in the same location report drops.', 'high'), ('FIX_CLOSE_BANDWIDTH_APPS', 'Close Bandwidth-Heavy Applications', 'Streaming, large downloads, cloud sync, or video calls may be consuming bandwidth.', 'Ask the user to pause large downloads, close streaming applications, pause cloud sync temporarily, and retest the connection speed.', 0, None, 'low'), ('FIX_RUN_SPEED_TEST_ESCALATE', 'Document Speed Test and Escalate', 'The connection may be slower than expected after basic troubleshooting.', 'Ask the user to run a speed test, record download and upload results, note whether connected by Wi-Fi or Ethernet, and escalate if the speed is significantly below expected service levels.', 1, 'Escalate if multiple users report slow internet or speed is far below the expected baseline.', 'medium'), ('FIX_RESTART_APPLICATION', 'Restart the Application', 'The application may be stuck or temporarily unstable.', 'Ask the user to save work if possible, close the application completely, reopen it, and test again.', 0, None, 'low'), ('FIX_UPDATE_APPLICATION', 'Update or Repair the Application', 'The application may be crashing because it is outdated, corrupted, or missing required components.', 'Ask the user to check for updates. If supported, run the application repair option or reinstall using the approved software source.', 0, 'Escalate if the application requires admin rights or continues crashing after repair.', 'medium'), ('FIX_ESCALATE_APP_CRASH', 'Escalate Application Crash', 'The application crash may require advanced troubleshooting, logs, vendor support, or administrator access.', 'Collect the app name, version, operating system, crash message, screenshots, when the crash occurs, and whether other users are affected. Escalate to the Application Support Team.', 1, 'Escalate immediately if the affected app is business-critical.', 'high'), ('FIX_USE_APPROVED_INSTALLER', 'Use Approved Software Installer', 'The user may be using an unsupported installer or source.', 'Direct the user to the approved software portal or company-provided installer. Retry installation using the approved source.', 0, 'Do not install software from untrusted websites.', 'low'), ('FIX_FREE_SPACE_FOR_INSTALL', 'Free Disk Space and Retry Installation', 'The installation may be failing because the device does not have enough available disk space.', 'Ask the user to remove unnecessary files, empty the recycle bin or trash, and retry installation after confirming sufficient free space.', 0, None, 'medium'), ('FIX_ESCALATE_INSTALL_ADMIN', 'Escalate Installation Requiring Admin Rights', 'The software installation may require administrator privileges, licensing, or endpoint management approval.', 'Collect the software name, version, business reason, installer source, error message, and user device name. Escalate to IT Support or Endpoint Management.', 1, 'Do not share administrator credentials with the user.', 'medium'), ('FIX_RESTART_COMPUTER', 'Restart the Computer', 'The computer may be slow because of a temporary system issue or pending updates.', 'Ask the user to save work, restart the computer, sign back in, and test performance again.', 0, None, 'low'), ('FIX_DISABLE_STARTUP_APPS', 'Reduce Startup Applications', 'Too many startup applications may be slowing the computer.', 'Ask the user to close unnecessary applications. For supported users, review startup applications and disable non-essential startup items according to company policy.', 0, 'Escalate if startup controls require admin access.', 'medium'), ('FIX_ESCALATE_HARDWARE_PERFORMANCE', 'Escalate Possible Hardware Performance Issue', 'The computer may need hardware review, memory upgrade, storage replacement, or deeper endpoint troubleshooting.', 'Collect device name, operating system, available disk space, CPU and memory usage, recent changes, and examples of slow behavior. Escalate to Desktop Support.', 1, 'Escalate if the device is unusable or repeatedly freezes.', 'medium'), ('FIX_EMPTY_TRASH_DOWNLOADS', 'Remove Unneeded Files', 'The disk is full because of accumulated downloads, recycle bin contents, temporary files, or large personal files.', 'Ask the user to empty recycle bin or trash, delete unnecessary downloads, remove duplicate files, and move approved files to cloud or network storage.', 0, None, 'low'), ('FIX_CLEAN_TEMP_FILES', 'Clean Temporary Files', 'Temporary system files may be consuming disk space.', 'Use approved system cleanup tools to remove temporary files, cache, and old update files. Restart the computer and check available space again.', 0, 'Escalate if cleanup requires admin rights or space fills again quickly.', 'medium'), ('FIX_ESCALATE_STORAGE_EXPANSION', 'Escalate Storage Capacity Issue', 'The device may need storage expansion, profile cleanup, or deeper investigation.', 'Collect available disk space, largest folders if known, device name, user role, and business need. Escalate to Desktop Support.', 1, 'Escalate if less than 5 percent disk space remains or the system cannot complete updates.', 'medium'), ('FIX_CLOSE_HIGH_CPU_PROCESS', 'Close High CPU Application', 'One application or process may be consuming excessive CPU.', 'Ask the user to close unnecessary applications. If a specific application is using high CPU, restart that application and retest.', 0, 'Escalate if the high CPU process is security software, system service, or unknown.', 'medium'), ('FIX_REBOOT_AFTER_HIGH_CPU', 'Restart After High CPU Usage', 'High CPU usage may be caused by a stuck process or pending update.', 'Ask the user to save work, restart the computer, and monitor CPU usage after signing back in.', 0, None, 'low'), ('FIX_ESCALATE_MALWARE_OR_ENDPOINT', 'Escalate Possible Malware or Endpoint Issue', 'Unknown processes, repeated high CPU, or suspicious behavior may indicate malware or endpoint management issues.', 'Collect screenshots, process names, device name, user name, recent downloads, and symptoms. Escalate to Security or Endpoint Support.', 1, 'Escalate immediately if suspicious processes, pop-ups, or security alerts are present.', 'high'), ('FIX_CHECK_VPN_CREDENTIALS_MFA', 'Check VPN Credentials and MFA', 'The VPN failure may be caused by incorrect credentials, expired password, or MFA issue.', 'Ask the user to confirm their username, reset or verify password if needed, approve the MFA prompt, and retry VPN login.', 0, 'Escalate if MFA is not received or the account appears locked.', 'medium'), ('FIX_CHANGE_NETWORK_RETRY_VPN', 'Try Another Network for VPN', 'The current network may be blocking or interfering with VPN traffic.', 'Ask the user to try a different network, such as a mobile hotspot, trusted home network, or wired connection. Retry VPN after switching networks.', 0, None, 'medium'), ('FIX_UPDATE_VPN_CLIENT', 'Update or Reinstall VPN Client', 'The VPN client may be outdated, corrupted, or misconfigured.', 'Ask the user to update the VPN client using the approved software source. If needed, reinstall the client according to company instructions.', 0, 'Escalate if installation requires admin rights.', 'medium'), ('FIX_ESCALATE_VPN_SUPPORT', 'Escalate VPN Connection Failure', 'The VPN issue may require account, network, certificate, or client configuration review.', 'Collect username, device name, VPN client version, error message, network type, time of failure, MFA status, and screenshots. Escalate to Network or VPN Support.', 1, 'Escalate immediately if multiple users cannot connect to VPN.', 'high')]
+
+
+def seed_problem_and_solution_data(cursor):
+    """Seed stable problem and solution reference data.
+
+    This step only inserts into the new relational tables:
+    - problem
+    - solution
+
+    It uses INSERT OR IGNORE so app restarts do not duplicate rows or
+    rewrite timestamps.
+    """
+
+    cursor.executemany(
+        """
+        INSERT OR IGNORE INTO problem (
+            problem_code,
+            title,
+            category,
+            severity,
+            description
+        )
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        PROBLEM_SEED_DATA,
+    )
+
+    cursor.executemany(
+        """
+        INSERT OR IGNORE INTO solution (
+            solution_code,
+            title,
+            summary,
+            resolution_steps,
+            escalation_required,
+            escalation_notes,
+            priority_recommendation
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        SOLUTION_SEED_DATA,
+    )
 
 
 def initialize_database():
     """Create SQLite tables if they do not already exist."""
     connection = get_db_connection()
     cursor = connection.cursor()
+
+    initialize_relational_knowledge_schema(cursor)
+    seed_problem_and_solution_data(cursor)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -1350,11 +1591,13 @@ def run_guided_flow(flow_name):
 
         answer = st.radio(
             question["text"],
-            ["Select"] + question["options"],
+            question["options"],
+            index=None,
             key=f"{flow_name}_{current_question_id}",
         )
 
-        if answer == "Select":
+        if answer is None:
+            st.info("Select an option to continue.")
             st.stop()
 
         answer_config = question["answers"][answer]
@@ -1375,19 +1618,30 @@ def run_auto_guided_flow(issue):
     """Create a simple guided flow automatically from knowledge base issue data."""
     st.subheader(f"🧭 {issue['title']} Guided Flow")
 
-    st.info("This guided flow is auto-generated from the Knowledge Base data.")
+    st.info("Review the symptoms first, then answer the question below.")
+
+    st.write("**Category:**", issue["category"])
+    show_severity(issue["severity"])
+    if "show_issue_metadata" in globals():
+        show_issue_metadata(issue)
+
+    with st.expander("👁 View Symptoms", expanded=True):
+        symptoms = issue.get("symptoms", [])
+        if symptoms:
+            for symptom in symptoms:
+                st.write("-", symptom)
+        else:
+            st.write("No symptoms listed for this issue.")
 
     has_symptoms = st.radio(
         "Is the user experiencing one or more of these symptoms?",
-        ["Select", "Yes", "No"],
+        ["Yes", "No"],
+        index=None,
         key=f"auto_{issue['title']}_symptoms",
     )
 
-    with st.expander("View symptoms"):
-        for symptom in issue["symptoms"]:
-            st.write("-", symptom)
-
-    if has_symptoms == "Select":
+    if has_symptoms is None:
+        st.info("Select Yes or No to continue.")
         st.stop()
 
     if has_symptoms == "No":
@@ -1396,23 +1650,22 @@ def run_auto_guided_flow(issue):
             "info",
             [
                 "Do not worry if you are unsure about the exact symptoms",
-                "Create a support ticket and describe what happened in your own words",
-                "Include details such as when it started, what you were trying to do, and any error message you saw",
-                "An IT technician can review the ticket and identify the correct issue",
+                "Return to the issue list and choose a closer match",
+                "Create a support ticket and describe what happened in your own words if you are not sure",
+                "Include when it started, what you were trying to do, and any error message you saw",
             ],
         )
         return
 
     confirmed_scope = st.radio(
-        "Does the issue match this category and severity?",
-        ["Select", "Yes", "No / Not sure"],
+        "Does this issue category and severity look correct?",
+        ["Yes", "No / Not sure"],
+        index=None,
         key=f"auto_{issue['title']}_scope",
     )
 
-    st.write("**Category:**", issue["category"])
-    show_severity(issue["severity"])
-
-    if confirmed_scope == "Select":
+    if confirmed_scope is None:
+        st.info("Select Yes or No / Not sure to continue.")
         st.stop()
 
     if confirmed_scope == "No / Not sure":
@@ -1423,6 +1676,7 @@ def run_auto_guided_flow(issue):
                 "Confirm when the issue started",
                 "Check whether one user or multiple users are affected",
                 "Review recent changes, updates, or outages",
+                "Create a support ticket if you are unsure how to proceed",
             ],
         )
         return
@@ -1445,8 +1699,12 @@ def run_auto_guided_flow(issue):
         )
 
     with st.expander("Possible causes"):
-        for cause in issue["causes"]:
-            st.write("-", cause)
+        causes = issue.get("causes", [])
+        if causes:
+            for cause in causes:
+                st.write("-", cause)
+        else:
+            st.write("No possible causes listed for this issue.")
 
 
 def show_guided_troubleshooting():
@@ -1455,12 +1713,13 @@ def show_guided_troubleshooting():
     issue_titles = [issue["title"] for issue in issues]
 
     selected_issue = st.selectbox(
-        "Select an issue to troubleshoot:",
-        ["None"] + issue_titles,
+        "Select an issue",
+        ["Other"] + issue_titles,
+        help="Choose the issue that best matches your problem.",
     )
 
-    if selected_issue == "None":
-        st.info("Select an issue to begin guided troubleshooting.")
+    if selected_issue == "Other":
+        st.info("Select a known issue from the list, or create a support ticket if your issue is not listed.")
         return
 
     if selected_issue in guided_flows:
@@ -3631,7 +3890,6 @@ def main():
         logout_user()
         st.rerun()
 
-
     tickets = st.session_state.get("tickets", [])
 
     if st.session_state.get("role") == "Admin":
@@ -3654,14 +3912,15 @@ def main():
             "🎫 Create Ticket",
             build_menu_label("📋 View Tickets", admin_notifications["unread_updates"]),
             "🛠 Manage Knowledge Base",
-
         ]
     else:
         username = st.session_state.get("username")
         user_notifications = get_user_notification_counts(tickets, username)
 
         if user_notifications["total"] > 0:
-            st.sidebar.warning(f"🔔 You have {user_notifications['total']} unread ticket update(s).")
+            st.sidebar.warning(
+                f"🔔 You have {user_notifications['total']} unread ticket update(s)."
+            )
 
         menu_options = [
             "ℹ️ About This App",
@@ -3689,7 +3948,9 @@ def main():
         unsafe_allow_html=True,
     )
 
-    if mode == "🏠 Home":
+    if mode == "ℹ️ About This App":
+        show_about_page()
+    elif mode == "🏠 Home":
         show_home_page()
     elif mode == "📊 Dashboard":
         show_admin_dashboard()
@@ -3705,8 +3966,6 @@ def main():
         show_ticket_list()
     elif mode == "🛠 Manage Knowledge Base":
         show_admin_kb_editor()
-    elif mode == "ℹ️ About This App":
-        show_about_page()
 
 
 if __name__ == "__main__":
