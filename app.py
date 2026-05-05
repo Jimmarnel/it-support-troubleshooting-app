@@ -412,6 +412,181 @@ def seed_problem_and_solution_data(cursor):
     )
 
 
+# -----------------------------
+# RELATIONAL KNOWLEDGE BASE SEED DATA
+# -----------------------------
+PROBLEM_CODE_BY_ISSUE_TITLE = {
+    "No Internet Connection": "NO_INTERNET_CONNECTION",
+    "Some Websites Not Loading": "SOME_WEBSITES_NOT_LOADING",
+    "Wi-Fi Drops Frequently": "WIFI_DROPS_FREQUENTLY",
+    "Slow Internet": "SLOW_INTERNET",
+    "Application Crashing": "APPLICATION_CRASHING",
+    "Software Installation Failure": "SOFTWARE_INSTALLATION_FAILURE",
+    "Computer Running Slow": "COMPUTER_RUNNING_SLOW",
+    "Disk Space Full": "DISK_SPACE_FULL",
+    "High CPU Usage": "HIGH_CPU_USAGE",
+    "VPN Connection Failure": "VPN_CONNECTION_FAILURE",
+}
+
+
+def get_problem_id_by_code(cursor, problem_code):
+    """Return the problem_id for a stable problem_code."""
+    cursor.execute(
+        "SELECT problem_id FROM problem WHERE problem_code = ?",
+        (problem_code,),
+    )
+    row = cursor.fetchone()
+    return row["problem_id"] if row else None
+
+
+def get_kb_article_id_by_problem_id(cursor, problem_id):
+    """Return the kb_article_id for a problem_id."""
+    cursor.execute(
+        "SELECT kb_article_id FROM kb_article WHERE problem_id = ?",
+        (problem_id,),
+    )
+    row = cursor.fetchone()
+    return row["kb_article_id"] if row else None
+
+
+def table_has_kb_rows(cursor, table_name, kb_article_id):
+    """Check whether a KB child table already has rows for an article."""
+    cursor.execute(
+        f"SELECT COUNT(*) AS count FROM {table_name} WHERE kb_article_id = ?",
+        (kb_article_id,),
+    )
+    return cursor.fetchone()["count"] > 0
+
+
+def seed_kb_child_rows(cursor, table_name, text_column, kb_article_id, values):
+    """Seed ordered KB child rows without duplicating existing rows."""
+    clean_values = [value for value in values if value]
+
+    if not clean_values:
+        return
+
+    if table_has_kb_rows(cursor, table_name, kb_article_id):
+        return
+
+    cursor.executemany(
+        f"""
+        INSERT INTO {table_name} (
+            kb_article_id,
+            {text_column},
+            sort_order
+        )
+        VALUES (?, ?, ?)
+        """,
+        [
+            (kb_article_id, value, index)
+            for index, value in enumerate(clean_values, start=1)
+        ],
+    )
+
+
+def seed_kb_tags(cursor, kb_article_id, tags):
+    """Seed KB tags without duplicates."""
+    clean_tags = [tag for tag in tags if tag]
+
+    if not clean_tags:
+        return
+
+    cursor.executemany(
+        """
+        INSERT OR IGNORE INTO kb_article_tag (
+            kb_article_id,
+            tag,
+            sort_order
+        )
+        VALUES (?, ?, ?)
+        """,
+        [
+            (kb_article_id, tag, index)
+            for index, tag in enumerate(clean_tags, start=1)
+        ],
+    )
+
+
+def seed_relational_kb_articles(cursor):
+    """Seed relational KB article data from the current in-code issues list.
+
+    This step populates:
+    - kb_article
+    - kb_article_tag
+    - kb_article_symptom
+    - kb_article_cause
+    - kb_article_user_step
+    - kb_article_it_step
+
+    It only seeds the 10 problems that already exist in the new relational
+    problem table. Existing rows are preserved to avoid overwriting future
+    admin edits.
+    """
+
+    for issue in issues:
+        problem_code = PROBLEM_CODE_BY_ISSUE_TITLE.get(issue.get("title"))
+        if not problem_code:
+            continue
+
+        problem_id = get_problem_id_by_code(cursor, problem_code)
+        if not problem_id:
+            continue
+
+        title = issue.get("title", "")
+        category = issue.get("category", "")
+        severity = issue.get("severity", "Medium")
+        symptoms = issue.get("symptoms", [])
+        causes = issue.get("causes", [])
+        tags = issue.get("tags", [])
+
+        summary = (
+            f"{title} troubleshooting article for {category.lower()} issues."
+            if category
+            else f"{title} troubleshooting article."
+        )
+
+        difficulty = issue.get("difficulty", "Beginner")
+        estimated_time = issue.get("estimated_time", "5 minutes")
+        escalation_required = 1 if issue.get("escalation_required") or severity == "High" else 0
+
+        cursor.execute(
+            """
+            INSERT OR IGNORE INTO kb_article (
+                problem_id,
+                title,
+                summary,
+                difficulty,
+                estimated_time,
+                escalation_required,
+                escalation_notes
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                problem_id,
+                title,
+                summary,
+                difficulty,
+                estimated_time,
+                escalation_required,
+                "Escalate if multiple users are affected, the issue is business-critical, or basic troubleshooting fails.",
+            ),
+        )
+
+        kb_article_id = get_kb_article_id_by_problem_id(cursor, problem_id)
+        if not kb_article_id:
+            continue
+
+        user_steps = issue.get("user_steps") or get_user_friendly_steps(issue)
+        it_steps = issue.get("it_steps") or issue.get("steps", [])
+
+        seed_kb_tags(cursor, kb_article_id, tags)
+        seed_kb_child_rows(cursor, "kb_article_symptom", "symptom", kb_article_id, symptoms)
+        seed_kb_child_rows(cursor, "kb_article_cause", "cause", kb_article_id, causes)
+        seed_kb_child_rows(cursor, "kb_article_user_step", "step_text", kb_article_id, user_steps)
+        seed_kb_child_rows(cursor, "kb_article_it_step", "step_text", kb_article_id, it_steps)
+
+
 def initialize_database():
     """Create SQLite tables if they do not already exist."""
     connection = get_db_connection()
@@ -419,6 +594,7 @@ def initialize_database():
 
     initialize_relational_knowledge_schema(cursor)
     seed_problem_and_solution_data(cursor)
+    seed_relational_kb_articles(cursor)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
