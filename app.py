@@ -347,6 +347,56 @@ def initialize_relational_knowledge_schema(cursor):
         )
     """)
 
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS diagnostic_tree (
+            diagnostic_tree_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            problem_id INTEGER,
+            diagnostic_tree_code TEXT UNIQUE NOT NULL,
+            base_tree_code TEXT NOT NULL,
+            audience TEXT NOT NULL CHECK (
+                audience IN ('user', 'technician', 'admin')
+            ),
+            title TEXT NOT NULL,
+            description TEXT,
+            is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+            FOREIGN KEY (problem_id)
+                REFERENCES problem(problem_id)
+                ON DELETE CASCADE
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS solution_step (
+            solution_step_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            solution_id INTEGER NOT NULL,
+            audience TEXT NOT NULL CHECK (
+                audience IN ('user', 'technician', 'admin')
+            ),
+            step_text TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+            FOREIGN KEY (solution_id)
+                REFERENCES solution(solution_id)
+                ON DELETE CASCADE
+        )
+    """)
+
+    cursor.execute("PRAGMA table_info(diagnostic_node)")
+    diagnostic_node_columns = [column[1] for column in cursor.fetchall()]
+    if "diagnostic_tree_id" not in diagnostic_node_columns:
+        cursor.execute("ALTER TABLE diagnostic_node ADD COLUMN diagnostic_tree_id INTEGER")
+
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_diagnostic_tree_code ON diagnostic_tree(diagnostic_tree_code)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_diagnostic_tree_base_audience ON diagnostic_tree(base_tree_code, audience)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_solution_step_solution_audience ON solution_step(solution_id, audience)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_diagnostic_node_tree_id ON diagnostic_node(diagnostic_tree_id)")
+
     # Helpful indexes for search, joins, and diagnostic traversal.
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_problem_code ON problem(problem_code)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_problem_category ON problem(category)")
@@ -615,6 +665,7 @@ def initialize_database():
     seed_problem_and_solution_data(cursor)
     seed_diagnostic_node_data(cursor)
     seed_relational_kb_articles(cursor)
+    seed_audience_diagnostic_support(cursor)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -1547,6 +1598,565 @@ def show_issue_card(issue, search_score=None):
         show_role_based_steps(issue)
 
 
+
+
+# -----------------------------
+# RELATIONAL DIAGNOSTIC AUDIENCE HELPERS
+# -----------------------------
+def get_problem_id_for_tree_code(cursor, tree_code):
+    """Return problem_id for a diagnostic tree code."""
+    cursor.execute(
+        "SELECT problem_id FROM problem WHERE problem_code = ?",
+        (tree_code,),
+    )
+    row = cursor.fetchone()
+    return row["problem_id"] if row else None
+
+
+def seed_diagnostic_tree_records(cursor):
+    """Create one user-facing diagnostic_tree record per seeded diagnostic tree.
+
+    Existing diagnostic_node rows use diagnostic_tree_code directly. This migration
+    preserves them and links all nodes to a new diagnostic_tree row with audience='user'.
+    """
+
+    cursor.execute(
+        """
+        SELECT
+            diagnostic_tree_code,
+            MIN(title) AS title,
+            MIN(description) AS description
+        FROM diagnostic_node
+        WHERE parent_diagnostic_node_id IS NULL
+        GROUP BY diagnostic_tree_code
+        """
+    )
+    root_rows = cursor.fetchall()
+
+    for row in root_rows:
+        base_tree_code = row["diagnostic_tree_code"]
+        user_tree_code = f"{base_tree_code}_USER"
+        problem_id = get_problem_id_for_tree_code(cursor, base_tree_code)
+
+        cursor.execute(
+            """
+            INSERT OR IGNORE INTO diagnostic_tree (
+                problem_id,
+                diagnostic_tree_code,
+                base_tree_code,
+                audience,
+                title,
+                description
+            )
+            VALUES (?, ?, ?, 'user', ?, ?)
+            """,
+            (
+                problem_id,
+                user_tree_code,
+                base_tree_code,
+                row["title"] or base_tree_code.replace("_", " ").title(),
+                row["description"] or "User-facing diagnostic tree.",
+            ),
+        )
+
+        cursor.execute(
+            """
+            SELECT diagnostic_tree_id
+            FROM diagnostic_tree
+            WHERE diagnostic_tree_code = ?
+            """,
+            (user_tree_code,),
+        )
+        tree_row = cursor.fetchone()
+
+        if tree_row:
+            cursor.execute(
+                """
+                UPDATE diagnostic_node
+                SET diagnostic_tree_id = ?
+                WHERE diagnostic_tree_code = ?
+                  AND diagnostic_tree_id IS NULL
+                """,
+                (tree_row["diagnostic_tree_id"], base_tree_code),
+            )
+
+
+def seed_solution_steps_from_solution_text(cursor):
+    """Seed solution_step rows from existing solution.resolution_steps text.
+
+    Existing solution records keep their original resolution_steps field, but this
+    creates normalized user-facing solution steps for role-aware display.
+    """
+
+    cursor.execute(
+        """
+        SELECT solution_id, resolution_steps
+        FROM solution
+        WHERE is_active = 1
+        """
+    )
+    rows = cursor.fetchall()
+
+    for row in rows:
+        solution_id = row["solution_id"]
+
+        cursor.execute(
+            """
+            SELECT COUNT(*) AS count
+            FROM solution_step
+            WHERE solution_id = ?
+              AND audience = 'user'
+            """,
+            (solution_id,),
+        )
+        if cursor.fetchone()["count"] > 0:
+            continue
+
+        raw_steps = row["resolution_steps"] or ""
+        steps = [
+            step.strip(" -•\t")
+            for step in raw_steps.splitlines()
+            if step.strip(" -•\t")
+        ]
+
+        if not steps and raw_steps.strip():
+            steps = [raw_steps.strip()]
+
+        cursor.executemany(
+            """
+            INSERT INTO solution_step (
+                solution_id,
+                audience,
+                step_text,
+                sort_order
+            )
+            VALUES (?, 'user', ?, ?)
+            """,
+            [
+                (solution_id, step_text, index)
+                for index, step_text in enumerate(steps, start=1)
+            ],
+        )
+
+
+def seed_audience_diagnostic_support(cursor):
+    """Seed/migrate audience-aware diagnostic and solution-step support."""
+    seed_diagnostic_tree_records(cursor)
+    seed_solution_steps_from_solution_text(cursor)
+
+
+# -----------------------------
+# RELATIONAL DIAGNOSTIC TREE ACCESS
+# -----------------------------
+
+
+def get_current_diagnostic_audience():
+    """Return the diagnostic audience based on the logged-in role."""
+    role = st.session_state.get("role", "User")
+
+    if role == "Admin":
+        return "admin"
+
+    # Future technician role can be added without changing the engine.
+    if role == "Technician":
+        return "technician"
+
+    return "user"
+
+
+def get_audience_fallback_order(audience):
+    """Return fallback order for diagnostic tree/solution-step lookup."""
+    if audience == "admin":
+        return ["admin", "technician", "user"]
+    if audience == "technician":
+        return ["technician", "user"]
+    return ["user"]
+
+
+def get_solution_steps_by_audience(solution_id, audience):
+    """Return normalized solution steps for the best available audience."""
+    if not solution_id:
+        return []
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    for candidate_audience in get_audience_fallback_order(audience):
+        cursor.execute(
+            """
+            SELECT step_text
+            FROM solution_step
+            WHERE solution_id = ?
+              AND audience = ?
+            ORDER BY sort_order, solution_step_id
+            """,
+            (solution_id, candidate_audience),
+        )
+        rows = cursor.fetchall()
+
+        if rows:
+            connection.close()
+            return [row["step_text"] for row in rows]
+
+    connection.close()
+    return []
+
+def get_available_diagnostic_trees():
+    """Return active diagnostic trees for the current audience."""
+    audience = get_current_diagnostic_audience()
+    fallback_audiences = get_audience_fallback_order(audience)
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    placeholders = ",".join(["?"] * len(fallback_audiences))
+
+    cursor.execute(
+        f"""
+        SELECT
+            dt.diagnostic_tree_code,
+            dt.base_tree_code,
+            dt.audience,
+            dt.title,
+            dt.description,
+            p.title AS problem_title,
+            p.category,
+            p.severity
+        FROM diagnostic_tree dt
+        LEFT JOIN problem p
+            ON dt.problem_id = p.problem_id
+        WHERE dt.is_active = 1
+          AND dt.audience IN ({placeholders})
+        ORDER BY
+            CASE dt.audience
+                WHEN ? THEN 0
+                WHEN 'technician' THEN 1
+                WHEN 'user' THEN 2
+                ELSE 3
+            END,
+            COALESCE(p.category, ''),
+            COALESCE(p.title, dt.title)
+        """,
+        fallback_audiences + [audience],
+    )
+
+    rows = cursor.fetchall()
+    connection.close()
+
+    return [dict(row) for row in rows]
+
+
+def diagnostic_tree_exists(tree_code):
+    """Check whether a diagnostic tree exists for the current audience."""
+    return get_diagnostic_tree_record(tree_code) is not None
+
+
+def get_diagnostic_tree_record(base_tree_code):
+    """Return the best diagnostic_tree record for a base tree code and current audience."""
+    if not base_tree_code:
+        return None
+
+    audience = get_current_diagnostic_audience()
+    fallback_audiences = get_audience_fallback_order(audience)
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    for candidate_audience in fallback_audiences:
+        cursor.execute(
+            """
+            SELECT *
+            FROM diagnostic_tree
+            WHERE base_tree_code = ?
+              AND audience = ?
+              AND is_active = 1
+            LIMIT 1
+            """,
+            (base_tree_code, candidate_audience),
+        )
+        row = cursor.fetchone()
+
+        if row:
+            connection.close()
+            return dict(row)
+
+    connection.close()
+    return None
+
+
+def get_diagnostic_root_node(tree_code):
+    """Return the root diagnostic node for the best available audience tree."""
+    tree_record = get_diagnostic_tree_record(tree_code)
+
+    if not tree_record:
+        return None
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT *
+        FROM diagnostic_node
+        WHERE diagnostic_tree_id = ?
+          AND parent_diagnostic_node_id IS NULL
+          AND is_active = 1
+        ORDER BY sort_order, diagnostic_node_id
+        LIMIT 1
+        """,
+        (tree_record["diagnostic_tree_id"],),
+    )
+
+    row = cursor.fetchone()
+    connection.close()
+    return dict(row) if row else None
+
+
+def get_diagnostic_node(node_id):
+    """Return a diagnostic node by ID."""
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT *
+        FROM diagnostic_node
+        WHERE diagnostic_node_id = ?
+          AND is_active = 1
+        """,
+        (node_id,),
+    )
+
+    row = cursor.fetchone()
+    connection.close()
+    return dict(row) if row else None
+
+
+def get_child_diagnostic_nodes(parent_node_id):
+    """Return active child diagnostic nodes ordered for display."""
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT *
+        FROM diagnostic_node
+        WHERE parent_diagnostic_node_id = ?
+          AND is_active = 1
+        ORDER BY sort_order, diagnostic_node_id
+        """,
+        (parent_node_id,),
+    )
+
+    rows = cursor.fetchall()
+    connection.close()
+    return [dict(row) for row in rows]
+
+
+def get_solution_by_id(solution_id):
+    """Return a solution by ID."""
+    if not solution_id:
+        return None
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT *
+        FROM solution
+        WHERE solution_id = ?
+          AND is_active = 1
+        """,
+        (solution_id,),
+    )
+
+    row = cursor.fetchone()
+    connection.close()
+    return dict(row) if row else None
+
+
+def get_solution_priority_label(priority):
+    """Normalize solution priority label for display."""
+    if not priority:
+        return "Medium"
+
+    mapping = {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "critical": "Critical",
+    }
+    return mapping.get(str(priority).lower(), "Medium")
+
+
+def display_diagnostic_solution(solution):
+    """Display a terminal solution from the relational solution table."""
+    if not solution:
+        st.error("No solution record was found for this diagnostic result.")
+        return
+
+    priority = get_solution_priority_label(solution.get("priority_recommendation"))
+
+    st.success(f"✅ Recommended Solution: {solution.get('title', 'Solution')}")
+
+    if solution.get("summary"):
+        st.write(solution["summary"])
+
+    show_priority_badge(priority)
+
+    if solution.get("escalation_required"):
+        st.warning("🚨 Escalation recommended")
+        if solution.get("escalation_notes"):
+            st.write(solution["escalation_notes"])
+    else:
+        st.info("This solution can usually be attempted before escalation.")
+
+    st.write("**Resolution Steps:**")
+    audience = get_current_diagnostic_audience()
+    normalized_steps = get_solution_steps_by_audience(solution.get("solution_id"), audience)
+
+    if normalized_steps:
+        for step in normalized_steps:
+            st.write("-", step)
+    else:
+        for step in str(solution.get("resolution_steps", "")).splitlines():
+            clean_step = step.strip()
+            if clean_step:
+                st.write("-", clean_step)
+
+    st.divider()
+    st.write("**Did this solve the issue?**")
+
+    col_yes, col_no = st.columns(2)
+
+    with col_yes:
+        if st.button("✅ Yes, issue resolved", key=f"resolved_{solution.get('solution_code')}"):
+            st.success("Great. No ticket is needed if the issue is resolved.")
+
+    with col_no:
+        if st.button("🎫 No, create a support ticket", key=f"create_ticket_{solution.get('solution_code')}"):
+            st.session_state["prefill_ticket_issue"] = solution.get("title", "")
+            st.session_state["prefill_ticket_description"] = (
+                f"Diagnostic result: {solution.get('title', '')}\n\n"
+                f"Summary: {solution.get('summary', '')}\n\n"
+                f"Attempted steps:\n{solution.get('resolution_steps', '')}"
+            )
+            st.session_state["prefill_ticket_severity"] = priority if priority in ["Low", "Medium", "High"] else "High"
+            st.info("Go to Create Ticket. The ticket fields will be pre-filled with the diagnostic result.")
+
+
+def run_relational_diagnostic_tree(tree_code, issue_title=None):
+    """Run a database-driven diagnostic tree."""
+    root = get_diagnostic_root_node(tree_code)
+
+    if not root:
+        st.error("No diagnostic tree found for this issue.")
+        return
+
+    session_key = f"diagnostic_current_node_{tree_code}"
+    path_key = f"diagnostic_path_{tree_code}"
+
+    if session_key not in st.session_state:
+        st.session_state[session_key] = root["diagnostic_node_id"]
+        st.session_state[path_key] = []
+
+    st.subheader(f"🧭 {issue_title or root.get('title', 'Guided Diagnostic')}")
+
+    current_audience = get_current_diagnostic_audience()
+    st.caption(f"Diagnostic audience: {current_audience.title()}")
+
+    if st.button("🔄 Restart diagnostic", key=f"restart_diag_{tree_code}"):
+        st.session_state[session_key] = root["diagnostic_node_id"]
+        st.session_state[path_key] = []
+        st.rerun()
+
+    current_node = get_diagnostic_node(st.session_state[session_key])
+
+    if not current_node:
+        st.error("Diagnostic node could not be loaded.")
+        return
+
+    # Root/category nodes usually just introduce the tree. Move automatically to first child.
+    if current_node["node_type"] == "category":
+        if current_node.get("description"):
+            st.info(current_node["description"])
+
+        children = get_child_diagnostic_nodes(current_node["diagnostic_node_id"])
+
+        if not children:
+            st.warning("This diagnostic tree has no questions yet.")
+            return
+
+        first_child = children[0]
+        st.session_state[session_key] = first_child["diagnostic_node_id"]
+        st.rerun()
+
+    if current_node["node_type"] == "solution":
+        solution = get_solution_by_id(current_node.get("solution_id"))
+
+        if current_node.get("condition_label") and current_node.get("condition_value"):
+            st.caption(f"Based on: {current_node['condition_label']} → {current_node['condition_value']}")
+
+        display_diagnostic_solution(solution)
+
+        with st.expander("Diagnostic path"):
+            for step in st.session_state.get(path_key, []):
+                st.write(f"- {step}")
+
+        return
+
+    # Question/check/instruction nodes.
+    if current_node.get("title"):
+        st.markdown(f"### {current_node['title']}")
+
+    if current_node.get("description"):
+        st.write(current_node["description"])
+
+    prompt = current_node.get("prompt_text") or "Choose the option that best matches the situation:"
+    st.write(f"**{prompt}**")
+
+    children = get_child_diagnostic_nodes(current_node["diagnostic_node_id"])
+
+    if not children:
+        st.warning("No next diagnostic steps are configured for this node.")
+        return
+
+    option_labels = []
+    option_by_label = {}
+
+    for child in children:
+        label = child.get("condition_value") or child.get("title") or f"Option {child['diagnostic_node_id']}"
+
+        # Keep labels unique for Streamlit radio.
+        display_label = label
+        counter = 2
+        while display_label in option_by_label:
+            display_label = f"{label} ({counter})"
+            counter += 1
+
+        option_labels.append(display_label)
+        option_by_label[display_label] = child
+
+    selected_label = st.radio(
+        "Select an answer",
+        option_labels,
+        index=None,
+        key=f"diag_answer_{current_node['diagnostic_node_id']}",
+    )
+
+    if selected_label is None:
+        st.info("Select an answer to continue.")
+        return
+
+    selected_child = option_by_label[selected_label]
+
+    if st.button("Continue", key=f"diag_continue_{current_node['diagnostic_node_id']}"):
+        condition_value = selected_child.get("condition_value") or selected_label
+        st.session_state[path_key].append(f"{prompt} → {condition_value}")
+        st.session_state[session_key] = selected_child["diagnostic_node_id"]
+        st.rerun()
+
 # -----------------------------
 # GUIDED TROUBLESHOOTING DATA
 # -----------------------------
@@ -1918,14 +2528,24 @@ def show_guided_troubleshooting():
         st.info("Select a known issue from the list, or create a support ticket if your issue is not listed.")
         return
 
+    issue = find_issue_by_title(selected_issue)
+
+    if not issue:
+        st.error("Issue not found in the Knowledge Base.")
+        return
+
+    tree_code = issue.get("problem_code") or PROBLEM_CODE_BY_ISSUE_TITLE.get(selected_issue) or make_problem_code(selected_issue)
+
+    if diagnostic_tree_exists(tree_code):
+        st.caption("Using database-driven diagnostic tree.")
+        run_relational_diagnostic_tree(tree_code, selected_issue)
+        return
+
+    # Fallback for issues that do not yet have a relational diagnostic tree.
     if selected_issue in guided_flows:
         run_guided_flow(selected_issue)
     else:
-        issue = find_issue_by_title(selected_issue)
-        if issue:
-            run_auto_guided_flow(issue)
-        else:
-            st.error("Issue not found in the Knowledge Base.")
+        run_auto_guided_flow(issue)
 
 
 
@@ -3064,9 +3684,20 @@ def show_ticket_form():
         st.caption(f"Email: {current_email}")
 
     with st.form("ticket_form"):
-        issue_title = st.text_input("Issue Title")
-        description = st.text_area("Describe the issue")
-        severity = st.selectbox("Severity", ["Low", "Medium", "High"])
+        prefill_issue = st.session_state.pop("prefill_ticket_issue", "")
+        prefill_description = st.session_state.pop("prefill_ticket_description", "")
+        prefill_severity = st.session_state.pop("prefill_ticket_severity", "Medium")
+        severity_options = ["Low", "Medium", "High"]
+        if prefill_severity not in severity_options:
+            prefill_severity = "Medium"
+
+        issue_title = st.text_input("Issue Title", value=prefill_issue)
+        description = st.text_area("Describe the issue", value=prefill_description)
+        severity = st.selectbox(
+            "Severity",
+            severity_options,
+            index=severity_options.index(prefill_severity),
+        )
         uploaded_files = st.file_uploader(
             "Attach screenshots or log files (optional)",
             type=["png", "jpg", "jpeg", "txt", "log", "pdf"],
