@@ -3651,8 +3651,10 @@ def run_relational_diagnostic_tree(tree_code, issue_title=None):
         st.rerun()
 
 # -----------------------------
-# GUIDED TROUBLESHOOTING DATA
+# LEGACY GUIDED TROUBLESHOOTING DATA
 # -----------------------------
+# Kept only as historical/reference data during migration.
+# The active Guided Troubleshooting page now uses relational diagnostic trees.
 guided_flows = {
     "No Internet Connection": {
         "subtitle": "🔌 No Internet Connection Flow",
@@ -4006,10 +4008,48 @@ def run_auto_guided_flow(issue):
             st.write("No possible causes listed for this issue.")
 
 
+
+def get_relational_diagnostic_issue_titles():
+    """Return Knowledge Base issue titles that have relational diagnostic trees."""
+    titles = []
+
+    for issue in issues:
+        tree_code = issue.get("problem_code") or PROBLEM_CODE_BY_ISSUE_TITLE.get(issue.get("title")) or make_problem_code(issue.get("title"))
+        if diagnostic_tree_exists(tree_code):
+            titles.append(issue.get("title"))
+
+    return titles
+
+
+def show_no_diagnostic_tree_message(issue):
+    """Show a clear fallback message when no relational diagnostic tree exists."""
+    st.warning("No database-driven diagnostic tree is available for this issue yet.")
+
+    st.info(
+        "You can still review the Knowledge Base guidance below. "
+        "If the issue continues, create a support ticket and include what was already tried."
+    )
+
+    st.write("**Knowledge Base Guidance:**")
+    show_role_based_steps(issue)
+
+    if issue.get("causes"):
+        with st.expander("Possible causes"):
+            for cause in issue.get("causes", []):
+                st.write("-", cause)
+
 def show_guided_troubleshooting():
     st.title("🧭 Guided Troubleshooting Assistant")
 
     issue_titles = [issue["title"] for issue in issues]
+    diagnostic_issue_titles = get_relational_diagnostic_issue_titles()
+
+    if diagnostic_issue_titles:
+        st.success(
+            f"Database-driven diagnostics available for {len(diagnostic_issue_titles)} issue(s)."
+        )
+    else:
+        st.warning("No database-driven diagnostic trees are available yet.")
 
     selected_issue = st.selectbox(
         "Select an issue",
@@ -4034,13 +4074,7 @@ def show_guided_troubleshooting():
         run_relational_diagnostic_tree(tree_code, selected_issue)
         return
 
-    # Fallback for issues that do not yet have a relational diagnostic tree.
-    if selected_issue in guided_flows:
-        run_guided_flow(selected_issue)
-    else:
-        run_auto_guided_flow(issue)
-
-
+    show_no_diagnostic_tree_message(issue)
 
 
 # -----------------------------
@@ -6231,6 +6265,9 @@ def show_admin_dashboard():
     st.caption(f"Closed tickets: {closed_tickets} | Unread comments: {unread_admin_comments}")
 
     st.info(f"🧭 Tickets from Guided Troubleshooting: {diagnostic_tickets}")
+
+    diagnostic_coverage = len(get_relational_diagnostic_issue_titles())
+    st.info(f"🧭 Relational diagnostic trees available for {diagnostic_coverage} Knowledge Base issue(s).")
 
     st.divider()
 
