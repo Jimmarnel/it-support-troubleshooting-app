@@ -3127,6 +3127,83 @@ def seed_audience_diagnostic_support(cursor):
     seed_solution_steps_from_solution_text(cursor)
 
 
+
+
+# -----------------------------
+# DIAGNOSTIC RESULT / TICKET CONTEXT HELPERS
+# -----------------------------
+def build_diagnostic_ticket_context(tree_code, solution, diagnostic_path, issue_title=None):
+    """Build a serializable diagnostic context to store with a ticket."""
+    solution = solution or {}
+    diagnostic_path = diagnostic_path or []
+
+    return {
+        "issue_title": issue_title or tree_code,
+        "diagnostic_tree_code": tree_code,
+        "diagnostic_audience": get_current_diagnostic_audience(),
+        "diagnostic_path": diagnostic_path,
+        "solution_code": solution.get("solution_code", ""),
+        "solution_title": solution.get("title", ""),
+        "solution_summary": solution.get("summary", ""),
+        "priority_recommendation": get_solution_priority_label(solution.get("priority_recommendation")),
+        "escalation_required": bool(solution.get("escalation_required")),
+        "escalation_notes": solution.get("escalation_notes", ""),
+        "captured_at": get_current_timestamp(),
+    }
+
+
+
+def ticket_has_diagnostic_context(ticket):
+    """Return True if a ticket was created after guided troubleshooting."""
+    return bool(ticket.get("diagnostic_context"))
+
+
+def get_diagnostic_ticket_label(ticket):
+    """Return a compact label for tickets created from Guided Troubleshooting."""
+    context = ticket.get("diagnostic_context") or {}
+
+    if not context:
+        return ""
+
+    solution_title = context.get("solution_title", "")
+    if solution_title:
+        return f" 🧭 Diagnostic: {solution_title}"
+
+    return " 🧭 Diagnostic"
+
+def show_ticket_diagnostic_context(ticket):
+    """Display diagnostic context stored in a ticket."""
+    context = ticket.get("diagnostic_context") or {}
+
+    if not context:
+        return
+
+    st.subheader("🧭 Diagnostic History")
+
+    st.write(f"**Original Issue:** {context.get('issue_title', 'N/A')}")
+    st.write(f"**Diagnostic Tree:** {context.get('diagnostic_tree_code', 'N/A')}")
+    st.write(f"**Audience:** {context.get('diagnostic_audience', 'N/A').title()}")
+    st.write(f"**Recommended Solution:** {context.get('solution_title', 'N/A')}")
+    st.write(f"**Priority Recommendation:** {context.get('priority_recommendation', 'N/A')}")
+
+    if context.get("escalation_required"):
+        st.warning("🚨 Escalation was recommended by the diagnostic result.")
+        if context.get("escalation_notes"):
+            st.write(context.get("escalation_notes"))
+
+    if context.get("solution_summary"):
+        st.write("**Solution Summary:**")
+        st.write(context.get("solution_summary"))
+
+    path = context.get("diagnostic_path", [])
+    if path:
+        with st.expander("View diagnostic path"):
+            for step in path:
+                st.write(f"- {step}")
+
+    if context.get("captured_at"):
+        st.caption(f"Diagnostic captured at: {context.get('captured_at')}")
+
 # -----------------------------
 # RELATIONAL DIAGNOSTIC TREE ACCESS
 # -----------------------------
@@ -3372,7 +3449,7 @@ def get_solution_priority_label(priority):
     return mapping.get(str(priority).lower(), "Medium")
 
 
-def display_diagnostic_solution(solution):
+def display_diagnostic_solution(solution, tree_code=None, diagnostic_path=None, issue_title=None):
     """Display a terminal solution from the relational solution table."""
     if not solution:
         st.error("No solution record was found for this diagnostic result.")
@@ -3418,14 +3495,43 @@ def display_diagnostic_solution(solution):
 
     with col_no:
         if st.button("🎫 No, create a support ticket", key=f"create_ticket_{solution.get('solution_code')}"):
-            st.session_state["prefill_ticket_issue"] = solution.get("title", "")
+            diagnostic_context = build_diagnostic_ticket_context(
+                tree_code,
+                solution,
+                diagnostic_path or [],
+                issue_title=issue_title,
+            )
+
+            original_issue_title = issue_title or diagnostic_context.get("issue_title") or "Support issue"
+            recommended_steps = get_solution_steps_by_audience(
+                solution.get("solution_id"),
+                get_current_diagnostic_audience(),
+            )
+
+            diagnostic_path_text = "\n".join(
+                [f"- {step}" for step in diagnostic_context.get("diagnostic_path", [])]
+            ) or "- No diagnostic path captured."
+
+            recommended_steps_text = "\n".join(
+                [f"- {step}" for step in recommended_steps]
+            ) or "- No recommended steps captured."
+
+            st.session_state["prefill_ticket_issue"] = original_issue_title
             st.session_state["prefill_ticket_description"] = (
-                f"Diagnostic result: {solution.get('title', '')}\n\n"
-                f"Summary: {solution.get('summary', '')}\n\n"
-                f"Attempted steps:\n{solution.get('resolution_steps', '')}"
+                f"Problem reported: {original_issue_title}\n\n"
+                f"Guided troubleshooting was completed, but the issue is still not resolved.\n\n"
+                f"Recommended solution shown: {solution.get('title', '')}\n"
+                f"Solution summary: {solution.get('summary', '')}\n\n"
+                f"Diagnostic path followed:\n"
+                f"{diagnostic_path_text}\n\n"
+                f"Recommended steps already suggested:\n"
+                f"{recommended_steps_text}\n\n"
+                f"Please review and continue troubleshooting."
             )
             st.session_state["prefill_ticket_severity"] = priority if priority in ["Low", "Medium", "High"] else "High"
-            st.info("Go to Create Ticket. The ticket fields will be pre-filled with the diagnostic result.")
+            st.session_state["prefill_diagnostic_context"] = diagnostic_context
+            st.success("Diagnostic context saved for the ticket.")
+            st.info("Go to Create Ticket. The ticket fields will be pre-filled with the original issue and diagnostic history.")
 
 
 def run_relational_diagnostic_tree(tree_code, issue_title=None):
@@ -3480,7 +3586,12 @@ def run_relational_diagnostic_tree(tree_code, issue_title=None):
         if current_node.get("condition_label") and current_node.get("condition_value"):
             st.caption(f"Based on: {current_node['condition_label']} → {current_node['condition_value']}")
 
-        display_diagnostic_solution(solution)
+        display_diagnostic_solution(
+            solution,
+            tree_code,
+            st.session_state.get(path_key, []),
+            issue_title=issue_title,
+        )
 
         with st.expander("Diagnostic path"):
             for step in st.session_state.get(path_key, []):
@@ -4978,6 +5089,7 @@ def load_tickets():
             "closed_at": "",
             "activity_log": [],
             "selected_resolution_template": "Select a template",
+            "diagnostic_context": {},
             "admin_unread_type": "new_ticket",
             "user_unread_type": "",
         })
@@ -5054,8 +5166,72 @@ def suggest_issues_from_text(description, title="", max_results=3):
     return suggestions[:max_results]
 
 
+
+def insert_ticket_directly(ticket):
+    """Insert one new ticket directly into SQLite and update its db_id.
+
+    This is safer for ticket creation than rewriting the whole tickets table.
+    """
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    ticket_data = json.dumps(ticket, indent=4)
+
+    cursor.execute(
+        """
+        INSERT INTO tickets (
+            username,
+            email,
+            issue,
+            description,
+            severity,
+            priority,
+            status,
+            assigned_to,
+            resolution_notes,
+            likely_infrastructure,
+            unread_for_admin,
+            unread_for_user,
+            ticket_data
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            ticket.get("username") or ticket.get("name", ""),
+            ticket.get("email", ""),
+            ticket.get("issue", ""),
+            ticket.get("description", ""),
+            ticket.get("severity", "Medium"),
+            ticket.get("priority", "Medium"),
+            ticket.get("status", "Open"),
+            ticket.get("assigned_to", "Unassigned"),
+            ticket.get("resolution_notes", ""),
+            1 if ticket.get("likely_infrastructure") else 0,
+            1 if ticket.get("unread_for_admin") else 0,
+            1 if ticket.get("unread_for_user") else 0,
+            ticket_data,
+        ),
+    )
+
+    ticket["db_id"] = cursor.lastrowid
+    ticket_data = json.dumps(ticket, indent=4)
+
+    cursor.execute(
+        "UPDATE tickets SET ticket_data = ? WHERE id = ?",
+        (ticket_data, ticket["db_id"]),
+    )
+
+    connection.commit()
+    connection.close()
+
+    return ticket["db_id"]
+
 def show_ticket_form():
     st.title("🎫 Create Support Ticket")
+
+    if "ticket_created_message" in st.session_state:
+        st.success(st.session_state.pop("ticket_created_message"))
+        st.info("Go to 📋 View Tickets as Admin, or 🎟 My Tickets as User, to review the new ticket.")
 
     current_username = st.session_state.get("username", "Unknown")
     current_user = get_user(current_username) or {}
@@ -5066,9 +5242,10 @@ def show_ticket_form():
         st.caption(f"Email: {current_email}")
 
     with st.form("ticket_form"):
-        prefill_issue = st.session_state.pop("prefill_ticket_issue", "")
-        prefill_description = st.session_state.pop("prefill_ticket_description", "")
-        prefill_severity = st.session_state.pop("prefill_ticket_severity", "Medium")
+        prefill_issue = st.session_state.get("prefill_ticket_issue", "")
+        prefill_description = st.session_state.get("prefill_ticket_description", "")
+        prefill_severity = st.session_state.get("prefill_ticket_severity", "Medium")
+        prefill_diagnostic_context = st.session_state.get("prefill_diagnostic_context", {})
         severity_options = ["Low", "Medium", "High"]
         if prefill_severity not in severity_options:
             prefill_severity = "Medium"
@@ -5113,6 +5290,7 @@ def show_ticket_form():
                 "waiting_on_user_at": "",
                 "closed_at": "",
                 "suggestions": [],
+                "diagnostic_context": prefill_diagnostic_context,
                 "likely_infrastructure": is_likely_infrastructure_issue(description),
                 "attachments": attachments,
                 "comments": [],
@@ -5174,6 +5352,11 @@ def show_ticket_list():
         ["All", "Critical", "High", "Medium", "Low"],
     )
 
+    diagnostic_filter = st.selectbox(
+        "Filter by diagnostic source",
+        ["All", "Created after Guided Troubleshooting", "Created manually"],
+    )
+
     sorted_tickets = sorted(
         tickets,
         key=lambda ticket: get_priority_rank(
@@ -5184,6 +5367,8 @@ def show_ticket_list():
         ),
     )
 
+    visible_ticket_count = 0
+
     for i, ticket in enumerate(sorted_tickets, 1):
         if status_filter != "All" and ticket.get("status", "Open") != status_filter:
             continue
@@ -5191,6 +5376,14 @@ def show_ticket_list():
         priority = ticket.get("priority", calculate_ticket_priority(ticket.get("description", ""), ticket.get("severity", "Medium")))
         if priority_filter != "All" and priority != priority_filter:
             continue
+
+        has_diagnostic_context = ticket_has_diagnostic_context(ticket)
+        if diagnostic_filter == "Created after Guided Troubleshooting" and not has_diagnostic_context:
+            continue
+        if diagnostic_filter == "Created manually" and has_diagnostic_context:
+            continue
+
+        visible_ticket_count += 1
 
         status = ticket.get("status", "Open")
         assigned_to = ticket.get("assigned_to", "Unassigned")
@@ -5203,7 +5396,8 @@ def show_ticket_list():
         sla_status, _ = get_sla_status(ticket)
         sla_label = f" — SLA: {sla_status}"
         unread_label = get_unread_label(ticket, "admin") if ticket.get("unread_for_admin") else ""
-        with st.expander(f"Ticket {i}: {ticket['issue']} — {status} — {priority}{sla_label}{unread_label}"):
+        diagnostic_label = get_diagnostic_ticket_label(ticket)
+        with st.expander(f"Ticket {i}: {ticket['issue']} — {status} — {priority}{sla_label}{unread_label}{diagnostic_label}"):
             st.write(f"**Name:** {ticket['name']}")
             st.write(f"**Email:** {ticket['email']}")
             st.write(f"**Severity:** {ticket['severity']}")
@@ -5224,6 +5418,8 @@ def show_ticket_list():
             st.write(f"**Assigned To:** {assigned_to}")
             st.markdown("**📝 Description**")
             render_description_box(ticket.get("description", ""))
+
+            show_ticket_diagnostic_context(ticket)
 
             if ticket.get("likely_infrastructure"):
                 st.warning("Possible wider IT/infrastructure issue")
@@ -5449,6 +5645,9 @@ def show_ticket_list():
 
             show_ticket_comments(ticket, i)
 
+
+    if visible_ticket_count == 0:
+        st.warning("No tickets match the current filters. Set Status and Priority filters to All to see every ticket.")
 
 
 
@@ -6031,6 +6230,8 @@ def show_admin_dashboard():
 
     st.caption(f"Closed tickets: {closed_tickets} | Unread comments: {unread_admin_comments}")
 
+    st.info(f"🧭 Tickets from Guided Troubleshooting: {diagnostic_tickets}")
+
     st.divider()
 
     show_export_tools(tickets)
@@ -6149,6 +6350,8 @@ def show_my_tickets():
                 st.write(f"**Closed At:** {ticket.get('closed_at')}")
             st.markdown("**📝 Description**")
             render_description_box(ticket.get("description", ""))
+
+            show_ticket_diagnostic_context(ticket)
 
             if ticket.get("resolution_notes"):
                 st.write("**Resolution Notes:**")
