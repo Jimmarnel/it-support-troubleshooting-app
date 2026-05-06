@@ -6240,6 +6240,7 @@ def show_admin_dashboard():
     tickets = st.session_state.get("tickets", [])
 
     total_tickets = len(tickets)
+    diagnostic_tickets = sum(1 for ticket in tickets if ticket_has_diagnostic_context(ticket))
     open_tickets = sum(1 for ticket in tickets if ticket.get("status", "Open") == "Open")
     assigned_tickets = sum(1 for ticket in tickets if ticket.get("status") == "Assigned")
     in_progress_tickets = sum(1 for ticket in tickets if ticket.get("status") == "In Progress")
@@ -6616,6 +6617,293 @@ processes can be organized into a working web application.
 
     st.caption("Built as a practical IT Support / Help Desk portfolio project.")
 
+
+
+# -----------------------------
+# ADMIN DIAGNOSTIC TREE VIEWER
+# -----------------------------
+def get_diagnostic_tree_records_for_admin():
+    """Return all diagnostic tree records for admin viewing."""
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT
+            dt.diagnostic_tree_id,
+            dt.diagnostic_tree_code,
+            dt.base_tree_code,
+            dt.audience,
+            dt.title,
+            dt.description,
+            dt.is_active,
+            p.title AS problem_title,
+            p.category,
+            p.severity
+        FROM diagnostic_tree dt
+        LEFT JOIN problem p
+            ON dt.problem_id = p.problem_id
+        ORDER BY
+            COALESCE(p.category, ''),
+            COALESCE(p.title, dt.title),
+            CASE dt.audience
+                WHEN 'user' THEN 1
+                WHEN 'technician' THEN 2
+                WHEN 'admin' THEN 3
+                ELSE 4
+            END,
+            dt.title
+        """
+    )
+
+    rows = cursor.fetchall()
+    connection.close()
+    return [dict(row) for row in rows]
+
+
+def get_diagnostic_tree_nodes_for_admin(diagnostic_tree_id):
+    """Return all nodes for a diagnostic tree."""
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT
+            dn.diagnostic_node_id,
+            dn.parent_diagnostic_node_id,
+            dn.diagnostic_tree_id,
+            dn.diagnostic_tree_code,
+            dn.node_key,
+            dn.node_type,
+            dn.title,
+            dn.description,
+            dn.prompt_text,
+            dn.condition_label,
+            dn.condition_value,
+            dn.solution_id,
+            dn.sort_order,
+            s.solution_code,
+            s.title AS solution_title,
+            s.summary AS solution_summary,
+            s.escalation_required,
+            s.priority_recommendation
+        FROM diagnostic_node dn
+        LEFT JOIN solution s
+            ON dn.solution_id = s.solution_id
+        WHERE dn.diagnostic_tree_id = ?
+          AND dn.is_active = 1
+        ORDER BY
+            COALESCE(dn.parent_diagnostic_node_id, 0),
+            dn.sort_order,
+            dn.diagnostic_node_id
+        """,
+        (diagnostic_tree_id,),
+    )
+
+    rows = cursor.fetchall()
+    connection.close()
+    return [dict(row) for row in rows]
+
+
+def build_diagnostic_tree_lines(nodes):
+    """Build readable indented lines from diagnostic nodes."""
+    if not nodes:
+        return []
+
+    children_by_parent = {}
+    node_by_id = {}
+
+    for node in nodes:
+        node_by_id[node["diagnostic_node_id"]] = node
+        children_by_parent.setdefault(node["parent_diagnostic_node_id"], []).append(node)
+
+    for children in children_by_parent.values():
+        children.sort(key=lambda item: (item.get("sort_order") or 0, item.get("diagnostic_node_id") or 0))
+
+    root_nodes = children_by_parent.get(None, [])
+
+    # Some SQLite rows can store parent as NULL, but if no root is found,
+    # fallback to nodes whose parent is missing from this selected tree.
+    if not root_nodes:
+        node_ids = set(node_by_id.keys())
+        root_nodes = [
+            node for node in nodes
+            if node.get("parent_diagnostic_node_id") not in node_ids
+        ]
+
+    lines = []
+
+    def visit(node, depth=0):
+        indent = "    " * depth
+        branch = ""
+
+        if node.get("condition_value"):
+            branch = f"[{node.get('condition_value')}] "
+
+        node_icon = {
+            "category": "📂",
+            "question": "❓",
+            "check": "🔎",
+            "instruction": "🛠",
+            "solution": "✅",
+        }.get(node.get("node_type"), "•")
+
+        title = node.get("title", "Untitled")
+        node_type = node.get("node_type", "node")
+
+        if node_type == "solution":
+            solution_title = node.get("solution_title") or title
+            line = f"{indent}{node_icon} {branch}{solution_title}"
+            if node.get("solution_code"):
+                line += f" ({node.get('solution_code')})"
+        else:
+            line = f"{indent}{node_icon} {branch}{title}"
+
+        lines.append(line)
+
+        if node.get("prompt_text"):
+            lines.append(f"{indent}   ↳ Prompt: {node.get('prompt_text')}")
+
+        for child in children_by_parent.get(node["diagnostic_node_id"], []):
+            visit(child, depth + 1)
+
+    for root in root_nodes:
+        visit(root, 0)
+
+    return lines
+
+
+def show_diagnostic_node_details(nodes):
+    """Show detailed node table-style expanders for one tree."""
+    if not nodes:
+        st.info("No nodes found for this diagnostic tree.")
+        return
+
+    for node in nodes:
+        label = f"{node.get('node_type', '').title()} — {node.get('title', 'Untitled')}"
+        if node.get("condition_value"):
+            label += f" | Branch: {node.get('condition_value')}"
+        if node.get("solution_title"):
+            label += f" | Solution: {node.get('solution_title')}"
+
+        with st.expander(label):
+            st.write(f"**Node Key:** `{node.get('node_key', '')}`")
+            st.write(f"**Node Type:** {node.get('node_type', '')}")
+            st.write(f"**Sort Order:** {node.get('sort_order', '')}")
+
+            if node.get("description"):
+                st.write("**Description:**")
+                st.write(node.get("description"))
+
+            if node.get("prompt_text"):
+                st.write("**Prompt:**")
+                st.write(node.get("prompt_text"))
+
+            if node.get("condition_label") or node.get("condition_value"):
+                st.write("**Branch Condition:**")
+                st.write(f"{node.get('condition_label', '')} → {node.get('condition_value', '')}")
+
+            if node.get("solution_title"):
+                st.success(f"Solution: {node.get('solution_title')}")
+                st.write(f"**Solution Code:** `{node.get('solution_code', '')}`")
+                if node.get("solution_summary"):
+                    st.write(node.get("solution_summary"))
+                st.write(f"**Escalation Required:** {'Yes' if node.get('escalation_required') else 'No'}")
+                st.write(f"**Priority Recommendation:** {get_solution_priority_label(node.get('priority_recommendation'))}")
+
+
+def show_admin_diagnostic_tree_viewer():
+    """Admin page to inspect database-driven diagnostic trees."""
+    require_admin()
+
+    st.title("🧭 Diagnostic Tree Viewer")
+    st.info(
+        "This page shows the diagnostic trees stored in the relational database. "
+        "It helps verify the hierarchy of questions, branches, and final solutions."
+    )
+
+    tree_records = get_diagnostic_tree_records_for_admin()
+
+    if not tree_records:
+        st.warning("No diagnostic trees found in the database.")
+        return
+
+    col_summary1, col_summary2, col_summary3 = st.columns(3)
+    col_summary1.metric("Diagnostic Trees", len(tree_records))
+    col_summary2.metric("User Trees", sum(1 for tree in tree_records if tree.get("audience") == "user"))
+    col_summary3.metric("Technician/Admin Trees", sum(1 for tree in tree_records if tree.get("audience") in ["technician", "admin"]))
+
+    st.divider()
+
+    audience_filter = st.selectbox(
+        "Filter by audience",
+        ["All", "user", "technician", "admin"],
+    )
+
+    problem_options = ["All"] + sorted(
+        {
+            tree.get("problem_title") or tree.get("title") or tree.get("base_tree_code")
+            for tree in tree_records
+        }
+    )
+
+    problem_filter = st.selectbox("Filter by problem", problem_options)
+
+    filtered_trees = []
+
+    for tree in tree_records:
+        if audience_filter != "All" and tree.get("audience") != audience_filter:
+            continue
+
+        tree_problem = tree.get("problem_title") or tree.get("title") or tree.get("base_tree_code")
+        if problem_filter != "All" and tree_problem != problem_filter:
+            continue
+
+        filtered_trees.append(tree)
+
+    if not filtered_trees:
+        st.warning("No diagnostic trees match the selected filters.")
+        return
+
+    tree_labels = [
+        f"{tree.get('problem_title') or tree.get('title')} — {tree.get('audience').title()} — {tree.get('diagnostic_tree_code')}"
+        for tree in filtered_trees
+    ]
+
+    selected_label = st.selectbox("Select a diagnostic tree", tree_labels)
+    selected_index = tree_labels.index(selected_label)
+    selected_tree = filtered_trees[selected_index]
+
+    st.divider()
+
+    st.subheader(selected_tree.get("title", "Diagnostic Tree"))
+    st.write(f"**Problem:** {selected_tree.get('problem_title', 'N/A')}")
+    st.write(f"**Category:** {selected_tree.get('category', 'N/A')}")
+    st.write(f"**Severity:** {selected_tree.get('severity', 'N/A')}")
+    st.write(f"**Audience:** {selected_tree.get('audience', 'N/A').title()}")
+    st.write(f"**Base Tree Code:** `{selected_tree.get('base_tree_code', '')}`")
+    st.write(f"**Diagnostic Tree Code:** `{selected_tree.get('diagnostic_tree_code', '')}`")
+
+    if selected_tree.get("description"):
+        st.write("**Description:**")
+        st.write(selected_tree.get("description"))
+
+    nodes = get_diagnostic_tree_nodes_for_admin(selected_tree["diagnostic_tree_id"])
+
+    st.divider()
+    st.subheader("🌳 Tree Structure")
+
+    tree_lines = build_diagnostic_tree_lines(nodes)
+
+    if tree_lines:
+        st.code("\n".join(tree_lines), language="text")
+    else:
+        st.info("No nodes found for this tree.")
+
+    st.divider()
+    st.subheader("🔎 Node Details")
+    show_diagnostic_node_details(nodes)
+
 # -----------------------------
 # MAIN APP
 # -----------------------------
@@ -6658,6 +6946,7 @@ def main():
             "🔍 Knowledge Base",
             "🎫 Create Ticket",
             build_menu_label("📋 View Tickets", admin_notifications["unread_updates"]),
+            "🧭 Diagnostic Tree Viewer",
             "🛠 Manage Knowledge Base",
         ]
     else:
@@ -6711,6 +7000,8 @@ def main():
         show_my_tickets()
     elif mode == "📋 View Tickets":
         show_ticket_list()
+    elif mode == "🧭 Diagnostic Tree Viewer":
+        show_admin_diagnostic_tree_viewer()
     elif mode == "🛠 Manage Knowledge Base":
         show_admin_kb_editor()
 
