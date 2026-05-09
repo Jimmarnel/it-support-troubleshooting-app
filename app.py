@@ -564,6 +564,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Printer Failure": "PRINTER_FAILURE",
     "Password Reset Request": "PASSWORD_RESET_REQUEST",
     "Account Locked": "ACCOUNT_LOCKED",
+    "Multi-factor Authentication Issue": "MULTI_FACTOR_AUTHENTICATION_ISSUE",
 }
 
 
@@ -577,10 +578,10 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
-    "Printer Failure, Password Reset Request, and Account Locked. Other sample issues are hidden until they "
+    "Printer Failure, Password Reset Request, Account Locked, and Multi-factor Authentication Issue. Other sample issues are hidden until they "
     "are expanded with detailed symptoms, causes, user steps, and technician steps."
 )
 
@@ -788,15 +789,15 @@ def seed_diagnostic_node_data(cursor):
 # -----------------------------
 TECHNICIAN_DIAGNOSTIC_TREE_SEED_DATA = {
     "NO_INTERNET_CONNECTION": {
-        "title": "No Internet Connection - Technician Diagnostic",
-        "description": "Technician-level diagnostic path for internet connectivity failures.",
+        "title": "No Internet Connection - IT Support Specialist Diagnostic",
+        "description": "IT Support Specialist diagnostic path for internet connectivity failures.",
         "sort_order": 101,
         "nodes": [
             {
                 "node_key": "ROOT_NO_INTERNET_TECH",
                 "parent_key": None,
                 "node_type": "category",
-                "title": "No Internet Connection - Technician Diagnostic",
+                "title": "No Internet Connection - IT Support Specialist Diagnostic",
                 "description": "Confirm whether the issue is client-side, network-side, or infrastructure-wide.",
                 "prompt_text": None,
                 "condition_label": None,
@@ -891,15 +892,15 @@ TECHNICIAN_DIAGNOSTIC_TREE_SEED_DATA = {
         ],
     },
     "SOME_WEBSITES_NOT_LOADING": {
-        "title": "Some Websites Not Loading - Technician Diagnostic",
-        "description": "Technician-level diagnostic path for partial website access issues.",
+        "title": "Some Websites Not Loading - IT Support Specialist Diagnostic",
+        "description": "IT Support Specialist diagnostic path for partial website access issues.",
         "sort_order": 102,
         "nodes": [
             {
                 "node_key": "ROOT_SOME_WEBSITES_TECH",
                 "parent_key": None,
                 "node_type": "category",
-                "title": "Some Websites Not Loading - Technician Diagnostic",
+                "title": "Some Websites Not Loading - IT Support Specialist Diagnostic",
                 "description": "Differentiate browser, DNS, filtering, and website availability issues.",
                 "prompt_text": None,
                 "condition_label": None,
@@ -970,15 +971,15 @@ TECHNICIAN_DIAGNOSTIC_TREE_SEED_DATA = {
         ],
     },
     "WIFI_DROPS_FREQUENTLY": {
-        "title": "Wi-Fi Drops Frequently - Technician Diagnostic",
-        "description": "Technician-level diagnostic path for unstable Wi-Fi connections.",
+        "title": "Wi-Fi Drops Frequently - IT Support Specialist Diagnostic",
+        "description": "IT Support Specialist diagnostic path for unstable Wi-Fi connections.",
         "sort_order": 103,
         "nodes": [
             {
                 "node_key": "ROOT_WIFI_DROPS_TECH",
                 "parent_key": None,
                 "node_type": "category",
-                "title": "Wi-Fi Drops Frequently - Technician Diagnostic",
+                "title": "Wi-Fi Drops Frequently - IT Support Specialist Diagnostic",
                 "description": "Check signal, client profile, access point, roaming, and local interference.",
                 "prompt_text": None,
                 "condition_label": None,
@@ -1049,15 +1050,15 @@ TECHNICIAN_DIAGNOSTIC_TREE_SEED_DATA = {
         ],
     },
     "SLOW_INTERNET": {
-        "title": "Slow Internet - Technician Diagnostic",
-        "description": "Technician-level diagnostic path for slow internet performance.",
+        "title": "Slow Internet - IT Support Specialist Diagnostic",
+        "description": "IT Support Specialist diagnostic path for slow internet performance.",
         "sort_order": 104,
         "nodes": [
             {
                 "node_key": "ROOT_SLOW_INTERNET_TECH",
                 "parent_key": None,
                 "node_type": "category",
-                "title": "Slow Internet - Technician Diagnostic",
+                "title": "Slow Internet - IT Support Specialist Diagnostic",
                 "description": "Check endpoint load, bandwidth usage, scope, and speed-test evidence.",
                 "prompt_text": None,
                 "condition_label": None,
@@ -1128,15 +1129,15 @@ TECHNICIAN_DIAGNOSTIC_TREE_SEED_DATA = {
         ],
     },
     "APPLICATION_CRASHING": {
-        "title": "Application Crashing - Technician Diagnostic",
-        "description": "Technician-level diagnostic path for crashing or freezing applications.",
+        "title": "Application Crashing - IT Support Specialist Diagnostic",
+        "description": "IT Support Specialist diagnostic path for crashing or freezing applications.",
         "sort_order": 105,
         "nodes": [
             {
                 "node_key": "ROOT_APP_CRASH_TECH",
                 "parent_key": None,
                 "node_type": "category",
-                "title": "Application Crashing - Technician Diagnostic",
+                "title": "Application Crashing - IT Support Specialist Diagnostic",
                 "description": "Check whether the crash is temporary, version-related, or requires escalation.",
                 "prompt_text": None,
                 "condition_label": None,
@@ -1207,15 +1208,15 @@ TECHNICIAN_DIAGNOSTIC_TREE_SEED_DATA = {
         ],
     },
     "SOFTWARE_INSTALLATION_FAILURE": {
-        "title": "Software Installation Failure - Technician Diagnostic",
-        "description": "Technician-level diagnostic path for failed software installations.",
+        "title": "Software Installation Failure - IT Support Specialist Diagnostic",
+        "description": "IT Support Specialist diagnostic path for failed software installations.",
         "sort_order": 106,
         "nodes": [
             {
                 "node_key": "ROOT_INSTALL_FAIL_TECH",
                 "parent_key": None,
                 "node_type": "category",
-                "title": "Software Installation Failure - Technician Diagnostic",
+                "title": "Software Installation Failure - IT Support Specialist Diagnostic",
                 "description": "Check installer source, disk space, privileges, licensing, and endpoint controls.",
                 "prompt_text": None,
                 "condition_label": None,
@@ -1286,15 +1287,15 @@ TECHNICIAN_DIAGNOSTIC_TREE_SEED_DATA = {
         ],
     },
     "COMPUTER_RUNNING_SLOW": {
-        "title": "Computer Running Slow - Technician Diagnostic",
-        "description": "Technician-level diagnostic path for endpoint performance issues.",
+        "title": "Computer Running Slow - IT Support Specialist Diagnostic",
+        "description": "IT Support Specialist diagnostic path for endpoint performance issues.",
         "sort_order": 107,
         "nodes": [
             {
                 "node_key": "ROOT_COMPUTER_SLOW_TECH",
                 "parent_key": None,
                 "node_type": "category",
-                "title": "Computer Running Slow - Technician Diagnostic",
+                "title": "Computer Running Slow - IT Support Specialist Diagnostic",
                 "description": "Check restart state, startup load, CPU, memory, disk, and hardware indicators.",
                 "prompt_text": None,
                 "condition_label": None,
@@ -1365,15 +1366,15 @@ TECHNICIAN_DIAGNOSTIC_TREE_SEED_DATA = {
         ],
     },
     "DISK_SPACE_FULL": {
-        "title": "Disk Space Full - Technician Diagnostic",
-        "description": "Technician-level diagnostic path for storage capacity issues.",
+        "title": "Disk Space Full - IT Support Specialist Diagnostic",
+        "description": "IT Support Specialist diagnostic path for storage capacity issues.",
         "sort_order": 108,
         "nodes": [
             {
                 "node_key": "ROOT_DISK_FULL_TECH",
                 "parent_key": None,
                 "node_type": "category",
-                "title": "Disk Space Full - Technician Diagnostic",
+                "title": "Disk Space Full - IT Support Specialist Diagnostic",
                 "description": "Check available storage, user files, temporary files, and capacity needs.",
                 "prompt_text": None,
                 "condition_label": None,
@@ -1444,15 +1445,15 @@ TECHNICIAN_DIAGNOSTIC_TREE_SEED_DATA = {
         ],
     },
     "HIGH_CPU_USAGE": {
-        "title": "High CPU Usage - Technician Diagnostic",
-        "description": "Technician-level diagnostic path for CPU spikes and suspicious processes.",
+        "title": "High CPU Usage - IT Support Specialist Diagnostic",
+        "description": "IT Support Specialist diagnostic path for CPU spikes and suspicious processes.",
         "sort_order": 109,
         "nodes": [
             {
                 "node_key": "ROOT_HIGH_CPU_TECH",
                 "parent_key": None,
                 "node_type": "category",
-                "title": "High CPU Usage - Technician Diagnostic",
+                "title": "High CPU Usage - IT Support Specialist Diagnostic",
                 "description": "Check process ownership, restart state, endpoint health, and suspicious activity.",
                 "prompt_text": None,
                 "condition_label": None,
@@ -1523,15 +1524,15 @@ TECHNICIAN_DIAGNOSTIC_TREE_SEED_DATA = {
         ],
     },
     "VPN_CONNECTION_FAILURE": {
-        "title": "VPN Connection Failure - Technician Diagnostic",
-        "description": "Technician-level diagnostic path for VPN authentication, client, and network issues.",
+        "title": "VPN Connection Failure - IT Support Specialist Diagnostic",
+        "description": "IT Support Specialist diagnostic path for VPN authentication, client, and network issues.",
         "sort_order": 110,
         "nodes": [
             {
                 "node_key": "ROOT_VPN_FAILURE_TECH",
                 "parent_key": None,
                 "node_type": "category",
-                "title": "VPN Connection Failure - Technician Diagnostic",
+                "title": "VPN Connection Failure - IT Support Specialist Diagnostic",
                 "description": "Check internet, credentials/MFA, network restrictions, client version, and escalation triggers.",
                 "prompt_text": None,
                 "condition_label": None,
@@ -2260,7 +2261,7 @@ PRINTER_USER_DIAGNOSTIC_NODES = [
 ]
 
 PRINTER_TECH_DIAGNOSTIC_NODES = [
-    ('ROOT_PRINTER_FAILURE_TECH',None,'category','Printer Failure - Technician Diagnostic','Technician-level diagnostic path for printer power, connectivity, queue, driver, hardware, permissions, and print server issues.',None,None,None,None,1),
+    ('ROOT_PRINTER_FAILURE_TECH',None,'category','Printer Failure - IT Support Specialist Diagnostic','IT Support Specialist diagnostic path for printer power, connectivity, queue, driver, hardware, permissions, and print server issues.',None,None,None,None,1),
     ('Q_POWER_TECH','ROOT_PRINTER_FAILURE_TECH','question','Check Power State','Confirm power, outlet, cable, display, and safety conditions.','Is the printer powered on with no visible power/safety issue?',None,None,None,1),
     ('S_POWER_TECH','Q_POWER_TECH','solution','Check Printer Power',None,None,'Is the printer powered on with no visible power/safety issue?','No','FIX_PRINTER_POWER',1),
     ('Q_USB_TECH','Q_POWER_TECH','question','Identify Connection Type','Determine whether the troubleshooting path is USB or network/print server.','Is this a USB-connected printer?','Is the printer powered on with no visible power/safety issue?','Yes',None,2),
@@ -2329,7 +2330,7 @@ def seed_printer_failure_content(cursor):
             cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
             cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
     seed_printer_failure_tree(cursor, 'user', 'PRINTER_FAILURE_USER', 'Printer Failure - User Diagnostic', 'User-friendly diagnostic tree for printer failure symptoms.', PRINTER_USER_DIAGNOSTIC_NODES)
-    seed_printer_failure_tree(cursor, 'technician', 'PRINTER_FAILURE_TECHNICIAN', 'Printer Failure - Technician Diagnostic', 'Technician-level diagnostic tree for printer failure root-cause analysis.', PRINTER_TECH_DIAGNOSTIC_NODES)
+    seed_printer_failure_tree(cursor, 'technician', 'PRINTER_FAILURE_TECHNICIAN', 'Printer Failure - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for printer failure root-cause analysis.', PRINTER_TECH_DIAGNOSTIC_NODES)
 
 def seed_printer_failure_tree(cursor, audience, tree_code, title, description, nodes):
     problem_id = get_problem_id_for_tree_code(cursor, 'PRINTER_FAILURE')
@@ -2510,7 +2511,7 @@ PASSWORD_RESET_USER_DIAGNOSTIC_NODES = [
 ]
 
 PASSWORD_RESET_TECH_DIAGNOSTIC_NODES = [
-    ('ROOT_PASSWORD_RESET_TECH',None,'category','Password Reset Request - Technician Diagnostic','Technician-level path for identity verification, account status, MFA, lockout, and sync/policy issues.',None,None,None,None,1),
+    ('ROOT_PASSWORD_RESET_TECH',None,'category','Password Reset Request - IT Support Specialist Diagnostic','IT Support Specialist path for identity verification, account status, MFA, lockout, and sync/policy issues.',None,None,None,None,1),
     ('Q_IDENTITY_VERIFIED_TECH','ROOT_PASSWORD_RESET_TECH','question','Verify User Identity','Password resets must start with identity verification.','Has the user identity been verified according to policy?',None,None,None,1),
     ('S_VERIFY_IDENTITY_TECH','Q_IDENTITY_VERIFIED_TECH','solution','Verify Identity Before Reset',None,None,'Has the user identity been verified according to policy?','No','FIX_VERIFY_IDENTITY_BEFORE_RESET',1),
     ('Q_ACCOUNT_ACTIVE_TECH','Q_IDENTITY_VERIFIED_TECH','question','Check Account State','Confirm whether this is a valid active account.','Is the account active and enabled?','Has the user identity been verified according to policy?','Yes',None,2),
@@ -2575,7 +2576,7 @@ def seed_password_reset_request_content(cursor):
             cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
             cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
     seed_password_reset_tree(cursor, 'user', 'PASSWORD_RESET_REQUEST_USER', 'Password Reset Request - User Diagnostic', 'User-friendly diagnostic tree for password reset requests.', PASSWORD_RESET_USER_DIAGNOSTIC_NODES)
-    seed_password_reset_tree(cursor, 'technician', 'PASSWORD_RESET_REQUEST_TECHNICIAN', 'Password Reset Request - Technician Diagnostic', 'Technician-level diagnostic tree for password reset root-cause analysis.', PASSWORD_RESET_TECH_DIAGNOSTIC_NODES)
+    seed_password_reset_tree(cursor, 'technician', 'PASSWORD_RESET_REQUEST_TECHNICIAN', 'Password Reset Request - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for password reset root-cause analysis.', PASSWORD_RESET_TECH_DIAGNOSTIC_NODES)
 
 def seed_password_reset_tree(cursor, audience, tree_code, title, description, nodes):
     problem_id = get_problem_id_for_tree_code(cursor, 'PASSWORD_RESET_REQUEST')
@@ -2739,7 +2740,7 @@ ACCOUNT_LOCKED_USER_DIAGNOSTIC_NODES = [
 ]
 
 ACCOUNT_LOCKED_TECH_DIAGNOSTIC_NODES = [
-    ('ROOT_ACCOUNT_LOCKED_TECH',None,'category','Account Locked - Technician Diagnostic','Technician-level path for identity verification, lockout validation, stale credentials, and security escalation.',None,None,None,None,1),
+    ('ROOT_ACCOUNT_LOCKED_TECH',None,'category','Account Locked - IT Support Specialist Diagnostic','IT Support Specialist path for identity verification, lockout validation, stale credentials, and security escalation.',None,None,None,None,1),
     ('Q_IDENTITY_VERIFIED_UNLOCK_TECH','ROOT_ACCOUNT_LOCKED_TECH','question','Verify User Identity','Unlocking an account requires identity verification.','Has the user identity been verified according to policy?',None,None,None,1),
     ('S_VERIFY_IDENTITY_UNLOCK_TECH','Q_IDENTITY_VERIFIED_UNLOCK_TECH','solution','Verify Identity Before Unlock',None,None,'Has the user identity been verified according to policy?','No','FIX_VERIFY_IDENTITY_BEFORE_UNLOCK',1),
     ('Q_ACCOUNT_ACTUALLY_LOCKED_TECH','Q_IDENTITY_VERIFIED_UNLOCK_TECH','question','Confirm Account Lockout','Differentiate lockout from password, MFA, disabled account, or access denial.','Is the account locked in the identity system?','Has the user identity been verified according to policy?','Yes',None,2),
@@ -2802,7 +2803,7 @@ def seed_account_locked_content(cursor):
             cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
             cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
     seed_account_locked_tree(cursor, 'user', 'ACCOUNT_LOCKED_USER', 'Account Locked - User Diagnostic', 'User-friendly diagnostic tree for account lockouts.', ACCOUNT_LOCKED_USER_DIAGNOSTIC_NODES)
-    seed_account_locked_tree(cursor, 'technician', 'ACCOUNT_LOCKED_TECHNICIAN', 'Account Locked - Technician Diagnostic', 'Technician-level diagnostic tree for account lockouts and recurring failed sign-ins.', ACCOUNT_LOCKED_TECH_DIAGNOSTIC_NODES)
+    seed_account_locked_tree(cursor, 'technician', 'ACCOUNT_LOCKED_TECHNICIAN', 'Account Locked - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for account lockouts and recurring failed sign-ins.', ACCOUNT_LOCKED_TECH_DIAGNOSTIC_NODES)
 
 def seed_account_locked_tree(cursor, audience, tree_code, title, description, nodes):
     problem_id = get_problem_id_for_tree_code(cursor, 'ACCOUNT_LOCKED')
@@ -2844,6 +2845,227 @@ def seed_account_locked_tree(cursor, audience, tree_code, title, description, no
 
 
 
+# -----------------------------
+# MULTI-FACTOR AUTHENTICATION ISSUE RELATIONAL SEED DATA
+# -----------------------------
+MFA_ISSUE_PROBLEM = (
+    'MULTI_FACTOR_AUTHENTICATION_ISSUE',
+    'Multi-factor Authentication Issue',
+    'Account & Access',
+    'Medium',
+    'User cannot complete sign-in because the MFA prompt, code, authenticator app, phone call, or text message is not working.',
+)
+
+MFA_ISSUE_KB = {
+    'title': 'Multi-factor Authentication Issue',
+    'summary': 'Use this guide when MFA prompts, verification codes, authenticator apps, phone calls, or text messages prevent sign-in.',
+    'difficulty': 'Beginner',
+    'estimated_time': '5-15 minutes',
+    'escalation_required': 0,
+    'escalation_notes': 'Escalate if the user changed or lost their MFA device, cannot access any registered method, receives unexpected MFA prompts, is blocked by conditional access/device compliance, or suspicious sign-in activity is present.',
+    'tags': ['MFA', 'multi-factor authentication', 'authenticator app', 'verification code', 'push notification', 'SMS code', 'phone call', 'sign-in', 'security'],
+    'symptoms': [
+        'MFA prompt, push notification, text message, or phone call does not arrive.',
+        'Authenticator app code is incorrect, expired, or not accepted.',
+        'User changed phones, changed phone numbers, or reinstalled the authenticator app.',
+        'User lost access to the registered MFA device or method.',
+        'Sign-in repeatedly asks for MFA but never completes.',
+        'User receives MFA prompts they did not request.',
+        'User cannot complete password reset because MFA is required.',
+    ],
+    'causes': [
+        'Common: phone offline, poor cellular signal, authenticator notifications disabled, expired prompt, wrong authenticator account, recently changed phone, outdated registered phone number, no MFA method enrolled, stale browser session, or sign-in from a new device/location.',
+        'Advanced: conditional access policy, device compliance block, MFA service degradation, disabled MFA method, stale push token, time-based code mismatch, risk-based sign-in policy, MFA fatigue attack, or account compromise indicators.',
+    ],
+    'user_steps': [
+        'Confirm you are signing in to the correct company account.',
+        'Check that your phone has internet access or cellular signal.',
+        'Open the authenticator app manually and look for the approval prompt.',
+        'Make sure notifications are enabled for the authenticator app.',
+        'If using a code, confirm you are using the correct account in the authenticator app.',
+        'Set your phone date and time to automatic if codes are failing.',
+        'Retry sign-in from a private/incognito browser window.',
+        'Contact IT if you changed phones, changed phone numbers, lost the device, or cannot access any registered method.',
+        'Deny and report MFA prompts you did not request.',
+    ],
+    'it_steps': [
+        'Verify the user identity according to support policy before changing MFA methods.',
+        'Confirm the affected system: email, VPN, SSO portal, password reset portal, or business application.',
+        'Review registered MFA methods and whether the user still has access to any of them.',
+        'Check MFA logs for sent prompts, timeouts, denials, method used, location, IP, and device.',
+        'Guide the user to use another valid method if available.',
+        'If all methods are unavailable, follow the approved MFA reset or re-registration process.',
+        'Escalate to Security for unexpected prompts, denied prompts, impossible travel, unknown locations, or suspected compromise.',
+        'Escalate to Identity/Access Management or Endpoint if conditional access or device compliance blocks sign-in.',
+    ],
+}
+
+MFA_ISSUE_SOLUTIONS = [
+    ('FIX_MFA_DELIVERY_BASIC_CHECKS','Check Phone Signal, App Notifications, and Retry MFA','MFA prompts may fail because the phone is offline, notifications are disabled, or the prompt expired.','Confirm phone internet or cellular signal. Open the authenticator app manually. Enable app notifications. Retry sign-in and wait for a fresh prompt. Do not approve prompts the user did not request.',0,'Escalate if MFA challenges are sent but never delivered after basic checks.','medium'),
+    ('FIX_MFA_CODE_TIME_SYNC','Fix Authenticator Code or Time Sync Issue','Authenticator codes may fail if the user selects the wrong account or the device time is out of sync.','Confirm the user is using the correct authenticator account. Wait for a new code. Set phone date and time to automatic. Restart the authenticator app and retry.',0,'Escalate if codes continue failing after time sync and correct account validation.','medium'),
+    ('FIX_MFA_RESET_REREGISTRATION','Request MFA Method Reset or Re-registration','The user changed phones, lost a device, or lost access to the registered MFA method.','Verify identity. Reset MFA methods or require re-registration according to policy. Have the user register a new approved method and complete a test sign-in.',1,'Escalate if MFA reset requires Identity/Access Management approval or stronger identity verification.','medium'),
+    ('FIX_REGISTER_MFA_METHOD','Register MFA Method','The user has no valid MFA method registered and must enroll.','Guide the user through the official MFA registration page. Add an approved method and backup method if allowed. Complete a test sign-in.',0,'Escalate if the user cannot access the registration page or policy blocks enrollment.','medium'),
+    ('FIX_REPORT_SUSPICIOUS_MFA_PROMPT','Report Suspicious MFA Prompt','Unexpected MFA prompts may indicate someone else is trying to access the account.','Deny unexpected prompts. Capture time, location, user report, and sign-in log details. Escalate to Security and follow incident response guidance.',1,'Escalate immediately to Security for unexpected prompts, repeated prompts, unfamiliar locations, or suspected compromise.','high'),
+    ('FIX_ESCALATE_MFA_CONDITIONAL_ACCESS','Escalate Conditional Access or Device Compliance Issue','Sign-in may be blocked because policy requires a compliant device, trusted location, or approved MFA method.','Review sign-in logs and conditional access result. Check device compliance and enrollment status. Escalate to Identity/Access Management or Endpoint team.',1,'Escalate when conditional access, device compliance, or MFA policy blocks sign-in.','high'),
+    ('FIX_VERIFY_IDENTITY_BEFORE_MFA_CHANGE','Verify Identity Before MFA Changes','MFA changes require identity verification to protect the account.','Verify the user identity according to policy before resetting or changing MFA methods. Do not ask for passwords or MFA codes. Document verification.',0,'Escalate if the user cannot verify identity or the request appears suspicious.','medium'),
+]
+
+MFA_ISSUE_SOLUTION_STEPS = {
+    'FIX_MFA_DELIVERY_BASIC_CHECKS': {
+        'user': ['Confirm your phone has internet or cellular signal.', 'Open the authenticator app manually and check for the prompt.', 'Enable notifications for the authenticator app.', 'Retry sign-in and wait for a new prompt.', 'Do not approve prompts you did not request.'],
+        'technician': ['Confirm whether the MFA challenge is being sent.', 'Ask the user to open the authenticator app manually.', 'Confirm notification settings and device connectivity.', 'Check MFA logs for timeout or delivery failure.', 'Escalate if prompts are sent but not delivered after basic checks.'],
+        'admin': ['Review whether MFA delivery issues affect one user or multiple users.', 'Escalate if MFA service degradation or policy issue is suspected.'],
+    },
+    'FIX_MFA_CODE_TIME_SYNC': {
+        'user': ['Confirm you are using the code for the correct company account.', 'Wait for the next code and enter it before it expires.', 'Set your phone date and time to automatic.', 'Restart the authenticator app and try again.', 'Contact IT if codes still fail.'],
+        'technician': ['Confirm the user is selecting the correct authenticator account.', 'Check the failed MFA reason in logs.', 'Ask the user to enable automatic date and time.', 'Re-register the authenticator app if codes continue failing.'],
+        'admin': ['Escalate repeated code failures if logs suggest policy or identity-provider issues.'],
+    },
+    'FIX_MFA_RESET_REREGISTRATION': {
+        'user': ['Contact IT through an approved support channel.', 'Be ready to verify your identity.', 'Tell IT whether you changed phones, changed phone numbers, or lost the device.', 'Re-register MFA through the official company sign-in page.', 'Test sign-in after setup.'],
+        'technician': ['Verify identity according to support policy.', 'Review existing MFA methods.', 'Reset MFA methods or require re-registration according to policy.', 'Do not add unverified phone numbers or devices.', 'Confirm successful MFA setup and sign-in.'],
+        'admin': ['Require stronger verification for MFA reset if policy requires it.', 'Escalate suspicious reset requests to Security.'],
+    },
+    'FIX_REGISTER_MFA_METHOD': {
+        'user': ['Open the official company MFA registration page.', 'Add the approved authentication method.', 'Add a backup method if your organization allows it.', 'Complete a test sign-in.'],
+        'technician': ['Confirm the user is eligible and required to use MFA.', 'Guide the user through registration.', 'Confirm at least one primary and one backup method if policy allows.', 'Document completion in the ticket.'],
+        'admin': ['Review enrollment policy if the user cannot register a method.'],
+    },
+    'FIX_REPORT_SUSPICIOUS_MFA_PROMPT': {
+        'user': ['Deny the MFA prompt.', 'Do not approve prompts you did not initiate.', 'Report the time and details of the prompt.', 'Change your password only if instructed by IT or Security.', 'Wait for Security instructions.'],
+        'technician': ['Capture prompt time, source IP/location, user agent, and sign-in logs.', 'Check for repeated prompts or denied attempts.', 'Escalate to Security.', 'Do not simply reset MFA without reviewing account risk.', 'Follow incident response guidance if compromise is suspected.'],
+        'admin': ['Treat unexpected MFA prompts as security-sensitive.', 'Prioritize as High if prompts are repeated or location/device is unfamiliar.'],
+    },
+    'FIX_ESCALATE_MFA_CONDITIONAL_ACCESS': {
+        'user': ['Record the exact error message.', 'Note the device and network you are using.', 'Try from an approved company device if available.', 'Submit screenshots with the ticket.'],
+        'technician': ['Review sign-in logs and conditional access result.', 'Check device compliance and enrollment status.', 'Confirm whether the user is using an approved MFA method and location.', 'Escalate to Identity/Access Management or Endpoint team.'],
+        'admin': ['Validate whether the block is expected policy behavior or a misconfiguration.', 'Escalate if multiple users are blocked unexpectedly.'],
+    },
+    'FIX_VERIFY_IDENTITY_BEFORE_MFA_CHANGE': {
+        'user': ['Use only official IT support channels.', 'Be ready to verify your identity.', 'Do not share passwords or MFA codes with anyone.'],
+        'technician': ['Verify identity according to policy.', 'Do not reset MFA before identity verification.', 'Escalate if the user cannot verify identity.', 'Document the verification method according to policy.'],
+        'admin': ['Audit MFA reset requests if suspicious or repeated.', 'Require escalation for failed identity verification.'],
+    },
+}
+
+MFA_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_MFA_USER',None,'category','Multi-factor Authentication Issue - User Diagnostic','User-friendly path for MFA delivery, code, phone change, and suspicious prompt issues.',None,None,None,None,1),
+    ('Q_RECEIVING_MFA_USER','ROOT_MFA_USER','question','Check MFA Delivery','Determine whether the user receives a prompt, code, text, or call.','Are you receiving the MFA prompt, code, text, or phone call?',None,None,None,1),
+    ('Q_CHANGED_PHONE_USER','Q_RECEIVING_MFA_USER','question','Check Phone or Method Change','Changed phones or numbers usually requires MFA reset/re-registration.','Did you recently change phones, phone numbers, or reinstall the authenticator app?','Are you receiving the MFA prompt, code, text, or phone call?','No',None,1),
+    ('S_MFA_RESET_USER','Q_CHANGED_PHONE_USER','solution','Request MFA Method Reset or Re-registration',None,None,'Did you recently change phones, phone numbers, or reinstall the authenticator app?','Yes','FIX_MFA_RESET_REREGISTRATION',1),
+    ('S_MFA_DELIVERY_USER','Q_CHANGED_PHONE_USER','solution','Check Phone Signal, App Notifications, and Retry MFA',None,None,'Did you recently change phones, phone numbers, or reinstall the authenticator app?','No','FIX_MFA_DELIVERY_BASIC_CHECKS',2),
+    ('Q_CODE_FAILS_USER','Q_RECEIVING_MFA_USER','question','Check Code or Prompt Failure','Codes can fail because the wrong account is selected or the phone time is wrong.','Is the code incorrect, expired, or not accepted?','Are you receiving the MFA prompt, code, text, or phone call?','Yes',None,2),
+    ('S_CODE_TIME_SYNC_USER','Q_CODE_FAILS_USER','solution','Fix Authenticator Code or Time Sync Issue',None,None,'Is the code incorrect, expired, or not accepted?','Yes','FIX_MFA_CODE_TIME_SYNC',1),
+    ('Q_UNEXPECTED_PROMPTS_USER','Q_CODE_FAILS_USER','question','Check Unexpected MFA Prompts','Unexpected prompts may indicate account attack or compromise.','Are you receiving MFA prompts you did not request?','Is the code incorrect, expired, or not accepted?','No',None,2),
+    ('S_SUSPICIOUS_MFA_USER','Q_UNEXPECTED_PROMPTS_USER','solution','Report Suspicious MFA Prompt',None,None,'Are you receiving MFA prompts you did not request?','Yes','FIX_REPORT_SUSPICIOUS_MFA_PROMPT',1),
+    ('S_USE_METHOD_RETRY_USER','Q_UNEXPECTED_PROMPTS_USER','solution','Use Available MFA Method and Retry Sign-In',None,None,'Are you receiving MFA prompts you did not request?','No','FIX_MFA_DELIVERY_BASIC_CHECKS',2),
+]
+
+MFA_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_MFA_TECH',None,'category','Multi-factor Authentication Issue - IT Support Specialist Diagnostic','IT Support Specialist path for identity verification, MFA registration, method availability, security risk, and policy blocks.',None,None,None,None,1),
+    ('Q_IDENTITY_VERIFIED_MFA_TECH','ROOT_MFA_TECH','question','Verify User Identity','MFA changes must start with identity verification.','Has the user identity been verified according to policy?',None,None,None,1),
+    ('S_VERIFY_IDENTITY_MFA_TECH','Q_IDENTITY_VERIFIED_MFA_TECH','solution','Verify Identity Before MFA Changes',None,None,'Has the user identity been verified according to policy?','No','FIX_VERIFY_IDENTITY_BEFORE_MFA_CHANGE',1),
+    ('Q_REGISTERED_METHOD_TECH','Q_IDENTITY_VERIFIED_MFA_TECH','question','Check Registered MFA Method','Confirm whether the user has a registered method.','Does the user have at least one registered MFA method?','Has the user identity been verified according to policy?','Yes',None,2),
+    ('S_REGISTER_MFA_TECH','Q_REGISTERED_METHOD_TECH','solution','Register MFA Method',None,None,'Does the user have at least one registered MFA method?','No','FIX_REGISTER_MFA_METHOD',1),
+    ('Q_ACCESS_TO_METHOD_TECH','Q_REGISTERED_METHOD_TECH','question','Check Method Access','Determine if reset or re-registration is needed.','Does the user still have access to a registered MFA method?','Does the user have at least one registered MFA method?','Yes',None,2),
+    ('S_RESET_MFA_TECH','Q_ACCESS_TO_METHOD_TECH','solution','Reset MFA Method and Require Re-registration',None,None,'Does the user still have access to a registered MFA method?','No','FIX_MFA_RESET_REREGISTRATION',1),
+    ('Q_SUSPICIOUS_MFA_TECH','Q_ACCESS_TO_METHOD_TECH','question','Check Suspicious Prompts','Review MFA prompts and sign-in context for account attack indicators.','Are MFA prompts suspicious or from unfamiliar sign-ins?','Does the user still have access to a registered MFA method?','Yes',None,2),
+    ('S_ESCALATE_MFA_ATTACK_TECH','Q_SUSPICIOUS_MFA_TECH','solution','Escalate Possible MFA Attack',None,None,'Are MFA prompts suspicious or from unfamiliar sign-ins?','Yes','FIX_REPORT_SUSPICIOUS_MFA_PROMPT',1),
+    ('Q_CONDITIONAL_ACCESS_TECH','Q_SUSPICIOUS_MFA_TECH','question','Check Conditional Access or Device Compliance','Policy may require a compliant device, trusted location, or approved method.','Is conditional access or device compliance blocking sign-in?','Are MFA prompts suspicious or from unfamiliar sign-ins?','No',None,2),
+    ('S_ESCALATE_CA_TECH','Q_CONDITIONAL_ACCESS_TECH','solution','Escalate Conditional Access or Device Compliance Issue',None,None,'Is conditional access or device compliance blocking sign-in?','Yes','FIX_ESCALATE_MFA_CONDITIONAL_ACCESS',1),
+    ('S_TROUBLESHOOT_MFA_DELIVERY_TECH','Q_CONDITIONAL_ACCESS_TECH','solution','Troubleshoot MFA Delivery or Code Issue',None,None,'Is conditional access or device compliance blocking sign-in?','No','FIX_MFA_DELIVERY_BASIC_CHECKS',2),
+]
+
+def seed_mfa_issue_content(cursor):
+    """Seed Multi-factor Authentication Issue KB article, solutions, role-specific steps, and diagnostic trees."""
+    code_, title, category, severity, description = MFA_ISSUE_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, MFA_ISSUE_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, MFA_ISSUE_KB['title'], MFA_ISSUE_KB['summary'], MFA_ISSUE_KB['difficulty'], MFA_ISSUE_KB['estimated_time'], MFA_ISSUE_KB['escalation_required'], MFA_ISSUE_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, MFA_ISSUE_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, MFA_ISSUE_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, MFA_ISSUE_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, MFA_ISSUE_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, MFA_ISSUE_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, MFA_ISSUE_SOLUTIONS)
+    for solution_code, audience_steps in MFA_ISSUE_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_mfa_issue_tree(cursor, 'user', 'MULTI_FACTOR_AUTHENTICATION_ISSUE_USER', 'Multi-factor Authentication Issue - User Diagnostic', 'User-friendly diagnostic tree for MFA delivery, phone change, code, and suspicious prompt issues.', MFA_USER_DIAGNOSTIC_NODES)
+    seed_mfa_issue_tree(cursor, 'technician', 'MULTI_FACTOR_AUTHENTICATION_ISSUE_TECHNICIAN', 'Multi-factor Authentication Issue - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for MFA method, security, and policy root-cause analysis.', MFA_TECH_DIAGNOSTIC_NODES)
+
+def seed_mfa_issue_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'MULTI_FACTOR_AUTHENTICATION_ISSUE')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'MULTI_FACTOR_AUTHENTICATION_ISSUE', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
+
 def initialize_database():
     """Create SQLite tables if they do not already exist."""
     connection = get_db_connection()
@@ -2858,6 +3080,7 @@ def initialize_database():
     seed_printer_failure_content(cursor)
     seed_password_reset_request_content(cursor)
     seed_account_locked_content(cursor)
+    seed_mfa_issue_content(cursor)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -3594,7 +3817,7 @@ def get_user_guidance_for_ticket(description):
 
 
 def get_it_steps(issue):
-    """Return technical troubleshooting steps for admins."""
+    """Return technical troubleshooting steps for IT Support Specialists."""
     if issue.get("it_steps"):
         return issue["it_steps"]
     return issue.get("steps", [])
@@ -3605,7 +3828,7 @@ def show_role_based_steps(issue):
     role = st.session_state.get("role", "User")
 
     if role == "Admin":
-        st.write("**Advanced IT Troubleshooting Steps:**")
+        st.write("**IT Support Specialist Steps (Tier 1 / junior Tier 2):**")
         for number, step in enumerate(get_it_steps(issue), 1):
             st.write(f"{number}. {step}")
 
@@ -3814,7 +4037,7 @@ def show_login_page():
 
         with col_admin:
             st.warning(
-                "**Admin Account**\n\n"
+                "**IT Support Specialist Account**\n\n"
                 "Username: `admin`\n\n"
                 "Password: `admin123`"
             )
@@ -3858,7 +4081,7 @@ def show_login_page():
 def require_admin():
     """Stop access if current user is not an admin."""
     if st.session_state.get("role") != "Admin":
-        st.error("Admin access required")
+        st.error("IT Support Specialist access required")
         st.stop()
 
 
@@ -4516,24 +4739,39 @@ def show_ticket_diagnostic_context(ticket):
 
 
 def get_current_diagnostic_audience():
-    """Return the diagnostic audience based on the logged-in role."""
+    """Return the troubleshooting audience for the logged-in role.
+
+    In this MVP, the Streamlit role named ``Admin`` represents the app's
+    support-side user. That person should see IT Support Specialist procedures
+    rather than senior company-admin-only notes.
+    """
     role = st.session_state.get("role", "User")
 
-    if role == "Admin":
-        return "admin"
-
-    # Future technician role can be added without changing the engine.
-    if role == "Technician":
+    if role in ["Admin", "Technician", "IT Support Specialist"]:
         return "technician"
 
     return "user"
 
 
+def get_audience_display_name(audience):
+    """Return reviewer-friendly audience labels for the UI."""
+    if audience == "technician":
+        return "IT Support Specialist"
+    if audience == "admin":
+        return "Escalation Notes"
+    return "Regular User"
+
+
+def get_role_display_name(role):
+    """Return portfolio-friendly role labels without changing stored role values."""
+    if role == "Admin":
+        return "IT Support Specialist"
+    return role or "User"
+
+
 def get_audience_fallback_order(audience):
     """Return fallback order for diagnostic tree/solution-step lookup."""
-    if audience == "admin":
-        return ["admin", "technician", "user"]
-    if audience == "technician":
+    if audience in ["admin", "technician"]:
         return ["technician", "user"]
     return ["user"]
 
@@ -4565,6 +4803,49 @@ def get_solution_steps_by_audience(solution_id, audience):
 
     connection.close()
     return []
+
+
+def get_solution_steps_for_exact_audience(solution_id, audience):
+    """Return solution steps for one exact audience without fallback.
+
+    This is used for admin/technician displays so approved technician
+    procedures are not hidden by a shorter admin escalation note.
+    """
+    if not solution_id or not audience:
+        return []
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        SELECT step_text
+        FROM solution_step
+        WHERE solution_id = ?
+          AND audience = ?
+        ORDER BY sort_order, solution_step_id
+        """,
+        (solution_id, audience),
+    )
+    rows = cursor.fetchall()
+    connection.close()
+    return [row["step_text"] for row in rows]
+
+
+def get_solution_steps_for_ticket_context(solution_id, audience):
+    """Return the operational steps that should be copied into a ticket.
+
+    Support-side users should capture IT Support Specialist steps first, plus
+    escalation notes where available.
+    """
+    if audience in ["admin", "technician"]:
+        technician_steps = get_solution_steps_for_exact_audience(solution_id, "technician")
+        escalation_notes = get_solution_steps_for_exact_audience(solution_id, "admin")
+        combined = technician_steps[:]
+        combined.extend([f"Escalation note: {step}" for step in escalation_notes])
+        if combined:
+            return combined
+
+    return get_solution_steps_by_audience(solution_id, audience)
 
 def get_available_diagnostic_trees():
     """Return active diagnostic trees for the current audience."""
@@ -4780,12 +5061,35 @@ def display_diagnostic_solution(solution, tree_code=None, diagnostic_path=None, 
 
     st.write("**Resolution Steps:**")
     audience = get_current_diagnostic_audience()
-    normalized_steps = get_solution_steps_by_audience(solution.get("solution_id"), audience)
 
-    if normalized_steps:
-        for step in normalized_steps:
-            st.write("-", step)
+    if audience in ["admin", "technician"]:
+        technician_steps = get_solution_steps_for_exact_audience(
+            solution.get("solution_id"),
+            "technician",
+        )
+        escalation_notes = get_solution_steps_for_exact_audience(
+            solution.get("solution_id"),
+            "admin",
+        )
+
+        if technician_steps:
+            st.write("**IT Support Specialist steps (Tier 1 / junior Tier 2):**")
+            for step in technician_steps:
+                st.write("-", step)
+
+        if escalation_notes:
+            st.write("**Escalation notes / Tier 2-3 handoff:**")
+            for step in escalation_notes:
+                st.write("-", step)
+
+        normalized_steps = technician_steps or escalation_notes
     else:
+        normalized_steps = get_solution_steps_by_audience(solution.get("solution_id"), audience)
+        if normalized_steps:
+            for step in normalized_steps:
+                st.write("-", step)
+
+    if not normalized_steps:
         for step in str(solution.get("resolution_steps", "")).splitlines():
             clean_step = step.strip()
             if clean_step:
@@ -4825,7 +5129,7 @@ def display_diagnostic_solution(solution, tree_code=None, diagnostic_path=None, 
             )
 
             original_issue_title = issue_title or diagnostic_context.get("issue_title") or "Support issue"
-            recommended_steps = get_solution_steps_by_audience(
+            recommended_steps = get_solution_steps_for_ticket_context(
                 solution.get("solution_id"),
                 get_current_diagnostic_audience(),
             )
@@ -4888,7 +5192,7 @@ def run_relational_diagnostic_tree(tree_code, issue_title=None):
     render_mvp_flow_steps("question")
 
     current_audience = get_current_diagnostic_audience()
-    st.caption(f"Diagnostic audience: {current_audience.title()}")
+    st.caption(f"Diagnostic audience: {get_audience_display_name(current_audience)}")
 
     if st.button("🔄 Restart diagnostic", key=f"restart_diag_{tree_code}"):
         previous_session_id = st.session_state.get(audit_session_key, "")
@@ -5987,6 +6291,7 @@ def show_knowledge_base():
         "Printer Failure",
         "Password Reset Request",
         "Account Locked",
+        "Multi-factor Authentication Issue",
     ]
 
     common_issues = [issue for issue in issues if issue["title"] in common_titles]
@@ -6100,7 +6405,7 @@ def validate_issue_form(title, category, symptoms_text, steps_text):
     if not symptoms_text.strip():
         errors.append("At least one symptom is required.")
     if not steps_text.strip():
-        errors.append("At least one advanced IT step is required.")
+        errors.append("At least one IT Support Specialist step is required.")
     if title.strip() and find_issue_by_title(title.strip()):
         errors.append("An issue with this title already exists.")
 
@@ -6109,9 +6414,9 @@ def validate_issue_form(title, category, symptoms_text, steps_text):
 
 def show_admin_kb_editor():
     require_admin()
-    st.title("🛠 Admin Knowledge Base Editor")
+    st.title("🛠 IT Support Knowledge Base Editor")
 
-    st.info("Add new troubleshooting issues without editing the Python code.")
+    st.info("Add or prototype troubleshooting issues without editing the Python code.")
 
     if "issue_added_message" in st.session_state:
         st.success(st.session_state.pop("issue_added_message"))
@@ -6132,7 +6437,7 @@ def show_admin_kb_editor():
             placeholder="Enter simple steps users can safely do, one per line",
             key="kb_user_steps",
         )
-        steps_text = st.text_area("Advanced IT Steps", placeholder="Enter technical admin steps, one per line", key="kb_steps")
+        steps_text = st.text_area("IT Support Specialist Steps", placeholder="Enter Tier 1 / junior Tier 2 troubleshooting steps, one per line", key="kb_steps")
 
         submitted = st.form_submit_button("Add Issue", key="add_issue_submit")
 
@@ -8123,7 +8428,7 @@ def get_portfolio_health_metrics():
     connection = get_db_connection()
     cursor = connection.cursor()
     try:
-        cursor.execute("SELECT COUNT(*) AS count FROM diagnostic_tree WHERE is_active = 1 AND base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST', 'ACCOUNT_LOCKED')")
+        cursor.execute("SELECT COUNT(*) AS count FROM diagnostic_tree WHERE is_active = 1 AND base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST', 'ACCOUNT_LOCKED', 'MULTI_FACTOR_AUTHENTICATION_ISSUE')")
         diagnostic_tree_count = cursor.fetchone()["count"]
 
         cursor.execute("SELECT COUNT(*) AS count FROM troubleshooting_event")
@@ -8239,7 +8544,7 @@ IT support teams often receive tickets with missing context. This app improves t
 
 ## Key Features
 
-- Local login and role-aware navigation
+- Local login and role-aware user/support navigation
 - Category-first guided troubleshooting
 - Database-driven diagnostic trees
 - Ordered solution steps for users and technicians
@@ -8260,7 +8565,7 @@ IT support teams often receive tickets with missing context. This app improves t
 
 - Visible MVP issues: {metrics['issues_count']}
 - Active diagnostic trees: {metrics['diagnostic_tree_count']}
-- Role-specific solution steps: {metrics['solution_step_count']}
+- User and IT Support Specialist solution steps: {metrics['solution_step_count']}
 - Troubleshooting audit events: {metrics['event_count']}
 - Tickets in local database: {metrics['ticket_count']}
 - Tickets with guided troubleshooting trail: {metrics['diagnostic_ticket_count']}
@@ -8321,6 +8626,7 @@ The project uses local authentication rather than enterprise SSO. That keeps the
 - Search across tickets and KB articles
 - SLA automation and notifications
 - Import/export tools for troubleshooting trees
+- Dedicated Tier 2/3 role views for Identity, Network, Security, Endpoint, and Systems teams
 - Separate reporting or analytics module outside the core MVP
 
 ## How to Run Locally
@@ -8528,7 +8834,7 @@ This page helps a reviewer understand the project quickly without reading the so
     with col1:
         st.markdown(
             """
-- Basic login and role-aware navigation
+- Basic login and role-aware user/support navigation
 - Category-first guided troubleshooting
 - Reusable diagnostic page driven by database nodes
 - Solution display with ordered steps
@@ -8550,6 +8856,8 @@ This page helps a reviewer understand the project quickly without reading the so
     st.markdown(
         """
 This app is intentionally centered on **guided troubleshooting**. Ticket creation and ticket review are included only to show what happens when self-service troubleshooting does not resolve the issue. A full analytics dashboard, assignment queue, SLA engine, and reporting module are intentionally outside the visible MVP.
+
+The support-side role is labeled **IT Support Specialist** in the UI. It represents Tier 1 help desk plus junior Tier 2 network/support work appropriate for A+, Network+, and CCNA-track troubleshooting: device/user/scope checks, IP/DNS/DHCP/VPN/printer reachability checks when relevant, clear documentation, and evidence-based escalation.
 """
     )
 
@@ -8587,6 +8895,7 @@ The MVP centers around these tables:
 - Email or chat notifications
 - SLA escalation automation
 - Import/export tools for troubleshooting trees
+- Dedicated Tier 2/3 role views for Identity, Network, Security, Endpoint, and Systems teams
 """
     )
 
@@ -8618,9 +8927,9 @@ def show_home_page():
 
     if role == "Admin":
         st.markdown("""
-### 👨‍💼 Admin Overview
+### 👨‍💼 IT Support Specialist Overview
 
-Use this system to review escalated support tickets, inspect diagnostic trees, and maintain Knowledge Base content. The visible MVP intentionally stays focused on troubleshooting rather than analytics.
+Use this system to review escalated support tickets, inspect diagnostic trees, and follow structured Tier 1 / junior Tier 2 troubleshooting. The visible MVP intentionally stays focused on troubleshooting rather than analytics.
 """)
         st.info("💡 Start with View Tickets to review, assign, update, or delete test tickets. Use Guided Troubleshooting to demo the main application flow.")
     else:
@@ -8838,7 +9147,7 @@ def get_diagnostic_tree_records_for_admin():
         FROM diagnostic_tree dt
         LEFT JOIN problem p
             ON dt.problem_id = p.problem_id
-        WHERE dt.base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST', 'ACCOUNT_LOCKED')
+        WHERE dt.base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST', 'ACCOUNT_LOCKED', 'MULTI_FACTOR_AUTHENTICATION_ISSUE')
         ORDER BY
             COALESCE(p.category, ''),
             COALESCE(p.title, dt.title),
@@ -9027,7 +9336,7 @@ def show_admin_diagnostic_tree_viewer():
     col_summary1, col_summary2, col_summary3 = st.columns(3)
     col_summary1.metric("Diagnostic Trees", len(tree_records))
     col_summary2.metric("User Trees", sum(1 for tree in tree_records if tree.get("audience") == "user"))
-    col_summary3.metric("Technician/Admin Trees", sum(1 for tree in tree_records if tree.get("audience") in ["technician", "admin"]))
+    col_summary3.metric("IT Support Specialist Trees", sum(1 for tree in tree_records if tree.get("audience") in ["technician", "admin"]))
 
     st.divider()
 
@@ -9119,7 +9428,7 @@ def main():
         return
 
     st.sidebar.write(f"Logged in as: **{st.session_state.get('username')}**")
-    st.sidebar.write(f"Role: **{st.session_state.get('role')}**")
+    st.sidebar.write(f"Role: **{get_role_display_name(st.session_state.get('role'))}**")
 
     if st.sidebar.button("Logout", key="sidebar_logout_button"):
         logout_user()
@@ -9132,7 +9441,7 @@ def main():
 
         if admin_notifications["total"] > 0:
             st.sidebar.warning(
-                f"🔔 {admin_notifications['total']} admin alert(s): "
+                f"🔔 {admin_notifications['total']} support alert(s): "
                 f"{admin_notifications['critical']} critical, "
                 f"{admin_notifications['overdue']} overdue, "
                 f"{admin_notifications['unread_updates']} unread update(s)"
