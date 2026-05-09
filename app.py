@@ -578,7 +578,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
     "Printer Failure, Password Reset Request, Account Locked, and Multi-factor Authentication Issue. Other sample issues are hidden until they "
@@ -3066,6 +3066,244 @@ def seed_mfa_issue_tree(cursor, audience, tree_code, title, description, nodes):
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
 
+
+# -----------------------------
+# VPN CONNECTION FAILURE RELATIONAL SEED DATA
+# -----------------------------
+VPN_CONNECTION_FAILURE_PROBLEM = (
+    'VPN_CONNECTION_FAILURE',
+    'VPN Connection Failure',
+    'Network, Remote Access & Storage',
+    'High',
+    'User cannot connect to the company VPN or loses VPN access after connecting.',
+)
+
+VPN_CONNECTION_FAILURE_KB = {
+    'title': 'VPN Connection Failure',
+    'summary': 'Use this guide when VPN will not connect, disconnects, or connects but internal resources such as shared drives, internal websites, or business applications do not work.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-20 minutes',
+    'escalation_required': 1,
+    'escalation_notes': 'Escalate to Identity/Access Management for account, MFA, group, or conditional access issues; Network Team for gateway, routing, DNS, ACL, VPN pool, or multiple-user issues; Endpoint/Desktop Support for client, certificate, profile, or compliance issues; Security for suspicious login/MFA activity or risk blocks.',
+    'tags': ['VPN', 'remote access', 'network', 'MFA', 'DNS', 'routing', 'firewall', 'ACL', 'VPN client', 'split tunnel', 'remote work'],
+    'symptoms': [
+        'VPN will not connect or gets stuck connecting.',
+        'VPN says authentication failed, password expired, account locked, or MFA failed.',
+        'VPN connects but shared drives, internal websites, or business applications do not work.',
+        'VPN disconnects frequently or worked previously but stopped working.',
+        'VPN works on a mobile hotspot but not on home Wi-Fi or public Wi-Fi.',
+        'User receives a certificate, profile, compliance, or VPN client error.',
+        'Multiple users cannot connect, suggesting possible VPN gateway, identity provider, DNS, or network outage.',
+    ],
+    'causes': [
+        'Common: no internet connection before starting VPN, incorrect username/password, expired password, locked account, MFA prompt not approved, outdated VPN client, missing/corrupted VPN profile, unstable Wi-Fi, local network blocking VPN traffic, unavailable VPN service, wrong VPN profile/region, or incorrect device time/date.',
+        'Advanced: VPN gateway DNS failure, local firewall/security software blocking the client, VPN protocol/port blocked by ACL/firewall, NAT traversal issue, expired or missing certificate, endpoint compliance failure, split-tunnel route problem, overlapping local subnet, exhausted VPN IP pool, gateway outage/high utilization, routing or ACL issue between VPN pool and internal resources, identity provider outage, or conditional access block.',
+    ],
+    'user_steps': [
+        'Confirm your normal internet connection works without VPN.',
+        'Restart the VPN client.',
+        'Confirm you are using the correct company username and password.',
+        'Approve the MFA prompt only if you initiated the VPN sign-in.',
+        'Restart your computer and try VPN again.',
+        'Try a different trusted network, such as a mobile hotspot.',
+        'If VPN connects but internal apps do not work, write down which app, website, or shared drive fails.',
+        'Take a screenshot of the VPN error message.',
+        'Do not repeatedly retry if you see account lockout, MFA, or security warnings.',
+        'Submit a support ticket if the issue continues.',
+    ],
+    'it_steps': [
+        'Tier 1: Confirm the user, device name, location, network type, VPN client name/version, and exact error message.',
+        'Tier 1: Confirm normal internet works before VPN and identify whether the issue is unable to connect, disconnecting, or connected with no internal access.',
+        'Tier 1: Confirm whether MFA prompt is received/approved and whether the account is locked, password expired, or blocked by MFA.',
+        'Tier 1: Confirm the user is selecting the correct VPN profile or region.',
+        'Tier 1: Ask the user to restart the VPN client, reboot the device, and test from another trusted network or mobile hotspot.',
+        'Tier 1: Check whether other users report similar VPN failures and capture screenshots, timestamps, and error codes.',
+        'Tier 2: Verify local IP configuration including IP address, subnet mask, default gateway, and DNS servers.',
+        'Tier 2: Test DNS resolution for the VPN gateway hostname and compare results across home Wi-Fi, office network, and mobile hotspot.',
+        'Tier 2: Review VPN client logs for authentication, certificate, DNS, route, tunnel, or compliance errors.',
+        'Tier 2: Confirm whether the VPN client receives a VPN adapter IP address after connecting.',
+        'Tier 2: If connected but internal resources fail, test internal DNS lookup, allowed resource reachability, route table entries, and shared drive/internal app access.',
+        'Tier 2: Check for local subnet overlap, local firewall/security software interference, routing symptoms, DNS symptoms, or ACL/resource-permission boundaries.',
+        'Tier 2: Determine whether the likely root cause is identity/authentication, MFA, local network, VPN client, DNS, routing, firewall/ACL, endpoint compliance, or VPN gateway outage.',
+        'Escalate with collected evidence if infrastructure, policy, gateway, certificate, or security-side changes are required.',
+    ],
+}
+
+VPN_CONNECTION_FAILURE_SOLUTIONS = [
+    ('FIX_VPN_RESTORE_BASE_INTERNET','Restore Internet Connection Before VPN','VPN cannot work until the device has normal internet access.','Disconnect VPN, confirm public websites open, reconnect Wi-Fi/Ethernet, restart the router if working remotely, and retry VPN after internet access works.',0,'Escalate only if the base internet issue appears to affect a company-managed network, multiple users, or a managed device configuration.','medium'),
+    ('FIX_VPN_AUTH_MFA_DEPENDENCY','Resolve VPN Authentication or MFA Issue','VPN sign-in may fail because of password, account lockout, expired password, MFA, conditional access, or missing VPN group membership.','Confirm username/password, approve legitimate MFA, avoid repeated retries, and route to password reset, account locked, or MFA troubleshooting when needed.',1,'Escalate to Identity/Access Management if conditional access, group membership, risky sign-in, or identity policy blocks VPN access.','high'),
+    ('FIX_VPN_LOCAL_NETWORK_BLOCK','Identify Local Network Blocking VPN','The current network may block or interfere with VPN traffic.','Test VPN from a trusted mobile hotspot or another safe network, compare behavior, and document which networks work and fail.',0,'Escalate if a company-managed firewall, ACL, or network path appears to block VPN. For unmanaged home/public networks, document likely local network or ISP restriction.','medium'),
+    ('FIX_VPN_UPDATE_REINSTALL_CLIENT','Update or Reinstall VPN Client','The VPN client may be outdated, corrupted, missing its profile, or blocked by a local endpoint issue.','Restart the client and computer, check VPN client version/profile, review logs, repair/update/reinstall from the approved source, and escalate if admin rights, certificates, or managed deployment are required.',1,'Escalate to Endpoint/Desktop Support if the client, certificate, profile, or managed deployment requires elevated access or endpoint management.','medium'),
+    ('FIX_VPN_DNS_GATEWAY_RESOLUTION','Troubleshoot DNS Resolution for VPN Gateway','The device cannot resolve the VPN gateway hostname.','Confirm internet access, perform DNS lookup for the VPN gateway, compare results on another trusted network, flush DNS cache if appropriate, and escalate if DNS records fail or multiple users are affected.',1,'Escalate to Network/DNS team if VPN gateway DNS resolution fails, DNS results are inconsistent, or multiple users are affected.','high'),
+    ('FIX_VPN_CONNECTED_INTERNAL_ACCESS_FAILS','Troubleshoot VPN Routing, DNS, or ACL Access','VPN connects, but internal resources are unreachable due to routing, internal DNS, permissions, or ACL issues.','Confirm VPN adapter IP, test internal DNS, test allowed internal resources by hostname/IP where appropriate, review route table entries, check resource permissions, and escalate with evidence.',1,'Escalate to Network or Systems team with VPN IP, routes, DNS results, resource tested, screenshots, and timestamps.','high'),
+    ('FIX_ESCALATE_VPN_CLIENT_CERT_GATEWAY','Escalate Possible VPN Client, Certificate, or Gateway Issue','VPN fails across multiple networks and may involve client certificate, profile, compliance, or gateway-side problem.','Confirm failure across multiple networks, check client version/profile/certificate status where visible, review VPN logs, check whether other users are affected, and escalate based on evidence.',1,'Escalate to Endpoint, Network, Identity, or Security depending on whether evidence points to certificate/profile/compliance, gateway/tunnel negotiation, identity policy, or suspicious activity.','high'),
+    ('FIX_VPN_CONFIRM_RESTORED','Confirm VPN Restored','VPN is connected and required internal resources are reachable.','Confirm VPN shows connected, verify required internal app/shared drive/internal site access, document successful test, and close or resolve the ticket if applicable.',0,None,'low'),
+]
+
+VPN_CONNECTION_FAILURE_SOLUTION_STEPS = {
+    'FIX_VPN_RESTORE_BASE_INTERNET': {
+        'user': ['Disconnect VPN.', 'Confirm you can open public websites.', 'Restart Wi-Fi or reconnect Ethernet.', 'Restart your router if working from home.', 'Try VPN again after internet access works.'],
+        'technician': ['Confirm whether the issue is internet access or VPN-specific.', 'Verify the user has a valid IP address, gateway, and DNS.', 'Test public website access and DNS resolution.', 'Guide the user through reconnecting Wi-Fi/Ethernet.', 'Continue VPN troubleshooting only after internet is restored.'],
+        'admin': ['Escalation notes: escalate only if base connectivity fails on a company-managed network, multiple users are affected, or managed device network configuration appears incorrect.'],
+    },
+    'FIX_VPN_AUTH_MFA_DEPENDENCY': {
+        'user': ['Confirm you are using the correct username and password.', 'Approve the MFA prompt only if you initiated the VPN sign-in.', 'Do not repeatedly retry if the account may be locked.', 'Reset your password or contact IT if authentication continues to fail.'],
+        'technician': ['Check whether the user can sign in to the SSO portal or email.', 'Check account locked, password expired, and MFA status.', 'Review the VPN authentication error message.', 'If needed, route to Password Reset, Account Locked, or MFA troubleshooting flow.', 'Escalate if conditional access or VPN group membership is blocking access.'],
+        'admin': ['Escalation notes: escalate to Identity/Access Management with username, error text, timestamp, MFA status, account state, and VPN group/conditional-access evidence.'],
+    },
+    'FIX_VPN_LOCAL_NETWORK_BLOCK': {
+        'user': ['Try VPN from a trusted mobile hotspot or another safe network.', 'Restart your home router if working remotely.', 'Avoid public Wi-Fi that blocks VPN traffic.', 'Tell IT which networks work and which do not.'],
+        'technician': ['Compare VPN behavior on home Wi-Fi, hotspot, and office network.', 'Confirm whether DNS resolves the VPN gateway on each network.', 'Check whether the issue is isolated to one network path.', 'Look for local subnet overlap with corporate networks.', 'Document network type, public IP if allowed by policy, error message, and test results.', 'Escalate if a company-managed firewall, ACL, or network path appears to block VPN.'],
+        'admin': ['Escalation notes: provide Network Team with working/failing networks, DNS lookup results, public IP if policy allows, VPN error code, timestamps, and subnet-overlap findings.'],
+    },
+    'FIX_VPN_UPDATE_REINSTALL_CLIENT': {
+        'user': ['Restart the VPN client.', 'Restart the computer.', 'Check whether the VPN profile is still listed.', 'Submit a ticket with the VPN client name and error message if it still fails.'],
+        'technician': ['Check VPN client version and profile.', 'Review VPN client logs if available.', 'Repair or update the VPN client from the approved source.', 'Reinstall the VPN client or profile if policy allows.', 'Escalate to Endpoint/Desktop Support if admin rights, certificates, or managed deployment are required.'],
+        'admin': ['Escalation notes: provide Endpoint/Desktop Support with client version, profile name, certificate/profile symptoms, device name, screenshots, and install/update attempts.'],
+    },
+    'FIX_VPN_DNS_GATEWAY_RESOLUTION': {
+        'user': ['Confirm normal internet access works.', 'Try VPN again from a private/home network or trusted hotspot.', 'Submit a ticket with the VPN error screenshot.'],
+        'technician': ['Run or guide DNS lookup for the VPN gateway hostname.', 'Compare DNS results on the current network and mobile hotspot.', 'Flush DNS cache if appropriate.', 'Try alternate trusted DNS only if company policy allows.', 'Escalate to Network/DNS team if gateway DNS records fail or multiple users are affected.'],
+        'admin': ['Escalation notes: provide Network/DNS team with VPN gateway hostname, DNS server used, lookup output, affected network, affected users, and timestamps.'],
+    },
+    'FIX_VPN_CONNECTED_INTERNAL_ACCESS_FAILS': {
+        'user': ['Confirm VPN shows connected.', 'Write down which internal website, application, or shared drive does not work.', 'Try another internal resource if available.', 'Submit a ticket with screenshots and affected resource names.'],
+        'technician': ['Confirm VPN adapter has an assigned VPN IP address.', 'Test internal DNS resolution.', 'Test allowed internal resources by hostname and IP where appropriate.', 'Review route table for VPN routes.', 'Determine whether the issue affects one resource, one subnet, or all internal resources.', 'Check whether the user has permission to the resource.', 'Escalate to Network or Systems team with VPN IP, routes, DNS results, resource tested, and timestamps.'],
+        'admin': ['Escalation notes: provide Network/Systems team with VPN-assigned IP, route table notes, DNS results, target resource names/IPs, permission findings, screenshots, and timestamps.'],
+    },
+    'FIX_ESCALATE_VPN_CLIENT_CERT_GATEWAY': {
+        'user': ['Stop repeated VPN attempts if errors continue.', 'Take a screenshot of the VPN error.', 'Note whether VPN fails on home Wi-Fi and mobile hotspot.', 'Submit a ticket with device name and VPN client version if known.'],
+        'technician': ['Confirm failure occurs across multiple networks.', 'Check VPN client version, profile, and certificate status where visible.', 'Review VPN client logs for certificate, profile, compliance, or tunnel negotiation errors.', 'Check whether other users are affected.', 'Escalate to Endpoint, Network, Identity, or Security based on evidence.'],
+        'admin': ['Escalation notes: escalate with client logs, network comparison, client version, certificate/profile status, affected scope, compliance error text, and other-user impact.'],
+    },
+    'FIX_VPN_CONFIRM_RESTORED': {
+        'user': ['Confirm VPN shows connected.', 'Open the needed internal app, website, or shared drive.', 'Continue working normally.', 'Report the issue again if VPN disconnects or access fails.'],
+        'technician': ['Confirm tunnel is established.', 'Confirm the user can access required resources.', 'Document the successful test and close or resolve the ticket if applicable.'],
+        'admin': ['Escalation notes: no escalation needed if VPN and required internal resources are working.'],
+    },
+}
+
+VPN_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_VPN_USER', None, 'category', 'VPN Connection Failure', 'User-friendly diagnostic tree for VPN connection and internal access problems.', None, None, None, None, 1),
+    ('Q_BASE_INTERNET_WORKS_USER','ROOT_VPN_USER','question','Check Internet Before VPN',None,'Does your normal internet connection work without VPN?',None,None,None,1),
+    ('S_RESTORE_BASE_INTERNET_USER','Q_BASE_INTERNET_WORKS_USER','solution','Restore Internet Connection Before VPN',None,None,'Does your normal internet connection work without VPN?','No','FIX_VPN_RESTORE_BASE_INTERNET',1),
+    ('Q_AUTH_MFA_ERROR_USER','Q_BASE_INTERNET_WORKS_USER','question','Check Authentication or MFA Error',None,'Are you receiving an authentication, password, account locked, or MFA error?','Does your normal internet connection work without VPN?','Yes',None,2),
+    ('S_AUTH_MFA_DEPENDENCY_USER','Q_AUTH_MFA_ERROR_USER','solution','Resolve VPN Authentication or MFA Issue',None,None,'Are you receiving an authentication, password, account locked, or MFA error?','Yes','FIX_VPN_AUTH_MFA_DEPENDENCY',1),
+    ('Q_VPN_CONNECTS_USER','Q_AUTH_MFA_ERROR_USER','question','Check Whether VPN Connects',None,'Does the VPN connect successfully?','Are you receiving an authentication, password, account locked, or MFA error?','No',None,2),
+    ('Q_VPN_OTHER_NETWORK_USER','Q_VPN_CONNECTS_USER','question','Compare Another Trusted Network',None,'Does VPN work from another trusted network, such as a mobile hotspot?','Does the VPN connect successfully?','No',None,1),
+    ('S_LOCAL_NETWORK_BLOCK_USER','Q_VPN_OTHER_NETWORK_USER','solution','Identify Local Network Blocking VPN',None,None,'Does VPN work from another trusted network, such as a mobile hotspot?','Yes','FIX_VPN_LOCAL_NETWORK_BLOCK',1),
+    ('S_UPDATE_REINSTALL_CLIENT_USER','Q_VPN_OTHER_NETWORK_USER','solution','Update or Reinstall VPN Client',None,None,'Does VPN work from another trusted network, such as a mobile hotspot?','No','FIX_VPN_UPDATE_REINSTALL_CLIENT',2),
+    ('Q_INTERNAL_RESOURCES_USER','Q_VPN_CONNECTS_USER','question','Check Internal Resource Access',None,'If VPN connects, can you access internal resources such as shared drives or internal websites?','Does the VPN connect successfully?','Yes',None,2),
+    ('S_VPN_RESTORED_USER','Q_INTERNAL_RESOURCES_USER','solution','Confirm VPN Restored',None,None,'If VPN connects, can you access internal resources such as shared drives or internal websites?','Yes','FIX_VPN_CONFIRM_RESTORED',1),
+    ('S_CONNECTED_INTERNAL_FAILS_USER','Q_INTERNAL_RESOURCES_USER','solution','Report Connected VPN But Internal Access Fails',None,None,'If VPN connects, can you access internal resources such as shared drives or internal websites?','No','FIX_VPN_CONNECTED_INTERNAL_ACCESS_FAILS',2),
+]
+
+VPN_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_VPN_TECH', None, 'category', 'VPN Connection Failure - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for VPN authentication, DNS, routing, client, and network path failures.', None, None, None, None, 1),
+    ('Q_BASE_INTERNET_WORKS_TECH','ROOT_VPN_TECH','question','Verify Base Internet',None,'Can the user access the internet before starting VPN?',None,None,None,1),
+    ('S_RESTORE_BASE_INTERNET_TECH','Q_BASE_INTERNET_WORKS_TECH','solution','Restore Base Internet Connection',None,None,'Can the user access the internet before starting VPN?','No','FIX_VPN_RESTORE_BASE_INTERNET',1),
+    ('Q_VPN_AUTH_DEPENDENCY_TECH','Q_BASE_INTERNET_WORKS_TECH','question','Check Authentication, Account, and MFA',None,'Is the failure related to credentials, account lockout, password expiration, or MFA?','Can the user access the internet before starting VPN?','Yes',None,2),
+    ('S_VPN_AUTH_DEPENDENCY_TECH','Q_VPN_AUTH_DEPENDENCY_TECH','solution','Resolve VPN Authentication or MFA Dependency',None,None,'Is the failure related to credentials, account lockout, password expiration, or MFA?','Yes','FIX_VPN_AUTH_MFA_DEPENDENCY',1),
+    ('Q_VPN_DNS_GATEWAY_TECH','Q_VPN_AUTH_DEPENDENCY_TECH','question','Check VPN Gateway DNS',None,'Does DNS resolve the VPN gateway hostname?','Is the failure related to credentials, account lockout, password expiration, or MFA?','No',None,2),
+    ('S_VPN_DNS_GATEWAY_TECH','Q_VPN_DNS_GATEWAY_TECH','solution','Troubleshoot DNS Resolution for VPN Gateway',None,None,'Does DNS resolve the VPN gateway hostname?','No','FIX_VPN_DNS_GATEWAY_RESOLUTION',1),
+    ('Q_VPN_TUNNEL_IP_TECH','Q_VPN_DNS_GATEWAY_TECH','question','Check Tunnel Establishment',None,'Does the VPN client establish a tunnel and receive a VPN adapter IP address?','Does DNS resolve the VPN gateway hostname?','Yes',None,2),
+    ('Q_VPN_FAILS_MULTIPLE_NETWORKS_TECH','Q_VPN_TUNNEL_IP_TECH','question','Compare Network Paths',None,'Does VPN fail on multiple networks?','Does the VPN client establish a tunnel and receive a VPN adapter IP address?','No',None,1),
+    ('S_ESCALATE_CLIENT_CERT_GATEWAY_TECH','Q_VPN_FAILS_MULTIPLE_NETWORKS_TECH','solution','Escalate Possible VPN Client, Certificate, or Gateway Issue',None,None,'Does VPN fail on multiple networks?','Yes','FIX_ESCALATE_VPN_CLIENT_CERT_GATEWAY',1),
+    ('S_LOCAL_NETWORK_BLOCK_TECH','Q_VPN_FAILS_MULTIPLE_NETWORKS_TECH','solution','Identify Local Network Blocking VPN',None,None,'Does VPN fail on multiple networks?','No','FIX_VPN_LOCAL_NETWORK_BLOCK',2),
+    ('Q_INTERNAL_REACHABILITY_TECH','Q_VPN_TUNNEL_IP_TECH','question','Check Internal Reachability',None,'After connection, can the user resolve and reach internal resources?','Does the VPN client establish a tunnel and receive a VPN adapter IP address?','Yes',None,2),
+    ('S_VPN_RESTORED_TECH','Q_INTERNAL_REACHABILITY_TECH','solution','Confirm VPN Restored',None,None,'After connection, can the user resolve and reach internal resources?','Yes','FIX_VPN_CONFIRM_RESTORED',1),
+    ('S_CONNECTED_INTERNAL_FAILS_TECH','Q_INTERNAL_REACHABILITY_TECH','solution','Troubleshoot VPN Routing, DNS, or ACL Access',None,None,'After connection, can the user resolve and reach internal resources?','No','FIX_VPN_CONNECTED_INTERNAL_ACCESS_FAILS',2),
+]
+
+def seed_vpn_connection_failure_content(cursor):
+    """Seed VPN Connection Failure KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = VPN_CONNECTION_FAILURE_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, VPN_CONNECTION_FAILURE_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, VPN_CONNECTION_FAILURE_KB['title'], VPN_CONNECTION_FAILURE_KB['summary'], VPN_CONNECTION_FAILURE_KB['difficulty'], VPN_CONNECTION_FAILURE_KB['estimated_time'], VPN_CONNECTION_FAILURE_KB['escalation_required'], VPN_CONNECTION_FAILURE_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, VPN_CONNECTION_FAILURE_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, VPN_CONNECTION_FAILURE_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, VPN_CONNECTION_FAILURE_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, VPN_CONNECTION_FAILURE_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, VPN_CONNECTION_FAILURE_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, VPN_CONNECTION_FAILURE_SOLUTIONS)
+    for solution_code, audience_steps in VPN_CONNECTION_FAILURE_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_vpn_connection_failure_tree(cursor, 'user', 'VPN_CONNECTION_FAILURE_USER', 'VPN Connection Failure - User Diagnostic', 'User-friendly diagnostic tree for VPN connection and internal access problems.', VPN_USER_DIAGNOSTIC_NODES)
+    seed_vpn_connection_failure_tree(cursor, 'technician', 'VPN_CONNECTION_FAILURE_TECHNICIAN', 'VPN Connection Failure - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for VPN authentication, DNS, routing, client, and network path failures.', VPN_TECH_DIAGNOSTIC_NODES)
+
+def seed_vpn_connection_failure_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'VPN_CONNECTION_FAILURE')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'VPN_CONNECTION_FAILURE', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
 def initialize_database():
     """Create SQLite tables if they do not already exist."""
     connection = get_db_connection()
@@ -3081,6 +3319,7 @@ def initialize_database():
     seed_password_reset_request_content(cursor)
     seed_account_locked_content(cursor)
     seed_mfa_issue_content(cursor)
+    seed_vpn_connection_failure_content(cursor)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -8428,7 +8667,7 @@ def get_portfolio_health_metrics():
     connection = get_db_connection()
     cursor = connection.cursor()
     try:
-        cursor.execute("SELECT COUNT(*) AS count FROM diagnostic_tree WHERE is_active = 1 AND base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST', 'ACCOUNT_LOCKED', 'MULTI_FACTOR_AUTHENTICATION_ISSUE')")
+        cursor.execute("SELECT COUNT(*) AS count FROM diagnostic_tree WHERE is_active = 1 AND base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST', 'ACCOUNT_LOCKED', 'MULTI_FACTOR_AUTHENTICATION_ISSUE', 'VPN_CONNECTION_FAILURE')")
         diagnostic_tree_count = cursor.fetchone()["count"]
 
         cursor.execute("SELECT COUNT(*) AS count FROM troubleshooting_event")
@@ -9147,7 +9386,7 @@ def get_diagnostic_tree_records_for_admin():
         FROM diagnostic_tree dt
         LEFT JOIN problem p
             ON dt.problem_id = p.problem_id
-        WHERE dt.base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST', 'ACCOUNT_LOCKED', 'MULTI_FACTOR_AUTHENTICATION_ISSUE')
+        WHERE dt.base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST', 'ACCOUNT_LOCKED', 'MULTI_FACTOR_AUTHENTICATION_ISSUE', 'VPN_CONNECTION_FAILURE')
         ORDER BY
             COALESCE(p.category, ''),
             COALESCE(p.title, dt.title),
