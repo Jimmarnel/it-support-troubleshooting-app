@@ -563,6 +563,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "VPN Connection Failure": "VPN_CONNECTION_FAILURE",
     "Printer Failure": "PRINTER_FAILURE",
     "Password Reset Request": "PASSWORD_RESET_REQUEST",
+    "Account Locked": "ACCOUNT_LOCKED",
 }
 
 
@@ -576,10 +577,10 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
-    "Printer Failure and Password Reset Request. Other sample issues are hidden until they "
+    "Printer Failure, Password Reset Request, and Account Locked. Other sample issues are hidden until they "
     "are expanded with detailed symptoms, causes, user steps, and technician steps."
 )
 
@@ -2620,6 +2621,229 @@ def seed_password_reset_tree(cursor, audience, tree_code, title, description, no
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
 
+# -----------------------------
+# ACCOUNT LOCKED RELATIONAL SEED DATA
+# -----------------------------
+ACCOUNT_LOCKED_PROBLEM = (
+    'ACCOUNT_LOCKED',
+    'Account Locked',
+    'Account & Access',
+    'Medium',
+    'User cannot sign in because their account is temporarily locked after repeated failed sign-in attempts or suspicious activity.',
+)
+
+ACCOUNT_LOCKED_KB = {
+    'title': 'Account Locked',
+    'summary': 'Use this guide when an account is locked after too many failed sign-in attempts, saved old credentials, or possible suspicious activity.',
+    'difficulty': 'Beginner',
+    'estimated_time': '5-15 minutes',
+    'escalation_required': 0,
+    'escalation_notes': 'Escalate if failed attempts are suspicious, the account repeatedly locks after unlock, multiple users are affected, unexpected MFA prompts occur, or the lockout source cannot be identified.',
+    'tags': ['account locked', 'lockout', 'failed login', 'sign-in', 'password', 'saved password', 'credentials', 'MFA', 'security'],
+    'symptoms': [
+        'Account locked or too many failed attempts message appears',
+        'User cannot sign in even though they know the password',
+        'User recently changed password and is now locked out',
+        'Email, phone, VPN, or browser keeps prompting for credentials',
+        'Account locks again shortly after IT unlocks it',
+        'VPN or remote access reports authentication failed',
+        'Unexpected MFA prompts or security alerts appear',
+    ],
+    'causes': [
+        'Common: repeated wrong password attempts, recently changed password still saved on phone/email/VPN/browser, mapped drive using old credentials, wrong username/domain, Caps Lock or keyboard layout issue, or temporary security policy lockout.',
+        'Advanced: scheduled task or service using old credentials, cached Windows credentials, remote desktop saved credentials, legacy authentication client, directory sync delay, password spray/brute-force attempt, risk-based sign-in policy, or shared workstation with stale credentials.',
+    ],
+    'user_steps': [
+        'Stop retrying the password repeatedly.',
+        'Confirm you are using the correct company username or email address.',
+        'Check that Caps Lock is off and the keyboard layout is correct.',
+        'If you recently changed your password, update it on mobile email, VPN, browser password manager, mapped drives, and remote desktop connections.',
+        'Turn off or disconnect old phones, tablets, or laptops temporarily if they may still have the old password saved.',
+        'Try signing in from a private/incognito browser window after IT confirms the account is unlocked.',
+        'If the lockout happens again, tell IT which device or app you were using when it happened.',
+        'Do not approve unexpected MFA prompts; report them to IT immediately.',
+    ],
+    'it_steps': [
+        'Verify the user identity according to support policy before unlocking the account.',
+        'Confirm the exact username/email and system the user is trying to access.',
+        'Confirm whether the account is actually locked or whether the issue is password, MFA, disabled account, or access denial.',
+        'Review failed sign-in logs for timestamps, source IP/location, device, application/client, and failure reason.',
+        'Ask whether the user recently changed or reset their password.',
+        'Check likely stale-credential sources: mobile email, VPN, mapped network drives, browser password manager, remote desktop, old laptops/tablets, and cached Windows credentials.',
+        'If attempts appear legitimate, unlock the account and have the user update saved credentials before retrying.',
+        'If lockout recurs, identify the source of repeated failed attempts using identity, VPN, email, domain controller, or application logs.',
+        'Escalate to Security if attempts are suspicious, from unknown locations, or resemble brute-force/password spray activity.',
+        'Escalate to Identity/Access Management if the lockout source cannot be identified or identity policy/sync issues are suspected.',
+    ],
+}
+
+ACCOUNT_LOCKED_SOLUTIONS = [
+    ('FIX_ACCOUNT_LOCKED_CHECK_ERROR_TYPE','Check Sign-In Error Type','The user may not be locked out; the issue may be password, MFA, disabled account, or application access.','Read the exact sign-in error. Confirm whether it says locked, disabled, password expired, MFA required, or access denied. Capture a screenshot if possible. Check account status and route to the correct process.',0,'Escalate if the error suggests disabled account, policy block, or suspicious sign-in activity.','medium'),
+    ('FIX_UPDATE_SAVED_PASSWORDS_AFTER_CHANGE','Update Saved Passwords on Devices','Old saved credentials may keep retrying and locking the account after a password change.','Update or remove old passwords from phone, email apps, VPN, browser password manager, mapped drives, remote desktop, and cached credentials. Restart affected apps and retry after unlock.',0,'Escalate if the repeated failed-attempt source cannot be identified.','medium'),
+    ('FIX_FIND_OLD_CREDENTIAL_SOURCE','Find Device or App Using Old Credentials','A device, app, service, or saved connection is repeatedly using an old password.','Review lockout timestamps and sign-in logs. Check mobile email, VPN, mapped drives, RDP, scheduled tasks, saved Windows credentials, and old devices. Clear or update stored credentials.',1,'Escalate to Identity/Access Management if the source cannot be identified.','medium'),
+    ('FIX_UNLOCK_ACCOUNT_MONITOR','Unlock Account and Monitor','The account appears safely locked due to normal failed attempts and can be unlocked after identity verification.','Verify identity. Confirm failed attempts appear legitimate. Unlock the account. Ask the user to sign in once with the correct password and monitor whether the lockout returns.',0,'Escalate if lockout recurs or failed attempts look suspicious.','medium'),
+    ('FIX_ESCALATE_POSSIBLE_ACCOUNT_ATTACK','Escalate Possible Account Attack','Suspicious failed attempts or unexpected MFA prompts may indicate an attempted account attack.','Do not repeatedly unlock without review. Capture failed sign-in timestamps, source IPs, locations, user agent, and MFA events. Check whether other users are affected and escalate to Security.',1,'Escalate immediately to Security when compromise, password spray, brute force, or unexpected MFA prompts are suspected.','high'),
+    ('FIX_VERIFY_IDENTITY_BEFORE_UNLOCK','Verify Identity Before Unlock','IT must verify the user before unlocking an account or changing authentication settings.','Use the approved support identity-verification process. Do not disclose account details or unlock until verification passes. Escalate if identity cannot be verified.',0,'Follow company policy for identity verification and do not share passwords.','medium'),
+    ('FIX_INVESTIGATE_RECURRING_LOCKOUT_SOURCE','Investigate Recurring Lockout Source','The account keeps locking after unlock, so the repeated failed-attempt source must be identified.','Compare lockout timestamps to device activity. Review domain controller, identity provider, VPN, email, and application logs. Identify and clear the stale credential source.',1,'Escalate if source cannot be identified or suspicious sign-in patterns are present.','high'),
+]
+
+ACCOUNT_LOCKED_SOLUTION_STEPS = {
+    'FIX_ACCOUNT_LOCKED_CHECK_ERROR_TYPE': {
+        'user': ['Read the exact sign-in error message.', 'Check whether the message says locked, disabled, password expired, MFA required, or access denied.', 'Take a screenshot if possible.', 'Submit a ticket with the exact message if you are unsure.'],
+        'technician': ['Confirm the exact error message and affected system.', 'Check account status in the identity provider.', 'Route to password reset, MFA, access request, or disabled account process if the account is not locked.'],
+        'admin': ['Review whether the issue is a true account lockout or another access-control state.', 'Escalate if policy, licensing, or disabled-account handling is required.'],
+    },
+    'FIX_UPDATE_SAVED_PASSWORDS_AFTER_CHANGE': {
+        'user': ['Update the saved password on phone, tablet, email app, VPN, and browser password manager.', 'Remove old saved passwords if you are unsure which one is being used.', 'Restart affected apps after updating the password.', 'Try signing in again after IT unlocks the account.'],
+        'technician': ['Ask which devices and apps are configured with company credentials.', 'Check failed sign-in logs for client or application hints.', 'Help remove old credentials from Credential Manager, browser, VPN, or email profile.', 'Unlock the account after old credentials are corrected.'],
+        'admin': ['Confirm lockouts are caused by stale credentials before repeated unlocks.', 'Escalate recurring lockouts if the source is not obvious.'],
+    },
+    'FIX_FIND_OLD_CREDENTIAL_SOURCE': {
+        'user': ['Think about devices where your old password may still be saved.', 'Turn off or disconnect old phones, tablets, or laptops temporarily.', 'Update passwords in email, VPN, remote desktop, mapped drives, and browsers.', 'Tell IT if lockouts happen only when a specific device is online.'],
+        'technician': ['Review lockout logs for source workstation, IP, app, or protocol.', 'Check mobile email, VPN, mapped drives, RDP, scheduled tasks, and saved Windows credentials.', 'Clear cached credentials where appropriate.', 'If the source is unknown, escalate to Identity/Access Management.'],
+        'admin': ['Review recurring lockout evidence and authorize deeper identity-log investigation if needed.'],
+    },
+    'FIX_UNLOCK_ACCOUNT_MONITOR': {
+        'user': ['Wait for IT to confirm the account is unlocked.', 'Sign in one time using the correct password.', 'Avoid repeated attempts if sign-in fails.', 'Report immediately if the account locks again.'],
+        'technician': ['Verify user identity.', 'Confirm failed attempts appear legitimate.', 'Unlock the account.', 'Monitor whether lockout recurs.', 'Document the action in the support ticket.'],
+        'admin': ['Confirm unlock was appropriate and evidence does not suggest suspicious activity.'],
+    },
+    'FIX_ESCALATE_POSSIBLE_ACCOUNT_ATTACK': {
+        'user': ['Do not approve unexpected MFA prompts.', 'Stop retrying sign-in.', 'Report unfamiliar locations, devices, emails, or security alerts.', 'Wait for IT or Security instructions.'],
+        'technician': ['Do not unlock repeatedly without reviewing sign-in logs.', 'Capture failed sign-in timestamps, source IPs, locations, user agent, and MFA events.', 'Check whether other accounts are affected.', 'Escalate to Security.', 'Follow incident response guidance if compromise is suspected.'],
+        'admin': ['Treat as security-sensitive until reviewed.', 'Prioritize as High when suspicious activity, password spray, or unexpected MFA prompts are present.'],
+    },
+    'FIX_VERIFY_IDENTITY_BEFORE_UNLOCK': {
+        'user': ['Be ready to verify your identity using the approved support process.', 'Do not share your password with IT.', 'Use only official support channels.'],
+        'technician': ['Verify identity according to policy.', 'Do not disclose account details before verification.', 'Continue with unlock only after verification passes.', 'Escalate if identity cannot be verified.'],
+        'admin': ['Ensure the unlock process follows identity-verification policy.', 'Review exceptions or failed verification attempts.'],
+    },
+    'FIX_INVESTIGATE_RECURRING_LOCKOUT_SOURCE': {
+        'user': ['Tell IT when the lockout happens again.', 'Note which device or app you were using at that moment.', 'Disconnect old devices if instructed.', 'Avoid repeated sign-in attempts.'],
+        'technician': ['Compare lockout timestamps to user device activity.', 'Review domain controller, identity provider, VPN, email, and application logs.', 'Identify the source device, app, or protocol.', 'Remove or update stored credentials.', 'Escalate if the source cannot be identified.'],
+        'admin': ['Escalate to Identity/Access Management for unresolved recurring lockouts.', 'Escalate to Security if patterns suggest attack or compromise.'],
+    },
+}
+
+ACCOUNT_LOCKED_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_ACCOUNT_LOCKED_USER',None,'category','Account Locked - User Diagnostic','User-friendly path for account lockout, saved password, and suspicious prompt scenarios.',None,None,None,None,1),
+    ('Q_LOCKED_MESSAGE_USER','ROOT_ACCOUNT_LOCKED_USER','question','Confirm Lockout Message','Check whether this is a true account lockout.','Do you see an account locked or too many attempts message?',None,None,None,1),
+    ('S_CHECK_ERROR_TYPE_USER','Q_LOCKED_MESSAGE_USER','solution','Check Sign-In Error Type',None,None,'Do you see an account locked or too many attempts message?','No','FIX_ACCOUNT_LOCKED_CHECK_ERROR_TYPE',1),
+    ('Q_RECENT_PASSWORD_CHANGE_USER','Q_LOCKED_MESSAGE_USER','question','Check Recent Password Change','Recent password changes often cause stale credentials on devices.','Did you recently change or reset your password?','Do you see an account locked or too many attempts message?','Yes',None,2),
+    ('S_UPDATE_SAVED_PASSWORDS_USER','Q_RECENT_PASSWORD_CHANGE_USER','solution','Update Saved Passwords on Devices',None,None,'Did you recently change or reset your password?','Yes','FIX_UPDATE_SAVED_PASSWORDS_AFTER_CHANGE',1),
+    ('Q_UNEXPECTED_MFA_USER','Q_RECENT_PASSWORD_CHANGE_USER','question','Check Security Prompts','Unexpected MFA prompts may indicate suspicious sign-in activity.','Are you receiving unexpected MFA prompts or security alerts?','Did you recently change or reset your password?','No',None,2),
+    ('S_ESCALATE_ATTACK_USER','Q_UNEXPECTED_MFA_USER','solution','Report Possible Suspicious Sign-In',None,None,'Are you receiving unexpected MFA prompts or security alerts?','Yes','FIX_ESCALATE_POSSIBLE_ACCOUNT_ATTACK',1),
+    ('Q_RELOCKS_USER','Q_UNEXPECTED_MFA_USER','question','Check Repeated Lockout','Recurring lockouts usually mean an old credential is still being used.','Does the account lock again shortly after being unlocked?','Are you receiving unexpected MFA prompts or security alerts?','No',None,2),
+    ('S_FIND_OLD_CREDS_USER','Q_RELOCKS_USER','solution','Find Device or App Using Old Credentials',None,None,'Does the account lock again shortly after being unlocked?','Yes','FIX_FIND_OLD_CREDENTIAL_SOURCE',1),
+    ('S_UNLOCK_MONITOR_USER','Q_RELOCKS_USER','solution','Wait or Contact IT to Unlock Account',None,None,'Does the account lock again shortly after being unlocked?','No','FIX_UNLOCK_ACCOUNT_MONITOR',2),
+]
+
+ACCOUNT_LOCKED_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_ACCOUNT_LOCKED_TECH',None,'category','Account Locked - Technician Diagnostic','Technician-level path for identity verification, lockout validation, stale credentials, and security escalation.',None,None,None,None,1),
+    ('Q_IDENTITY_VERIFIED_UNLOCK_TECH','ROOT_ACCOUNT_LOCKED_TECH','question','Verify User Identity','Unlocking an account requires identity verification.','Has the user identity been verified according to policy?',None,None,None,1),
+    ('S_VERIFY_IDENTITY_UNLOCK_TECH','Q_IDENTITY_VERIFIED_UNLOCK_TECH','solution','Verify Identity Before Unlock',None,None,'Has the user identity been verified according to policy?','No','FIX_VERIFY_IDENTITY_BEFORE_UNLOCK',1),
+    ('Q_ACCOUNT_ACTUALLY_LOCKED_TECH','Q_IDENTITY_VERIFIED_UNLOCK_TECH','question','Confirm Account Lockout','Differentiate lockout from password, MFA, disabled account, or access denial.','Is the account locked in the identity system?','Has the user identity been verified according to policy?','Yes',None,2),
+    ('S_CHECK_ERROR_TYPE_TECH','Q_ACCOUNT_ACTUALLY_LOCKED_TECH','solution','Check Password, MFA, or Disabled Account Instead',None,None,'Is the account locked in the identity system?','No','FIX_ACCOUNT_LOCKED_CHECK_ERROR_TYPE',1),
+    ('Q_KNOWN_DEVICE_ATTEMPTS_TECH','Q_ACCOUNT_ACTUALLY_LOCKED_TECH','question','Review Failed Attempt Source','Known device/app attempts usually indicate stale credentials.','Do failed sign-in logs show repeated attempts from a known user device or app?','Is the account locked in the identity system?','Yes',None,2),
+    ('S_CLEAR_SAVED_CREDS_TECH','Q_KNOWN_DEVICE_ATTEMPTS_TECH','solution','Clear Saved Credentials and Unlock Account',None,None,'Do failed sign-in logs show repeated attempts from a known user device or app?','Yes','FIX_UPDATE_SAVED_PASSWORDS_AFTER_CHANGE',1),
+    ('Q_SUSPICIOUS_ATTEMPTS_TECH','Q_KNOWN_DEVICE_ATTEMPTS_TECH','question','Check Suspicious Attempts','Unknown sources may indicate attack or compromise.','Are failed attempts suspicious or from unknown locations?','Do failed sign-in logs show repeated attempts from a known user device or app?','No',None,2),
+    ('S_ESCALATE_ATTACK_TECH','Q_SUSPICIOUS_ATTEMPTS_TECH','solution','Escalate Possible Account Attack',None,None,'Are failed attempts suspicious or from unknown locations?','Yes','FIX_ESCALATE_POSSIBLE_ACCOUNT_ATTACK',1),
+    ('Q_RECURS_AFTER_UNLOCK_TECH','Q_SUSPICIOUS_ATTEMPTS_TECH','question','Check Recurrence','Recurring lockouts require source investigation.','Does lockout recur after unlock?','Are failed attempts suspicious or from unknown locations?','No',None,2),
+    ('S_INVESTIGATE_RECURRING_TECH','Q_RECURS_AFTER_UNLOCK_TECH','solution','Investigate Recurring Lockout Source',None,None,'Does lockout recur after unlock?','Yes','FIX_INVESTIGATE_RECURRING_LOCKOUT_SOURCE',1),
+    ('S_UNLOCK_MONITOR_TECH','Q_RECURS_AFTER_UNLOCK_TECH','solution','Unlock Account and Monitor',None,None,'Does lockout recur after unlock?','No','FIX_UNLOCK_ACCOUNT_MONITOR',2),
+]
+
+def seed_account_locked_content(cursor):
+    """Seed Account Locked KB article, solutions, role-specific steps, and diagnostic trees."""
+    code_, title, category, severity, description = ACCOUNT_LOCKED_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, ACCOUNT_LOCKED_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, ACCOUNT_LOCKED_KB['title'], ACCOUNT_LOCKED_KB['summary'], ACCOUNT_LOCKED_KB['difficulty'], ACCOUNT_LOCKED_KB['estimated_time'], ACCOUNT_LOCKED_KB['escalation_required'], ACCOUNT_LOCKED_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, ACCOUNT_LOCKED_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, ACCOUNT_LOCKED_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, ACCOUNT_LOCKED_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, ACCOUNT_LOCKED_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, ACCOUNT_LOCKED_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, ACCOUNT_LOCKED_SOLUTIONS)
+    for solution_code, audience_steps in ACCOUNT_LOCKED_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_account_locked_tree(cursor, 'user', 'ACCOUNT_LOCKED_USER', 'Account Locked - User Diagnostic', 'User-friendly diagnostic tree for account lockouts.', ACCOUNT_LOCKED_USER_DIAGNOSTIC_NODES)
+    seed_account_locked_tree(cursor, 'technician', 'ACCOUNT_LOCKED_TECHNICIAN', 'Account Locked - Technician Diagnostic', 'Technician-level diagnostic tree for account lockouts and recurring failed sign-ins.', ACCOUNT_LOCKED_TECH_DIAGNOSTIC_NODES)
+
+def seed_account_locked_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'ACCOUNT_LOCKED')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'ACCOUNT_LOCKED', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
+
+
 def initialize_database():
     """Create SQLite tables if they do not already exist."""
     connection = get_db_connection()
@@ -2633,6 +2857,7 @@ def initialize_database():
     seed_role_specific_diagnostic_content(cursor)
     seed_printer_failure_content(cursor)
     seed_password_reset_request_content(cursor)
+    seed_account_locked_content(cursor)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -5761,6 +5986,7 @@ def show_knowledge_base():
     common_titles = [
         "Printer Failure",
         "Password Reset Request",
+        "Account Locked",
     ]
 
     common_issues = [issue for issue in issues if issue["title"] in common_titles]
@@ -7897,7 +8123,7 @@ def get_portfolio_health_metrics():
     connection = get_db_connection()
     cursor = connection.cursor()
     try:
-        cursor.execute("SELECT COUNT(*) AS count FROM diagnostic_tree WHERE is_active = 1 AND base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST')")
+        cursor.execute("SELECT COUNT(*) AS count FROM diagnostic_tree WHERE is_active = 1 AND base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST', 'ACCOUNT_LOCKED')")
         diagnostic_tree_count = cursor.fetchone()["count"]
 
         cursor.execute("SELECT COUNT(*) AS count FROM troubleshooting_event")
@@ -8612,7 +8838,7 @@ def get_diagnostic_tree_records_for_admin():
         FROM diagnostic_tree dt
         LEFT JOIN problem p
             ON dt.problem_id = p.problem_id
-        WHERE dt.base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST')
+        WHERE dt.base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST', 'ACCOUNT_LOCKED')
         ORDER BY
             COALESCE(p.category, ''),
             COALESCE(p.title, dt.title),
