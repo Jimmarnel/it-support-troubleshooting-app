@@ -562,6 +562,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "High CPU Usage": "HIGH_CPU_USAGE",
     "VPN Connection Failure": "VPN_CONNECTION_FAILURE",
     "Printer Failure": "PRINTER_FAILURE",
+    "Password Reset Request": "PASSWORD_RESET_REQUEST",
 }
 
 
@@ -575,10 +576,10 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST"}
 MVP_CONTENT_FOCUS_NOTE = (
-    "The visible MVP currently focuses on Printer Failure because it is the most "
-    "complete troubleshooting example. Other sample issues are hidden until they "
+    "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
+    "Printer Failure and Password Reset Request. Other sample issues are hidden until they "
     "are expanded with detailed symptoms, causes, user steps, and technician steps."
 )
 
@@ -2341,7 +2342,12 @@ def seed_printer_failure_tree(cursor, audience, tree_code, title, description, n
     tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
     if not tree_id:
         return
-    cursor.execute('DELETE FROM diagnostic_node WHERE diagnostic_tree_id = ?', (tree_id,))
+    # Do not delete/recreate diagnostic nodes here. Existing troubleshooting
+    # sessions/events may reference diagnostic_node rows, so deleting them can
+    # fail with FOREIGN KEY constraint errors and would also break audit history.
+    # Instead, mark the existing tree inactive, then upsert the current seed
+    # nodes back to active. This preserves stable node IDs across app restarts.
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
     for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
         parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
         solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
@@ -2349,8 +2355,268 @@ def seed_printer_failure_tree(cursor, audience, tree_code, title, description, n
             INSERT INTO diagnostic_node (
                 diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
                 node_key, node_type, title, description, prompt_text,
-                condition_label, condition_value, solution_id, sort_order
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
+
+
+# -----------------------------
+# PASSWORD RESET REQUEST RELATIONAL SEED DATA
+# -----------------------------
+PASSWORD_RESET_REQUEST_PROBLEM = (
+    'PASSWORD_RESET_REQUEST',
+    'Password Reset Request',
+    'Account & Access',
+    'Medium',
+    'User cannot sign in because they forgot their password, believe their password expired, or need to reset it.',
+)
+
+PASSWORD_RESET_REQUEST_KB = {
+    'title': 'Password Reset Request',
+    'summary': 'Use this guide when a user forgot their password, their password expired, or the password reset process does not work.',
+    'difficulty': 'Beginner',
+    'estimated_time': '5-10 minutes',
+    'escalation_required': 0,
+    'escalation_notes': 'Escalate if identity cannot be verified, MFA/recovery methods are unavailable, suspicious sign-in activity exists, or reset succeeds in one system but fails in another.',
+    'tags': ['password', 'reset', 'account', 'login', 'sign-in', 'expired password', 'forgot password', 'self-service password reset', 'MFA'],
+    'symptoms': [
+        'User forgot their password',
+        'Password is not working',
+        'Password expired message appears',
+        'Password reset link or portal does not work',
+        'Reset code, email, or MFA prompt is not received',
+        'Password was changed but sign-in still fails',
+        'User can sign in to some systems but not others',
+        'Account locked message appears after repeated failed attempts',
+    ],
+    'causes': [
+        'Common: forgotten password, expired password, wrong username, Caps Lock or keyboard layout issue, failed self-service reset, outdated recovery email/phone, old saved passwords on mobile/email/VPN, browser cached session, or account lockout.',
+        'Advanced: directory synchronization delay, password writeback failure, conditional access block, missing MFA registration, disabled or expired account, password policy conflict, identity provider outage, separate local application credentials, or compromised-account protection.',
+    ],
+    'user_steps': [
+        'Confirm you are using the correct company username or email address.',
+        'Check that Caps Lock is off and the keyboard language/layout is correct.',
+        'Try signing in from a private/incognito browser window.',
+        'Use the company-approved password reset portal.',
+        'Follow the password requirements shown on the reset page.',
+        'After resetting the password, wait a few minutes and try signing in again.',
+        'Update the new password on saved devices, email apps, VPN, and mobile devices.',
+        'If you do not receive a reset code or email, check your recovery phone/email and spam/junk folder.',
+        'Submit a support ticket if the reset portal does not work or you still cannot sign in.',
+    ],
+    'it_steps': [
+        'Verify the user identity according to support policy before resetting or discussing account details.',
+        'Confirm the exact username/email and the system the user is trying to access.',
+        'Check whether the user can complete self-service password reset.',
+        'Check account status: active/disabled, locked/unlocked, password expired, must-change-password flag, and MFA registration.',
+        'If the account is locked, review failed sign-in attempts before unlocking.',
+        'If admin reset is required, use the approved admin reset process and require password change at next sign-in.',
+        'Ask the user to test sign-in from a private/incognito browser window.',
+        'Confirm the user updates saved passwords on mobile email, VPN, browser password manager, mapped drives, remote desktop, and Wi-Fi if applicable.',
+        'Check whether the reset synchronized to all required systems.',
+        'Escalate if MFA, conditional access, disabled account, identity provider errors, or suspected compromise are involved.',
+    ],
+}
+
+PASSWORD_RESET_REQUEST_SOLUTIONS = [
+    ('FIX_USE_PASSWORD_RESET_PORTAL','Use the Password Reset Portal','User forgot their password and should use the approved self-service reset process.','Go to the company-approved password reset portal. Enter the company username or email address. Complete identity verification. Create a new password that meets requirements. Wait a few minutes, then try signing in again. Update saved passwords on devices and apps.',0,'Escalate if the reset portal is unavailable, recovery methods are outdated, or reset fails after verification.','medium'),
+    ('FIX_RESET_EXPIRED_PASSWORD','Reset Expired Password','The user password expired and must be changed before sign-in can continue.','Follow the expired-password prompt. Enter the old password if requested. Create a compliant new password. Sign out and sign back in. Update saved credentials on other devices and apps.',0,'Escalate if the user cannot complete the expired-password flow or policy blocks the reset.','medium'),
+    ('FIX_PASSWORD_RESET_RECOVERY_METHOD','Check Recovery Method or MFA Prompt','The user cannot complete password reset because the reset code, email, or MFA prompt is unavailable.','Check spam/junk folders, phone signal, authenticator prompts, and recovery email/phone. Try private/incognito mode. Do not approve unexpected MFA prompts. Contact IT if recovery methods are outdated or inaccessible.',1,'Escalate to Identity/Access Management if recovery method changes require approval or identity verification beyond help desk scope.','medium'),
+    ('FIX_UNLOCK_ACCOUNT_REVIEW_ATTEMPTS','Unlock Account and Review Failed Attempts','The user may be locked out after repeated failed sign-in attempts.','Stop repeated password attempts. Verify identity. Review failed login source if available. Unlock the account if activity appears legitimate. Have the user sign in once and update saved passwords on all devices.',1,'Escalate to Security if failed attempts are suspicious or come from unknown locations.','medium'),
+    ('FIX_ADMIN_PASSWORD_RESET','Complete Admin Password Reset','IT must reset the password because self-service reset is unavailable or unsuccessful.','Verify identity. Reset the password using the approved admin console. Require password change at next sign-in. Avoid insecure password sharing. Confirm successful sign-in and document the reset.',0,'Escalate if policy requires higher approval or if the account appears compromised.','medium'),
+    ('FIX_ESCALATE_IDENTITY_SYNC_POLICY','Escalate Identity Sync or Policy Issue','Password reset completed but sign-in still fails due to sync, policy, or system-specific access issue.','Confirm reset succeeded in the identity provider. Identify whether one app or all apps fail. Check directory sync, password writeback, conditional access, licensing, and group membership. Capture errors and escalate.',1,'Escalate to Identity/Access Management when sync, writeback, conditional access, licensing, or app-specific identity issues are suspected.','high'),
+    ('FIX_VERIFY_IDENTITY_BEFORE_RESET','Verify Identity Before Reset','Support must verify the user identity before performing account changes.','Do not reset the password until the user identity is verified using approved support policy. If identity cannot be verified, escalate or follow the exception process.',1,'Never reset a password for an unverified requester. Escalate exceptions to a manager or Identity/Access Management.','high'),
+    ('FIX_ESCALATE_DISABLED_ACCOUNT','Escalate Disabled or Deprovisioned Account','The account is disabled, expired, or not fully provisioned and cannot be handled as a simple password reset.','Confirm the account state and collect user, manager, department, and business justification. Escalate to Identity/Access Management or HR/onboarding workflow as appropriate.',1,'Do not re-enable disabled or deprovisioned accounts without approval.','high'),
+    ('FIX_ESCALATE_MFA_RECOVERY','Escalate MFA Recovery','MFA is preventing the reset and recovery methods may need to be updated or re-registered.','Verify identity, confirm registered MFA methods, determine whether the user still has access to them, and follow the approved MFA recovery process.',1,'Escalate if MFA reset requires identity governance approval or suspicious activity is present.','high'),
+]
+
+PASSWORD_RESET_SOLUTION_STEPS = {
+    'FIX_USE_PASSWORD_RESET_PORTAL': {
+        'user': ['Open the company-approved password reset portal.', 'Enter your company username or email address.', 'Complete identity verification.', 'Create a new password that meets the listed requirements.', 'Wait a few minutes and try signing in again.', 'Update saved passwords on mobile, email, VPN, and browser password managers.'],
+        'technician': ['Confirm the user is using the correct reset portal.', 'Confirm the recovery email, phone, or MFA method is available.', 'Ask the user to retry in private/incognito mode.', 'Check identity logs if reset fails.', 'Escalate if the portal is unavailable or recovery methods are outdated.'],
+        'admin': ['Verify self-service password reset availability and policy assignment.', 'Check identity provider health if multiple users report failures.', 'Escalate recovery method issues according to access policy.'],
+    },
+    'FIX_RESET_EXPIRED_PASSWORD': {
+        'user': ['Follow the expired-password prompt on the sign-in page.', 'Enter your old password if requested.', 'Create a new password that meets requirements.', 'Sign out and sign back in with the new password.', 'Update saved passwords on other devices and apps.'],
+        'technician': ['Confirm password expiration status.', 'Confirm whether the user can change the password through normal sign-in.', 'If needed, force password change at next login.', 'Confirm the user successfully signs in after the change.', 'Check stale credentials if lockouts continue.'],
+        'admin': ['Review password policy if expiration/reset behavior is unexpected.', 'Check for repeated lockouts caused by stale credentials.'],
+    },
+    'FIX_PASSWORD_RESET_RECOVERY_METHOD': {
+        'user': ['Check spam or junk folders for the reset email.', 'Confirm your phone can receive SMS or authenticator prompts.', 'Try again from a private/incognito browser window.', 'Do not approve unexpected MFA prompts.', 'Contact IT if your recovery phone/email is outdated or inaccessible.'],
+        'technician': ['Verify user identity.', 'Check registered MFA/recovery methods.', 'Confirm whether the user still has access to the registered method.', 'Follow approved process to reset or update recovery information.', 'Escalate if recovery changes require approval.'],
+        'admin': ['Approve recovery method changes only after identity verification.', 'Route high-risk recovery changes to Identity/Access Management.'],
+    },
+    'FIX_UNLOCK_ACCOUNT_REVIEW_ATTEMPTS': {
+        'user': ['Stop retrying the password repeatedly.', 'Wait for IT confirmation that the account has been unlocked.', 'After unlock, sign in once using the correct password.', 'Update saved passwords on phones, email apps, VPN, and browser password managers.'],
+        'technician': ['Verify user identity.', 'Check account lockout status.', 'Review failed login source if available.', 'Unlock the account if activity appears legitimate.', 'Ask the user to update saved passwords on all devices.', 'Escalate to Security if failed attempts look suspicious.'],
+        'admin': ['Review repeated lockouts for stale credentials or suspicious activity.', 'Escalate suspicious lockout patterns to Security.'],
+    },
+    'FIX_ADMIN_PASSWORD_RESET': {
+        'user': ['Confirm your identity with IT.', 'Use the temporary password only through the approved sign-in page.', 'Create a new password when prompted.', 'Do not share the temporary or new password with anyone.', 'Update saved credentials on all devices.'],
+        'technician': ['Verify identity according to company policy.', 'Reset the password using the approved admin console.', 'Require password change at next sign-in.', 'Avoid sending passwords through insecure channels.', 'Confirm successful sign-in.', 'Document the reset in the support ticket.'],
+        'admin': ['Confirm the reset follows policy.', 'Audit password resets when elevated or exception handling is used.'],
+    },
+    'FIX_ESCALATE_IDENTITY_SYNC_POLICY': {
+        'user': ['Record the exact error message.', 'Note which systems work and which systems do not.', 'Avoid repeated login attempts until IT confirms next steps.'],
+        'technician': ['Confirm password reset succeeded in the identity provider.', 'Check whether the issue affects one app or all apps.', 'Check directory sync, password writeback, conditional access, and licensing/group membership.', 'Capture error messages and timestamps.', 'Escalate to Identity/Access Management.'],
+        'admin': ['Prioritize if the user is blocked from critical work or if multiple users are affected.', 'Coordinate with Identity/Access Management for sync or policy failures.'],
+    },
+    'FIX_VERIFY_IDENTITY_BEFORE_RESET': {
+        'user': ['Provide the identity verification information requested by IT.', 'Do not share your password with anyone.', 'Wait for IT to confirm the approved reset path.'],
+        'technician': ['Follow the approved identity verification process.', 'Do not reset the password if identity cannot be verified.', 'Document the verification result in the ticket.', 'Escalate exceptions to a manager or Identity/Access Management.'],
+        'admin': ['Review exceptions where user identity cannot be verified.', 'Do not approve reset bypasses without documented justification.'],
+    },
+    'FIX_ESCALATE_DISABLED_ACCOUNT': {
+        'user': ['Confirm your manager, department, and business need if requested.', 'Wait for IT or your manager to confirm access status.'],
+        'technician': ['Confirm whether the account is disabled, expired, or not fully provisioned.', 'Collect user, manager, department, and business justification.', 'Escalate to Identity/Access Management or onboarding/offboarding workflow.', 'Do not re-enable the account without approval.'],
+        'admin': ['Validate employment/access status before re-enabling accounts.', 'Coordinate with HR/onboarding/offboarding where needed.'],
+    },
+    'FIX_ESCALATE_MFA_RECOVERY': {
+        'user': ['Tell IT whether you still have access to your registered MFA device.', 'Do not approve unexpected prompts.', 'Follow the approved recovery process for MFA re-registration.'],
+        'technician': ['Verify user identity.', 'Review registered MFA methods.', 'Check whether MFA prompts are being delivered.', 'Follow approved MFA reset/re-registration workflow.', 'Escalate suspicious MFA activity to Security.'],
+        'admin': ['Approve MFA recovery only after identity verification.', 'Escalate high-risk MFA resets to Identity/Access Management or Security.'],
+    },
+}
+
+PASSWORD_RESET_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_PASSWORD_RESET_USER',None,'category','Password Reset Request - User Diagnostic','User-friendly path for forgotten, expired, or failed password reset issues.',None,None,None,None,1),
+    ('Q_REMEMBER_PASSWORD_USER','ROOT_PASSWORD_RESET_USER','question','Check Whether Password Is Known','Determine whether the user needs self-service reset or another sign-in path.','Do you remember your current password?',None,None,None,1),
+    ('S_USE_RESET_PORTAL_USER','Q_REMEMBER_PASSWORD_USER','solution','Use the Password Reset Portal',None,None,'Do you remember your current password?','No','FIX_USE_PASSWORD_RESET_PORTAL',1),
+    ('Q_EXPIRED_MESSAGE_USER','Q_REMEMBER_PASSWORD_USER','question','Check for Expired Password Message','Expired passwords usually follow a different reset path.','Are you seeing a message that your password expired?','Do you remember your current password?','Yes',None,2),
+    ('S_RESET_EXPIRED_USER','Q_EXPIRED_MESSAGE_USER','solution','Reset Expired Password',None,None,'Are you seeing a message that your password expired?','Yes','FIX_RESET_EXPIRED_PASSWORD',1),
+    ('Q_PORTAL_ACCESS_USER','Q_EXPIRED_MESSAGE_USER','question','Check Password Reset Portal Access','Confirm whether the user can reach the self-service reset portal.','Can you access the company password reset portal?','Are you seeing a message that your password expired?','No',None,2),
+    ('S_ADMIN_RESET_USER','Q_PORTAL_ACCESS_USER','solution','Submit Ticket for Password Reset Help',None,None,'Can you access the company password reset portal?','No','FIX_ADMIN_PASSWORD_RESET',1),
+    ('Q_RECEIVE_CODE_USER','Q_PORTAL_ACCESS_USER','question','Check Reset Code or MFA Prompt','The reset may fail if recovery methods are outdated or unavailable.','Did you receive the reset code, email, or MFA prompt?','Can you access the company password reset portal?','Yes',None,2),
+    ('S_RECOVERY_METHOD_USER','Q_RECEIVE_CODE_USER','solution','Check Recovery Method or MFA Prompt',None,None,'Did you receive the reset code, email, or MFA prompt?','No','FIX_PASSWORD_RESET_RECOVERY_METHOD',1),
+    ('Q_RESET_COMPLETE_USER','Q_RECEIVE_CODE_USER','question','Check Whether Reset Completed','Confirm whether the reset process finished successfully.','Did the password reset complete successfully?','Did you receive the reset code, email, or MFA prompt?','Yes',None,2),
+    ('S_UPDATE_SAVED_PASSWORDS_USER','Q_RESET_COMPLETE_USER','solution','Use the New Password and Update Saved Passwords',None,None,'Did the password reset complete successfully?','Yes','FIX_USE_PASSWORD_RESET_PORTAL',1),
+    ('S_FAILED_RESET_USER','Q_RESET_COMPLETE_USER','solution','Submit Ticket for Failed Password Reset',None,None,'Did the password reset complete successfully?','No','FIX_ESCALATE_IDENTITY_SYNC_POLICY',2),
+]
+
+PASSWORD_RESET_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_PASSWORD_RESET_TECH',None,'category','Password Reset Request - Technician Diagnostic','Technician-level path for identity verification, account status, MFA, lockout, and sync/policy issues.',None,None,None,None,1),
+    ('Q_IDENTITY_VERIFIED_TECH','ROOT_PASSWORD_RESET_TECH','question','Verify User Identity','Password resets must start with identity verification.','Has the user identity been verified according to policy?',None,None,None,1),
+    ('S_VERIFY_IDENTITY_TECH','Q_IDENTITY_VERIFIED_TECH','solution','Verify Identity Before Reset',None,None,'Has the user identity been verified according to policy?','No','FIX_VERIFY_IDENTITY_BEFORE_RESET',1),
+    ('Q_ACCOUNT_ACTIVE_TECH','Q_IDENTITY_VERIFIED_TECH','question','Check Account State','Confirm whether this is a valid active account.','Is the account active and enabled?','Has the user identity been verified according to policy?','Yes',None,2),
+    ('S_DISABLED_ACCOUNT_TECH','Q_ACCOUNT_ACTIVE_TECH','solution','Escalate Disabled or Deprovisioned Account',None,None,'Is the account active and enabled?','No','FIX_ESCALATE_DISABLED_ACCOUNT',1),
+    ('Q_ACCOUNT_LOCKED_TECH','Q_ACCOUNT_ACTIVE_TECH','question','Check Lockout State','Repeated failed attempts may lock the account.','Is the account locked?','Is the account active and enabled?','Yes',None,2),
+    ('S_UNLOCK_REVIEW_TECH','Q_ACCOUNT_LOCKED_TECH','solution','Unlock Account and Review Failed Attempts',None,None,'Is the account locked?','Yes','FIX_UNLOCK_ACCOUNT_REVIEW_ATTEMPTS',1),
+    ('Q_PASSWORD_EXPIRED_TECH','Q_ACCOUNT_LOCKED_TECH','question','Check Password Expiration or Reset Flag','Expired passwords and forced reset flags have a standard path.','Is the password expired or marked for reset?','Is the account locked?','No',None,2),
+    ('S_RESET_EXPIRED_TECH','Q_PASSWORD_EXPIRED_TECH','solution','Reset Expired Password',None,None,'Is the password expired or marked for reset?','Yes','FIX_RESET_EXPIRED_PASSWORD',1),
+    ('Q_MFA_BLOCKING_TECH','Q_PASSWORD_EXPIRED_TECH','question','Check MFA or Recovery Block','MFA may prevent self-service reset completion.','Is MFA or an unavailable recovery method blocking the reset?','Is the password expired or marked for reset?','No',None,2),
+    ('S_MFA_RECOVERY_TECH','Q_MFA_BLOCKING_TECH','solution','Escalate MFA Recovery',None,None,'Is MFA or an unavailable recovery method blocking the reset?','Yes','FIX_ESCALATE_MFA_RECOVERY',1),
+    ('Q_RESET_FAILS_TECH','Q_MFA_BLOCKING_TECH','question','Check Sync or Policy Failure','If normal reset does not work, check sync, writeback, and conditional access.','Does sign-in still fail after password reset or admin action?','Is MFA or an unavailable recovery method blocking the reset?','No',None,2),
+    ('S_SYNC_POLICY_TECH','Q_RESET_FAILS_TECH','solution','Escalate Identity Sync or Policy Issue',None,None,'Does sign-in still fail after password reset or admin action?','Yes','FIX_ESCALATE_IDENTITY_SYNC_POLICY',1),
+    ('S_ADMIN_RESET_TECH','Q_RESET_FAILS_TECH','solution','Complete Admin Password Reset',None,None,'Does sign-in still fail after password reset or admin action?','No','FIX_ADMIN_PASSWORD_RESET',2),
+]
+
+def seed_password_reset_request_content(cursor):
+    """Seed Password Reset Request KB article, solutions, role-specific steps, and diagnostic trees."""
+    code_, title, category, severity, description = PASSWORD_RESET_REQUEST_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, PASSWORD_RESET_REQUEST_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, PASSWORD_RESET_REQUEST_KB['title'], PASSWORD_RESET_REQUEST_KB['summary'], PASSWORD_RESET_REQUEST_KB['difficulty'], PASSWORD_RESET_REQUEST_KB['estimated_time'], PASSWORD_RESET_REQUEST_KB['escalation_required'], PASSWORD_RESET_REQUEST_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, PASSWORD_RESET_REQUEST_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, PASSWORD_RESET_REQUEST_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, PASSWORD_RESET_REQUEST_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, PASSWORD_RESET_REQUEST_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, PASSWORD_RESET_REQUEST_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, PASSWORD_RESET_REQUEST_SOLUTIONS)
+    for solution_code, audience_steps in PASSWORD_RESET_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_password_reset_tree(cursor, 'user', 'PASSWORD_RESET_REQUEST_USER', 'Password Reset Request - User Diagnostic', 'User-friendly diagnostic tree for password reset requests.', PASSWORD_RESET_USER_DIAGNOSTIC_NODES)
+    seed_password_reset_tree(cursor, 'technician', 'PASSWORD_RESET_REQUEST_TECHNICIAN', 'Password Reset Request - Technician Diagnostic', 'Technician-level diagnostic tree for password reset root-cause analysis.', PASSWORD_RESET_TECH_DIAGNOSTIC_NODES)
+
+def seed_password_reset_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'PASSWORD_RESET_REQUEST')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'PASSWORD_RESET_REQUEST', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    # Do not delete/recreate diagnostic nodes here. Existing troubleshooting
+    # sessions/events may reference diagnostic_node rows, so deleting them can
+    # fail with FOREIGN KEY constraint errors and would also break audit history.
+    # Instead, mark the existing tree inactive, then upsert the current seed
+    # nodes back to active. This preserves stable node IDs across app restarts.
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
 
@@ -2365,6 +2631,8 @@ def initialize_database():
     seed_relational_kb_articles(cursor)
     seed_audience_diagnostic_support(cursor)
     seed_role_specific_diagnostic_content(cursor)
+    seed_printer_failure_content(cursor)
+    seed_password_reset_request_content(cursor)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -5492,6 +5760,7 @@ def show_knowledge_base():
     st.subheader("⭐ Featured MVP Issue")
     common_titles = [
         "Printer Failure",
+        "Password Reset Request",
     ]
 
     common_issues = [issue for issue in issues if issue["title"] in common_titles]
@@ -7628,7 +7897,7 @@ def get_portfolio_health_metrics():
     connection = get_db_connection()
     cursor = connection.cursor()
     try:
-        cursor.execute("SELECT COUNT(*) AS count FROM diagnostic_tree WHERE is_active = 1 AND base_tree_code IN ('PRINTER_FAILURE')")
+        cursor.execute("SELECT COUNT(*) AS count FROM diagnostic_tree WHERE is_active = 1 AND base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST')")
         diagnostic_tree_count = cursor.fetchone()["count"]
 
         cursor.execute("SELECT COUNT(*) AS count FROM troubleshooting_event")
@@ -8343,7 +8612,7 @@ def get_diagnostic_tree_records_for_admin():
         FROM diagnostic_tree dt
         LEFT JOIN problem p
             ON dt.problem_id = p.problem_id
-        WHERE dt.base_tree_code IN ('PRINTER_FAILURE')
+        WHERE dt.base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST')
         ORDER BY
             COALESCE(p.category, ''),
             COALESCE(p.title, dt.title),
