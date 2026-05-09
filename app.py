@@ -1,10 +1,12 @@
 import base64
 import csv
+import html
 import io
 from datetime import datetime, timedelta
 import json
 import os
 import re
+import secrets
 import sqlite3
 import uuid
 
@@ -15,6 +17,8 @@ import streamlit as st
 # -----------------------------
 UPLOAD_FOLDER = "ticket_attachments"
 DATABASE_FILE = "it_support.db"
+AUTH_SESSION_QUERY_PARAM = "auth_session"
+AUTH_SESSION_TIMEOUT_HOURS = 2
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -142,8 +146,13 @@ def apply_global_styles():
 
 
 def render_description_box(text):
-    """Render ticket descriptions in a readable box."""
-    safe_text = str(text or "No description provided.")
+    """Render ticket descriptions in a readable box.
+
+    User-submitted ticket descriptions may contain characters that look like
+    HTML. Escape them before rendering inside the styled card, while preserving
+    line breaks for readability.
+    """
+    safe_text = html.escape(str(text or "No description provided.")).replace("\n", "<br>")
     st.markdown(
         f"""
         <div class="description-box">
@@ -164,6 +173,81 @@ def format_priority_text(priority):
     }
     color = colors.get(priority, "#6c757d")
     return f"<span style='color:{color}; font-weight:700;'>{priority}</span>"
+
+
+# -----------------------------
+# MVP FLOW / NAVIGATION HELPERS
+# -----------------------------
+def normalize_mode_name(mode_name):
+    """Normalize a sidebar/page name so buttons can navigate across badge labels."""
+    return normalize_menu_choice(mode_name) if "normalize_menu_choice" in globals() else mode_name
+
+
+def navigate_to_mode(mode_name):
+    """Request navigation to a top-level sidebar mode and rerun the app."""
+    st.session_state["selected_mode_request"] = mode_name
+    st.rerun()
+
+
+def render_mvp_flow_steps(active_step):
+    """Render the MVP support flow as a compact visual stepper."""
+    steps = [
+        ("category", "1", "Select category"),
+        ("question", "2", "Answer questions"),
+        ("solution", "3", "Review solution"),
+        ("ticket", "4", "Submit ticket if needed"),
+    ]
+
+    cols = st.columns(len(steps))
+    for col, (step_key, number, label) in zip(cols, steps):
+        is_active = step_key == active_step
+        border_color = "#4e89ff" if is_active else "#d8dee9"
+        background = "#eef5ff" if is_active else "#ffffff"
+        col.markdown(
+            f"""
+            <div style="padding:0.75rem; border:1px solid {border_color}; background:{background}; border-radius:12px; text-align:center; min-height:78px;">
+                <div style="font-weight:800; font-size:1.05rem;">{number}</div>
+                <div style="font-size:0.9rem; color:#374151;">{label}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def render_support_action_cards():
+    """Show the three core portfolio MVP actions."""
+    col_start, col_ticket, col_mine = st.columns(3)
+
+    with col_start:
+        st.markdown("""
+        <div class="app-card">
+            <h3>Start troubleshooting</h3>
+            <p>Answer guided questions and receive a recommended fix.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Start guided troubleshooting", key="legacy_home_start_troubleshooting"):
+            navigate_to_mode("🧭 Guided Troubleshooting")
+
+    with col_ticket:
+        st.markdown("""
+        <div class="app-card">
+            <h3>Create a ticket</h3>
+            <p>Escalate unresolved issues with business impact and device details.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Create support ticket", key="legacy_home_create_ticket"):
+            navigate_to_mode("🎫 Create Ticket")
+
+    with col_mine:
+        st.markdown("""
+        <div class="app-card">
+            <h3>Review tickets</h3>
+            <p>Track submitted tickets, comments, status, and diagnostic history.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        target = "📋 View Tickets" if st.session_state.get("role") == "Admin" else "🎟 My Tickets"
+        if st.button("View tickets", key="legacy_home_view_tickets"):
+            navigate_to_mode(target)
 
 # -----------------------------
 # DATABASE SETUP
@@ -477,7 +561,48 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Disk Space Full": "DISK_SPACE_FULL",
     "High CPU Usage": "HIGH_CPU_USAGE",
     "VPN Connection Failure": "VPN_CONNECTION_FAILURE",
+    "Printer Failure": "PRINTER_FAILURE",
 }
+
+
+# -----------------------------
+# MVP CONTENT SCOPE
+# -----------------------------
+# The portfolio MVP should show fewer, higher-quality troubleshooting examples.
+# Printer Failure is currently the reference-quality issue because it includes
+# detailed symptoms, causes, user steps, technician steps, solutions, and
+# user/technician diagnostic trees. Other older sample issues remain seeded in
+# the database for future expansion, but they are hidden from the visible MVP
+# until their content is upgraded to the same depth.
+MVP_CONTENT_FOCUS_ENABLED = True
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE"}
+MVP_CONTENT_FOCUS_NOTE = (
+    "The visible MVP currently focuses on Printer Failure because it is the most "
+    "complete troubleshooting example. Other sample issues are hidden until they "
+    "are expanded with detailed symptoms, causes, user steps, and technician steps."
+)
+
+
+def get_problem_code_for_issue(issue):
+    """Return the stable problem code for an issue dictionary."""
+    title = issue.get("title", "") if isinstance(issue, dict) else ""
+    return (
+        issue.get("problem_code")
+        or PROBLEM_CODE_BY_ISSUE_TITLE.get(title)
+        or make_problem_code(title)
+    )
+
+
+def is_visible_mvp_issue(issue):
+    """Return True when an issue should appear in the visible MVP content set."""
+    if not MVP_CONTENT_FOCUS_ENABLED:
+        return True
+    return get_problem_code_for_issue(issue) in MVP_ACTIVE_PROBLEM_CODES
+
+
+def filter_visible_mvp_issues(issue_list):
+    """Hide shallow sample issues from the visible MVP without deleting database rows."""
+    return [issue for issue in issue_list if is_visible_mvp_issue(issue)]
 
 
 def get_problem_id_by_code(cursor, problem_code):
@@ -2037,6 +2162,198 @@ def seed_role_specific_diagnostic_content(cursor):
         seed_technician_diagnostic_tree(cursor, base_tree_code, tree_config)
 
 
+# -----------------------------
+# PRINTER FAILURE RELATIONAL SEED DATA
+# -----------------------------
+PRINTER_FAILURE_PROBLEM = (
+    'PRINTER_FAILURE',
+    'Printer Failure',
+    'Hardware',
+    'Medium',
+    'User cannot print, printer is offline, print jobs are stuck, or printer shows hardware/network errors.',
+)
+
+PRINTER_FAILURE_KB = {
+    'title': 'Printer Failure',
+    'summary': 'Troubleshooting article for printer power, connectivity, queue, driver, paper, toner, permissions, and print server issues.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-20 minutes',
+    'escalation_required': 0,
+    'escalation_notes': 'Escalate if multiple users are affected, printer is unreachable, print server issues are suspected, access/permission issues are present, or hardware damage is visible.',
+    'tags': ['printer', 'printing', 'print queue', 'spooler', 'driver', 'paper jam', 'toner', 'print server', 'permissions'],
+    'symptoms': [
+        'Printer does not power on',
+        'Printer shows Offline',
+        'Print jobs are stuck in the queue',
+        'User cannot print from one or all applications',
+        'Paper jam, no paper, low toner, or door/tray warning',
+        'Printer is unreachable on the network',
+        'Multiple users cannot print to the same printer',
+    ],
+    'causes': [
+        'Common: printer powered off, disconnected cable, wrong printer selected, offline mode enabled, stuck queue, Print Spooler issue, paper jam, no paper, low toner, incorrect driver, changed printer IP, lost Wi-Fi/network connection.',
+        'Rare: firmware bug, corrupted print server driver, port misconfiguration, IP conflict, VLAN or firewall block, faulty network card, damaged rollers, faulty paper sensor, corrupted Windows print subsystem, user permission problem, failed Group Policy deployment, print server spooler crash, application-specific rendering issue, OS update driver incompatibility.',
+    ],
+    'user_steps': [
+        'Check that the printer is powered on.',
+        'Check for paper, toner, paper jam, or warning messages on the printer screen.',
+        'Make sure you selected the correct printer.',
+        'Cancel stuck print jobs if possible.',
+        'Restart the printer and try again.',
+        'If it is a USB printer, check that the cable is connected.',
+        'If it is a network printer, ask whether nearby users can print.',
+        'Create a support ticket if the issue continues.',
+    ],
+    'it_steps': [
+        'Confirm printer name, model, location, connection type, and affected users.',
+        'Check printer power, display panel, paper/toner status, and visible hardware errors.',
+        'Check USB, Ethernet, Wi-Fi, or print server connectivity.',
+        'For network printers, verify IP address and ping reachability.',
+        'Check print queue and restart Print Spooler if needed.',
+        'Remove/re-add the printer or update/reinstall the printer driver.',
+        'Check print server queue, port, permissions, and Group Policy deployment.',
+        'Escalate to Desktop, Network, Server/Endpoint, or Security/Access team based on root cause.',
+    ],
+}
+
+PRINTER_FAILURE_SOLUTIONS = [
+    ('FIX_PRINTER_POWER','Check Printer Power','The printer may be powered off, disconnected from power, or connected to a faulty outlet.','Check the power cable. Confirm the wall outlet works. Try another outlet. Bypass the power strip if needed. Check for visible damage, burning smell, or unusual noise.',0,'Escalate to Hardware/Desktop Support if the printer does not power on after testing another outlet or if there is visible damage.','medium'),
+    ('FIX_PRINTER_USB_CONNECTION','Check USB Printer Connection','A USB printer may not be detected because of a loose cable, bad USB port, or cable failure.','Disconnect and reconnect the USB cable. Try another USB port. Try another USB cable if available. Restart the printer and computer. Confirm the printer appears in system printer settings.',0,'Escalate if the printer is not detected after testing another port/cable.','low'),
+    ('FIX_PRINTER_NETWORK_CONNECTION','Check Network Printer Connection','The network printer may be disconnected from Wi-Fi/Ethernet or using an incorrect IP address.','Confirm the printer is on the correct network. Print a network configuration page if possible. Verify the printer IP address. Ping the printer IP from the computer. Confirm the user is on the same network/VPN as the printer.',0,'Escalate to Network Team if the printer has no IP address, cannot be pinged, or multiple users cannot reach it.','medium'),
+    ('FIX_PRINTER_OFFLINE_REACHABLE','Fix Offline Printer That Is Reachable','The printer is reachable on the network but the print system marks it as offline.','Disable Use Printer Offline if enabled. Clear stuck jobs. Restart the Print Spooler. Remove and re-add the printer. Confirm the correct printer port/IP is configured.',0,'Escalate if the printer repeatedly goes offline or the print server queue is affected.','medium'),
+    ('FIX_PRINTER_UNREACHABLE','Fix Unreachable Network Printer','The printer cannot be reached from the client device.','Confirm the printer is powered on. Check Ethernet/Wi-Fi connection. Compare current printer IP with configured printer port. Restart printer network connection. Check switch port or Wi-Fi signal if available.',1,'Escalate if the printer is unreachable from multiple devices, an IP conflict is suspected, or VLAN/DHCP/firewall issues are possible.','high'),
+    ('FIX_CLEAR_PRINT_QUEUE','Clear Stuck Print Queue','Print jobs may be stuck in the local or server print queue.','Cancel stuck print jobs. Restart the printer. Restart the Print Spooler. Send a test print. If the queue remains stuck, remove and re-add the printer.',0,'Escalate if Print Spooler repeatedly crashes, jobs from multiple users are stuck, or the print server queue is affected.','medium'),
+    ('FIX_PAPER_TONER_JAM','Resolve Paper, Toner, or Tray Warning','The printer may be blocked by a paper jam, empty tray, low toner, open door, or sensor warning.','Follow the printer screen instructions. Clear paper jam carefully. Check for torn paper pieces. Reload correct paper size. Reseat or replace toner/ink. Close all trays and doors. Print a test page.',0,'Escalate if jams keep returning, the printer reports a jam with no visible paper, toner warnings remain after replacement, or mechanical damage/noise is present.','medium'),
+    ('FIX_REINSTALL_PRINTER_DRIVER','Reinstall Printer or Update Driver','The printer may be missing, duplicated, using the wrong driver, or affected by a corrupted driver.','Remove duplicate or old printer entries. Add the correct printer from the print server or approved printer list. Confirm the correct driver is used. Set as default if needed. Print a test page.',0,'Escalate if driver deployment requires admin/endpoint management or multiple computers fail with the same driver.','medium'),
+    ('FIX_APPLICATION_PRINTING','Fix Application-Specific Printing Issue','Printing fails only from one application, likely due to document formatting, application settings, or rendering issue.','Try printing a simple test page. Try printing from another application. Export the document to PDF and print the PDF. Check page size, margins, and selected printer. Restart or update the application.',0,'Escalate if the business application repeatedly fails to print or vendor support may be required.','medium'),
+    ('FIX_PRINT_SERVER_OR_PERMISSION','Escalate Print Server or Permission Issue','The issue may involve shared printer permissions, print server queue, driver package, or Group Policy deployment.','Check whether other users can print. Confirm the user has permission. Check print server queue, printer port, driver, and spooler. Check group membership or printer deployment policy if access is restricted.',1,'Escalate to Server/Endpoint or Access Management if multiple users are affected, print server is unavailable, spooler crashes, or printer permissions are controlled by AD/security groups.','high'),
+]
+
+PRINTER_FAILURE_SOLUTION_STEPS = {
+    'FIX_PRINTER_POWER': {'user':['Make sure the printer is turned on.','Check that the power cable is connected firmly.','Try another wall outlet if possible.','Stop and call IT if you see smoke, burning smell, or damaged cables.'], 'technician':['Verify outlet power and printer power cable connection.','Bypass power strip if applicable.','Check display, LEDs, adapter, and visible cable damage.','Escalate to hardware support if the printer remains unpowered.'], 'admin':['Classify as hardware issue if power remains unavailable after outlet/cable checks.','Escalate immediately if safety risk, burning smell, or physical damage exists.']},
+    'FIX_PRINTER_USB_CONNECTION': {'user':['Check that the USB cable is connected to the printer and computer.','Restart the printer and try printing again.','Restart your computer if the printer is still not detected.'], 'technician':['Reconnect USB cable and test another USB port.','Test another USB cable if available.','Verify printer appears in Devices and Printers or system printer settings.','Reinstall printer if the OS does not detect the device.'], 'admin':['Escalate to Desktop Support if the printer remains undetected after cable/port testing.']},
+    'FIX_PRINTER_NETWORK_CONNECTION': {'user':['Check that the printer is connected to the office network or Wi-Fi.','Ask nearby users whether they can print to the same printer.','Restart the printer and try again.'], 'technician':['Print or view printer network configuration.','Verify IP address, subnet, gateway, and network status.','Ping printer IP from affected client.','Confirm the client is on the same network/VPN as the printer.'], 'admin':['Escalate to Network Team if the printer has no IP, cannot be reached, or multiple users are impacted.']},
+    'FIX_PRINTER_OFFLINE_REACHABLE': {'user':['Check if the printer is showing Offline.','Restart the printer.','Cancel stuck jobs if possible.'], 'technician':['Disable Use Printer Offline if enabled.','Clear local queue and restart Print Spooler.','Validate configured printer port/IP.','Remove and re-add the printer if offline state persists.'], 'admin':['Investigate recurring offline state and check print server or port configuration if repeated.']},
+    'FIX_PRINTER_UNREACHABLE': {'user':['Confirm the printer is turned on.','Check whether other users can print to the same printer.','Report the printer location and any screen error message.'], 'technician':['Ping the printer IP from client and print server.','Compare current printer IP with configured port.','Check Ethernet/Wi-Fi state, switch port, VLAN, DHCP reservation, and IP conflict indicators.','Escalate with printer name, IP, location, and ping results.'], 'admin':['Treat as network/infrastructure issue if multiple users cannot reach the printer.','Escalate to Network Team with scope, location, and test results.']},
+    'FIX_CLEAR_PRINT_QUEUE': {'user':['Cancel stuck print jobs if you can.','Restart the printer.','Try printing a simple test page.'], 'technician':['Clear local and/or server-side print queue.','Restart Print Spooler service.','Use net stop spooler and net start spooler if appropriate.','Send a test print and monitor queue behavior.'], 'admin':['Escalate if spooler repeatedly crashes or several users/jobs are stuck on the print server.']},
+    'FIX_PAPER_TONER_JAM': {'user':['Check the printer screen for paper, toner, tray, or door warnings.','Add paper if needed.','Follow printer instructions to clear a jam carefully.','Tell IT if the warning returns.'], 'technician':['Inspect indicated tray/door/path for jammed or torn paper.','Verify paper size/type and tray alignment.','Reseat or replace toner/ink if warning exists.','Print test page and confirm warning clears.'], 'admin':['Escalate to hardware/vendor support if jams repeat, sensor warning remains, or rollers appear damaged.']},
+    'FIX_REINSTALL_PRINTER_DRIVER': {'user':['Make sure you selected the correct printer.','Try printing a test page.','Contact IT if the printer is missing from your printer list.'], 'technician':['Remove duplicate or stale printer entries.','Re-add printer from print server or approved printer list.','Verify correct driver and printer port.','Update or redeploy driver if needed.'], 'admin':['Escalate to Endpoint/Server team if driver package or deployment affects multiple devices.']},
+    'FIX_APPLICATION_PRINTING': {'user':['Try printing from another application.','Save or export the document as PDF and try printing the PDF.','Restart the application.'], 'technician':['Test Notepad/simple page printing.','Compare behavior across applications.','Check document margins, page size, and selected printer.','Repair/update application if issue is application-specific.'], 'admin':['Escalate to Application Support if a business application repeatedly cannot print.']},
+    'FIX_PRINT_SERVER_OR_PERMISSION': {'user':['Ask a nearby colleague if they can print to the same printer.','Tell IT whether the printer is missing or showing access denied.'], 'technician':['Check whether other users can print to the same shared printer.','Verify user has printer permissions and correct AD/security group membership.','Check print server queue, printer port, driver, and spooler service.','Check Group Policy printer deployment if applicable.'], 'admin':['Escalate to Server/Endpoint if print server, driver, or spooler affects multiple users.','Escalate to Access Management if permissions or security groups are the root cause.']},
+}
+
+PRINTER_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_PRINTER_FAILURE_USER',None,'category','Printer Failure - User Diagnostic','User-friendly diagnostic path for common printer issues.',None,None,None,None,1),
+    ('Q_POWER_USER','ROOT_PRINTER_FAILURE_USER','question','Check Printer Power','Start with the safest visible check.','Is the printer powered on?',None,None,None,1),
+    ('S_POWER_USER','Q_POWER_USER','solution','Check Printer Power',None,None,'Is the printer powered on?','No','FIX_PRINTER_POWER',1),
+    ('Q_WARNING_USER','Q_POWER_USER','question','Check Printer Warning','Look for visible printer screen messages.','Does the printer show paper jam, no paper, low toner, or door/tray warning?','Is the printer powered on?','Yes',None,2),
+    ('S_PAPER_TONER_USER','Q_WARNING_USER','solution','Resolve Paper, Toner, or Tray Warning',None,None,'Does the printer show paper jam, no paper, low toner, or door/tray warning?','Yes','FIX_PAPER_TONER_JAM',1),
+    ('Q_OFFLINE_USER','Q_WARNING_USER','question','Check Offline Status','Determine whether the printer appears offline.','Does the printer show as Offline on your computer?','Does the printer show paper jam, no paper, low toner, or door/tray warning?','No',None,2),
+    ('S_NETWORK_USER','Q_OFFLINE_USER','solution','Check Network Printer Connection',None,None,'Does the printer show as Offline on your computer?','Yes','FIX_PRINTER_NETWORK_CONNECTION',1),
+    ('Q_QUEUE_USER','Q_OFFLINE_USER','question','Check Print Queue','Check whether print jobs are stuck.','Are print jobs stuck in the queue?','Does the printer show as Offline on your computer?','No',None,2),
+    ('S_QUEUE_USER','Q_QUEUE_USER','solution','Clear Stuck Print Queue',None,None,'Are print jobs stuck in the queue?','Yes','FIX_CLEAR_PRINT_QUEUE',1),
+    ('Q_APP_USER','Q_QUEUE_USER','question','Check Application Scope','Determine if printing fails everywhere or only one app.','Does printing fail only from one application?','Are print jobs stuck in the queue?','No',None,2),
+    ('S_APP_USER','Q_APP_USER','solution','Fix Application-Specific Printing Issue',None,None,'Does printing fail only from one application?','Yes','FIX_APPLICATION_PRINTING',1),
+    ('S_DRIVER_USER','Q_APP_USER','solution','Reinstall Printer or Update Driver',None,None,'Does printing fail only from one application?','No','FIX_REINSTALL_PRINTER_DRIVER',2),
+]
+
+PRINTER_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_PRINTER_FAILURE_TECH',None,'category','Printer Failure - Technician Diagnostic','Technician-level diagnostic path for printer power, connectivity, queue, driver, hardware, permissions, and print server issues.',None,None,None,None,1),
+    ('Q_POWER_TECH','ROOT_PRINTER_FAILURE_TECH','question','Check Power State','Confirm power, outlet, cable, display, and safety conditions.','Is the printer powered on with no visible power/safety issue?',None,None,None,1),
+    ('S_POWER_TECH','Q_POWER_TECH','solution','Check Printer Power',None,None,'Is the printer powered on with no visible power/safety issue?','No','FIX_PRINTER_POWER',1),
+    ('Q_USB_TECH','Q_POWER_TECH','question','Identify Connection Type','Determine whether the troubleshooting path is USB or network/print server.','Is this a USB-connected printer?','Is the printer powered on with no visible power/safety issue?','Yes',None,2),
+    ('S_USB_TECH','Q_USB_TECH','solution','Check USB Printer Connection',None,None,'Is this a USB-connected printer?','Yes','FIX_PRINTER_USB_CONNECTION',1),
+    ('Q_REACHABLE_TECH','Q_USB_TECH','question','Check Network Reachability','For network printers, verify IP address and ping reachability.','Can you ping or otherwise reach the printer IP address?','Is this a USB-connected printer?','No',None,2),
+    ('S_UNREACHABLE_TECH','Q_REACHABLE_TECH','solution','Fix Unreachable Network Printer',None,None,'Can you ping or otherwise reach the printer IP address?','No','FIX_PRINTER_UNREACHABLE',1),
+    ('Q_OFFLINE_TECH','Q_REACHABLE_TECH','question','Check Offline State','Printer is reachable but may be marked offline locally or on print server.','Is the printer marked Offline even though it is reachable?','Can you ping or otherwise reach the printer IP address?','Yes',None,2),
+    ('S_OFFLINE_TECH','Q_OFFLINE_TECH','solution','Fix Offline Printer That Is Reachable',None,None,'Is the printer marked Offline even though it is reachable?','Yes','FIX_PRINTER_OFFLINE_REACHABLE',1),
+    ('Q_QUEUE_TECH','Q_OFFLINE_TECH','question','Check Queue/Spooler','Review local and print server queues.','Are print jobs stuck in the queue or is the spooler unstable?','Is the printer marked Offline even though it is reachable?','No',None,2),
+    ('S_QUEUE_TECH','Q_QUEUE_TECH','solution','Clear Stuck Print Queue',None,None,'Are print jobs stuck in the queue or is the spooler unstable?','Yes','FIX_CLEAR_PRINT_QUEUE',1),
+    ('Q_PANEL_TECH','Q_QUEUE_TECH','question','Check Printer Panel Warnings','Look for physical printer errors.','Does the printer show paper jam, toner, tray, door, sensor, or mechanical warning?','Are print jobs stuck in the queue or is the spooler unstable?','No',None,2),
+    ('S_PANEL_TECH','Q_PANEL_TECH','solution','Resolve Paper, Toner, or Tray Warning',None,None,'Does the printer show paper jam, toner, tray, door, sensor, or mechanical warning?','Yes','FIX_PAPER_TONER_JAM',1),
+    ('Q_APP_TECH','Q_PANEL_TECH','question','Check Application Scope','Determine if failure is app-specific or system-wide.','Does printing fail only from one application?','Does the printer show paper jam, toner, tray, door, sensor, or mechanical warning?','No',None,2),
+    ('S_APP_TECH','Q_APP_TECH','solution','Fix Application-Specific Printing Issue',None,None,'Does printing fail only from one application?','Yes','FIX_APPLICATION_PRINTING',1),
+    ('Q_MULTIPLE_USERS_TECH','Q_APP_TECH','question','Check Shared Printer Scope','Determine whether this is one user/device or a shared printer issue.','Are multiple users unable to print to the same printer?','Does printing fail only from one application?','No',None,2),
+    ('S_SERVER_PERMISSION_TECH','Q_MULTIPLE_USERS_TECH','solution','Escalate Print Server or Permission Issue',None,None,'Are multiple users unable to print to the same printer?','Yes','FIX_PRINT_SERVER_OR_PERMISSION',1),
+    ('S_DRIVER_TECH','Q_MULTIPLE_USERS_TECH','solution','Reinstall Printer or Update Driver',None,None,'Are multiple users unable to print to the same printer?','No','FIX_REINSTALL_PRINTER_DRIVER',2),
+]
+
+def seed_printer_failure_content(cursor):
+    """Seed Printer Failure KB article, solutions, role-specific steps, and diagnostic trees."""
+    code_, title, category, severity, description = PRINTER_FAILURE_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, PRINTER_FAILURE_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, PRINTER_FAILURE_KB['title'], PRINTER_FAILURE_KB['summary'], PRINTER_FAILURE_KB['difficulty'], PRINTER_FAILURE_KB['estimated_time'], PRINTER_FAILURE_KB['escalation_required'], PRINTER_FAILURE_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, PRINTER_FAILURE_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, PRINTER_FAILURE_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, PRINTER_FAILURE_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, PRINTER_FAILURE_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, PRINTER_FAILURE_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, PRINTER_FAILURE_SOLUTIONS)
+    for solution_code, audience_steps in PRINTER_FAILURE_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_printer_failure_tree(cursor, 'user', 'PRINTER_FAILURE_USER', 'Printer Failure - User Diagnostic', 'User-friendly diagnostic tree for printer failure symptoms.', PRINTER_USER_DIAGNOSTIC_NODES)
+    seed_printer_failure_tree(cursor, 'technician', 'PRINTER_FAILURE_TECHNICIAN', 'Printer Failure - Technician Diagnostic', 'Technician-level diagnostic tree for printer failure root-cause analysis.', PRINTER_TECH_DIAGNOSTIC_NODES)
+
+def seed_printer_failure_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'PRINTER_FAILURE')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'PRINTER_FAILURE', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('DELETE FROM diagnostic_node WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
+
 def initialize_database():
     """Create SQLite tables if they do not already exist."""
     connection = get_db_connection()
@@ -2058,6 +2375,20 @@ def initialize_database():
             role TEXT NOT NULL DEFAULT 'User'
         )
     """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS auth_session (
+            session_token TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            role TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            expires_at TEXT NOT NULL
+        )
+    """)
+
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_auth_session_username ON auth_session(username)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_auth_session_expires ON auth_session(expires_at)")
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS issues (
@@ -2119,11 +2450,58 @@ def initialize_database():
         )
     """)
 
+    # MVP+ troubleshooting audit trail tables.
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS troubleshooting_session (
+            session_id TEXT PRIMARY KEY,
+            username TEXT,
+            diagnostic_tree_code TEXT NOT NULL,
+            issue_title TEXT,
+            status TEXT NOT NULL DEFAULT 'Started',
+            current_node_id INTEGER,
+            started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            ended_at TEXT,
+            FOREIGN KEY (current_node_id)
+                REFERENCES diagnostic_node(diagnostic_node_id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS troubleshooting_event (
+            event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            node_id INTEGER,
+            event_type TEXT NOT NULL,
+            event_notes TEXT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (session_id)
+                REFERENCES troubleshooting_session(session_id)
+                ON DELETE CASCADE,
+            FOREIGN KEY (node_id)
+                REFERENCES diagnostic_node(diagnostic_node_id)
+        )
+    """)
+
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_troubleshooting_event_session ON troubleshooting_event(session_id, created_at)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_troubleshooting_session_user ON troubleshooting_session(username, started_at)")
+
     # Add ticket_data column for full ticket JSON storage during migration.
     cursor.execute("PRAGMA table_info(tickets)")
     ticket_columns = [column[1] for column in cursor.fetchall()]
     if "ticket_data" not in ticket_columns:
         cursor.execute("ALTER TABLE tickets ADD COLUMN ticket_data TEXT")
+
+    ticket_mvp_columns = {
+        "business_impact": "TEXT DEFAULT ''",
+        "contact_method": "TEXT DEFAULT ''",
+        "device_or_location": "TEXT DEFAULT ''",
+        "troubleshooting_session_id": "TEXT DEFAULT ''",
+        "troubleshooting_summary_snapshot": "TEXT DEFAULT ''",
+    }
+
+    for column_name, column_definition in ticket_mvp_columns.items():
+        if column_name not in ticket_columns:
+            cursor.execute(f"ALTER TABLE tickets ADD COLUMN {column_name} {column_definition}")
 
     # Add Knowledge Base article quality columns during migration.
     cursor.execute("PRAGMA table_info(issues)")
@@ -2273,8 +2651,13 @@ def apply_global_styles():
 
 
 def render_description_box(text):
-    """Render ticket descriptions in a readable box."""
-    safe_text = str(text or "No description provided.")
+    """Render ticket descriptions in a readable box.
+
+    User-submitted ticket descriptions may contain characters that look like
+    HTML. Escape them before rendering inside the styled card, while preserving
+    line breaks for readability.
+    """
+    safe_text = html.escape(str(text or "No description provided.")).replace("\n", "<br>")
     st.markdown(
         f"""
         <div class="description-box">
@@ -2295,6 +2678,81 @@ def format_priority_text(priority):
     }
     color = colors.get(priority, "#6c757d")
     return f"<span style='color:{color}; font-weight:700;'>{priority}</span>"
+
+
+# -----------------------------
+# MVP FLOW / NAVIGATION HELPERS
+# -----------------------------
+def normalize_mode_name(mode_name):
+    """Normalize a sidebar/page name so buttons can navigate across badge labels."""
+    return normalize_menu_choice(mode_name) if "normalize_menu_choice" in globals() else mode_name
+
+
+def navigate_to_mode(mode_name):
+    """Request navigation to a top-level sidebar mode and rerun the app."""
+    st.session_state["selected_mode_request"] = mode_name
+    st.rerun()
+
+
+def render_mvp_flow_steps(active_step):
+    """Render the MVP support flow as a compact visual stepper."""
+    steps = [
+        ("category", "1", "Select category"),
+        ("question", "2", "Answer questions"),
+        ("solution", "3", "Review solution"),
+        ("ticket", "4", "Submit ticket if needed"),
+    ]
+
+    cols = st.columns(len(steps))
+    for col, (step_key, number, label) in zip(cols, steps):
+        is_active = step_key == active_step
+        border_color = "#4e89ff" if is_active else "#d8dee9"
+        background = "#eef5ff" if is_active else "#ffffff"
+        col.markdown(
+            f"""
+            <div style="padding:0.75rem; border:1px solid {border_color}; background:{background}; border-radius:12px; text-align:center; min-height:78px;">
+                <div style="font-weight:800; font-size:1.05rem;">{number}</div>
+                <div style="font-size:0.9rem; color:#374151;">{label}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def render_support_action_cards():
+    """Show the three core portfolio MVP actions."""
+    col_start, col_ticket, col_mine = st.columns(3)
+
+    with col_start:
+        st.markdown("""
+        <div class="app-card">
+            <h3>Start troubleshooting</h3>
+            <p>Answer guided questions and receive a recommended fix.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Start guided troubleshooting", key="home_start_troubleshooting"):
+            navigate_to_mode("🧭 Guided Troubleshooting")
+
+    with col_ticket:
+        st.markdown("""
+        <div class="app-card">
+            <h3>Create a ticket</h3>
+            <p>Escalate unresolved issues with business impact and device details.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Create support ticket", key="home_create_ticket"):
+            navigate_to_mode("🎫 Create Ticket")
+
+    with col_mine:
+        st.markdown("""
+        <div class="app-card">
+            <h3>Review tickets</h3>
+            <p>Track submitted tickets, comments, status, and diagnostic history.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        target = "📋 View Tickets" if st.session_state.get("role") == "Admin" else "🎟 My Tickets"
+        if st.button("View tickets", key="home_view_tickets"):
+            navigate_to_mode(target)
 
 # -----------------------------
 # DATA
@@ -2670,6 +3128,140 @@ def show_role_based_steps(issue):
 # -----------------------------
 # HELPER FUNCTIONS
 # -----------------------------
+def get_query_param_value(name):
+    """Return one query parameter value across Streamlit versions."""
+    try:
+        value = st.query_params.get(name)
+    except Exception:
+        return ""
+
+    if isinstance(value, list):
+        return value[0] if value else ""
+    return value or ""
+
+
+def set_query_param_value(name, value):
+    """Set one query parameter safely."""
+    try:
+        st.query_params[name] = value
+    except Exception:
+        pass
+
+
+def clear_query_param_value(name):
+    """Remove one query parameter safely."""
+    try:
+        if name in st.query_params:
+            del st.query_params[name]
+    except Exception:
+        pass
+
+
+def create_auth_session(username, role):
+    """Create a refresh-safe login session token with a sliding timeout."""
+    token = secrets.token_urlsafe(32)
+    now = datetime.now()
+    expires_at = now + timedelta(hours=AUTH_SESSION_TIMEOUT_HOURS)
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        INSERT INTO auth_session (
+            session_token,
+            username,
+            role,
+            created_at,
+            last_seen_at,
+            expires_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            token,
+            username,
+            role,
+            now.strftime("%Y-%m-%d %H:%M:%S"),
+            now.strftime("%Y-%m-%d %H:%M:%S"),
+            expires_at.strftime("%Y-%m-%d %H:%M:%S"),
+        ),
+    )
+    connection.commit()
+    connection.close()
+    return token
+
+
+def delete_auth_session(token):
+    """Delete one persisted auth session token."""
+    if not token:
+        return
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM auth_session WHERE session_token = ?", (token,))
+    connection.commit()
+    connection.close()
+
+
+def restore_login_from_auth_session():
+    """Restore login after browser refresh while the session has not expired."""
+    if st.session_state.get("logged_in"):
+        return True
+
+    token = get_query_param_value(AUTH_SESSION_QUERY_PARAM)
+    if not token:
+        return False
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        SELECT session_token, username, role, expires_at
+        FROM auth_session
+        WHERE session_token = ?
+        """,
+        (token,),
+    )
+    row = cursor.fetchone()
+
+    if not row:
+        connection.close()
+        clear_query_param_value(AUTH_SESSION_QUERY_PARAM)
+        return False
+
+    expires_at = parse_timestamp(row["expires_at"])
+    now = datetime.now()
+
+    if not expires_at or expires_at <= now:
+        cursor.execute("DELETE FROM auth_session WHERE session_token = ?", (token,))
+        connection.commit()
+        connection.close()
+        clear_query_param_value(AUTH_SESSION_QUERY_PARAM)
+        return False
+
+    refreshed_expires_at = now + timedelta(hours=AUTH_SESSION_TIMEOUT_HOURS)
+    cursor.execute(
+        """
+        UPDATE auth_session
+        SET last_seen_at = ?, expires_at = ?
+        WHERE session_token = ?
+        """,
+        (
+            now.strftime("%Y-%m-%d %H:%M:%S"),
+            refreshed_expires_at.strftime("%Y-%m-%d %H:%M:%S"),
+            token,
+        ),
+    )
+    connection.commit()
+    connection.close()
+
+    st.session_state["logged_in"] = True
+    st.session_state["username"] = row["username"]
+    st.session_state["role"] = row["role"]
+    st.session_state["auth_session_token"] = token
+    return True
+
+
 def login_user(username, password):
     """Validate a user login using SQLite."""
     username_clean = username.strip()
@@ -2679,16 +3271,23 @@ def login_user(username, password):
         st.session_state["logged_in"] = True
         st.session_state["username"] = username_clean
         st.session_state["role"] = account["role"]
+        auth_token = create_auth_session(username_clean, account["role"])
+        st.session_state["auth_session_token"] = auth_token
+        set_query_param_value(AUTH_SESSION_QUERY_PARAM, auth_token)
         return True
 
     return False
 
 
 def logout_user():
-    """Clear login session."""
+    """Clear login session and invalidate the persisted refresh token."""
+    token = st.session_state.get("auth_session_token") or get_query_param_value(AUTH_SESSION_QUERY_PARAM)
+    delete_auth_session(token)
+    clear_query_param_value(AUTH_SESSION_QUERY_PARAM)
     st.session_state["logged_in"] = False
     st.session_state.pop("username", None)
     st.session_state.pop("role", None)
+    st.session_state.pop("auth_session_token", None)
 
 
 def show_login_page():
@@ -2701,7 +3300,7 @@ def show_login_page():
         with st.form("login_form"):
             username = st.text_input("Username", key="login_username")
             password = st.text_input("Password", type="password", key="login_password")
-            submitted = st.form_submit_button("Login")
+            submitted = st.form_submit_button("Login", key="login_submit")
 
             if submitted:
                 if login_user(username, password):
@@ -2738,7 +3337,7 @@ def show_login_page():
             new_email = st.text_input("Email", key="register_email")
             new_password = st.text_input("Password", type="password", key="register_password")
             confirm_password = st.text_input("Confirm password", type="password", key="confirm_password")
-            submitted_register = st.form_submit_button("Create Account")
+            submitted_register = st.form_submit_button("Create Account", key="register_submit")
 
             if submitted_register:
                 username_clean = new_username.strip()
@@ -2952,7 +3551,8 @@ Recommended Actions:
         label="📄 Download Report",
         data=report,
         file_name="troubleshooting_report.txt",
-        mime="text/plain"
+        mime="text/plain",
+        key="download_troubleshooting_report",
     )
 
 
@@ -3132,6 +3732,131 @@ def seed_audience_diagnostic_support(cursor):
 # -----------------------------
 # DIAGNOSTIC RESULT / TICKET CONTEXT HELPERS
 # -----------------------------
+def create_troubleshooting_session(tree_code, root_node_id, issue_title=None):
+    """Create a persistent troubleshooting session for the current guided flow."""
+    session_id = str(uuid.uuid4())
+    username = st.session_state.get("username", "Unknown")
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        INSERT INTO troubleshooting_session (
+            session_id,
+            username,
+            diagnostic_tree_code,
+            issue_title,
+            status,
+            current_node_id,
+            started_at
+        )
+        VALUES (?, ?, ?, ?, 'Started', ?, ?)
+        """,
+        (
+            session_id,
+            username,
+            tree_code,
+            issue_title or tree_code,
+            root_node_id,
+            get_current_timestamp(),
+        ),
+    )
+    connection.commit()
+    connection.close()
+    return session_id
+
+
+def update_troubleshooting_session(session_id, current_node_id=None, status=None):
+    """Update the active troubleshooting session status/current node."""
+    if not session_id:
+        return
+
+    assignments = []
+    values = []
+
+    if current_node_id is not None:
+        assignments.append("current_node_id = ?")
+        values.append(current_node_id)
+
+    if status:
+        assignments.append("status = ?")
+        values.append(status)
+        if status in {"Resolved", "Ticket Submitted", "Abandoned"}:
+            assignments.append("ended_at = ?")
+            values.append(get_current_timestamp())
+
+    if not assignments:
+        return
+
+    values.append(session_id)
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        f"UPDATE troubleshooting_session SET {', '.join(assignments)} WHERE session_id = ?",
+        values,
+    )
+    connection.commit()
+    connection.close()
+
+
+def log_troubleshooting_event(session_id, node_id, event_type, event_notes=""):
+    """Persist one troubleshooting audit event."""
+    if not session_id:
+        return
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        INSERT INTO troubleshooting_event (
+            session_id,
+            node_id,
+            event_type,
+            event_notes,
+            created_at
+        )
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            session_id,
+            node_id,
+            event_type,
+            event_notes,
+            get_current_timestamp(),
+        ),
+    )
+    connection.commit()
+    connection.close()
+
+
+def build_troubleshooting_summary_snapshot(diagnostic_context):
+    """Build a stable plain-text snapshot of the diagnostic trail for tickets."""
+    diagnostic_context = diagnostic_context or {}
+    lines = [
+        f"Issue: {diagnostic_context.get('issue_title', 'N/A')}",
+        f"Diagnostic tree: {diagnostic_context.get('diagnostic_tree_code', 'N/A')}",
+        f"Audience: {str(diagnostic_context.get('diagnostic_audience', 'user')).title()}",
+        f"Recommended solution: {diagnostic_context.get('solution_title', 'N/A')}",
+        f"Priority recommendation: {diagnostic_context.get('priority_recommendation', 'N/A')}",
+    ]
+
+    if diagnostic_context.get("escalation_required"):
+        lines.append("Escalation recommended: Yes")
+        if diagnostic_context.get("escalation_notes"):
+            lines.append(f"Escalation notes: {diagnostic_context.get('escalation_notes')}")
+    else:
+        lines.append("Escalation recommended: No")
+
+    path = diagnostic_context.get("diagnostic_path") or []
+    lines.append("Diagnostic path:")
+    if path:
+        lines.extend([f"- {step}" for step in path])
+    else:
+        lines.append("- No diagnostic path captured.")
+
+    return "\n".join(lines)
+
+
 def build_diagnostic_ticket_context(tree_code, solution, diagnostic_path, issue_title=None):
     """Build a serializable diagnostic context to store with a ticket."""
     solution = solution or {}
@@ -3149,6 +3874,7 @@ def build_diagnostic_ticket_context(tree_code, solution, diagnostic_path, issue_
         "escalation_required": bool(solution.get("escalation_required")),
         "escalation_notes": solution.get("escalation_notes", ""),
         "captured_at": get_current_timestamp(),
+        "troubleshooting_session_id": st.session_state.get(f"diagnostic_session_id_{tree_code}", ""),
     }
 
 
@@ -3170,6 +3896,86 @@ def get_diagnostic_ticket_label(ticket):
         return f" 🧭 Diagnostic: {solution_title}"
 
     return " 🧭 Diagnostic"
+
+def get_ticket_reference(ticket, fallback_index=None):
+    """Return a stable, reviewer-friendly ticket reference."""
+    if ticket.get("db_id"):
+        return f"TICKET-{int(ticket['db_id']):04d}"
+    if fallback_index is not None:
+        return f"TICKET-{int(fallback_index):04d}"
+    return "TICKET-PENDING"
+
+
+def render_ticket_mvp_summary(ticket, fallback_index=None):
+    """Render the MVP ticket fields that make the escalation useful."""
+    st.markdown("### 🎫 Ticket Details")
+    col_ref, col_contact, col_device = st.columns(3)
+    col_ref.metric("Ticket Ref", get_ticket_reference(ticket, fallback_index))
+    col_contact.metric("Contact", ticket.get("contact_method") or "Not provided")
+    col_device.metric("Device / Location", ticket.get("device_or_location") or "Not provided")
+
+    business_impact = ticket.get("business_impact", "").strip()
+    if business_impact:
+        st.markdown("**Business Impact**")
+        render_description_box(business_impact)
+    else:
+        st.caption("Business impact was not provided for this ticket.")
+
+
+def load_troubleshooting_events_for_session(session_id):
+    """Load persisted troubleshooting events for a ticket's session trail."""
+    if not session_id:
+        return []
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        SELECT
+            event_type,
+            event_notes,
+            created_at
+        FROM troubleshooting_event
+        WHERE session_id = ?
+        ORDER BY created_at ASC, event_id ASC
+        """,
+        (session_id,),
+    )
+    events = [dict(row) for row in cursor.fetchall()]
+    connection.close()
+    return events
+
+
+def show_troubleshooting_event_audit(session_id):
+    """Display the full persisted event trail for a troubleshooting session."""
+    events = load_troubleshooting_events_for_session(session_id)
+    if not events:
+        return
+
+    with st.expander("View full troubleshooting event audit"):
+        for event in events:
+            event_type = event.get("event_type", "EVENT")
+            notes = event.get("event_notes") or "No notes captured."
+            created_at = event.get("created_at", "")
+            st.write(f"**{event_type}** — {created_at}")
+            st.caption(notes)
+
+
+def show_ticket_trail_snapshot(ticket):
+    """Show the historical ticket trail snapshot saved at submission time."""
+    snapshot = ticket.get("troubleshooting_summary_snapshot", "").strip()
+    if not snapshot:
+        return
+
+    with st.expander("View submitted troubleshooting trail snapshot"):
+        st.code(snapshot, language="text")
+
+
+def render_empty_ticket_state(message, button_key):
+    """Display a helpful empty state with the next best action."""
+    st.info(message)
+    if st.button("Start guided troubleshooting", key=button_key):
+        navigate_to_mode("🧭 Guided Troubleshooting")
 
 def show_ticket_diagnostic_context(ticket):
     """Display diagnostic context stored in a ticket."""
@@ -3201,8 +4007,15 @@ def show_ticket_diagnostic_context(ticket):
             for step in path:
                 st.write(f"- {step}")
 
+    session_id = context.get("troubleshooting_session_id") or ticket.get("troubleshooting_session_id", "")
+    if session_id:
+        st.caption(f"Troubleshooting session: {session_id}")
+        show_troubleshooting_event_audit(session_id)
+
     if context.get("captured_at"):
         st.caption(f"Diagnostic captured at: {context.get('captured_at')}")
+
+    show_ticket_trail_snapshot(ticket)
 
 # -----------------------------
 # RELATIONAL DIAGNOSTIC TREE ACCESS
@@ -3457,6 +4270,7 @@ def display_diagnostic_solution(solution, tree_code=None, diagnostic_path=None, 
 
     priority = get_solution_priority_label(solution.get("priority_recommendation"))
 
+    render_mvp_flow_steps("solution")
     st.success(f"✅ Recommended Solution: {solution.get('title', 'Solution')}")
 
     if solution.get("summary"):
@@ -3491,10 +4305,25 @@ def display_diagnostic_solution(solution, tree_code=None, diagnostic_path=None, 
 
     with col_yes:
         if st.button("✅ Yes, issue resolved", key=f"resolved_{solution.get('solution_code')}"):
+            session_id = st.session_state.get(f"diagnostic_session_id_{tree_code}", "")
+            log_troubleshooting_event(
+                session_id,
+                None,
+                "SOLUTION_FIXED",
+                solution.get("title", "Solution marked fixed"),
+            )
+            update_troubleshooting_session(session_id, status="Resolved")
             st.success("Great. No ticket is needed if the issue is resolved.")
 
     with col_no:
         if st.button("🎫 No, create a support ticket", key=f"create_ticket_{solution.get('solution_code')}"):
+            session_id = st.session_state.get(f"diagnostic_session_id_{tree_code}", "")
+            log_troubleshooting_event(
+                session_id,
+                None,
+                "SOLUTION_FAILED",
+                solution.get("title", "Solution did not fix the issue"),
+            )
             diagnostic_context = build_diagnostic_ticket_context(
                 tree_code,
                 solution,
@@ -3530,8 +4359,7 @@ def display_diagnostic_solution(solution, tree_code=None, diagnostic_path=None, 
             )
             st.session_state["prefill_ticket_severity"] = priority if priority in ["Low", "Medium", "High"] else "High"
             st.session_state["prefill_diagnostic_context"] = diagnostic_context
-            st.success("Diagnostic context saved for the ticket.")
-            st.info("Go to Create Ticket. The ticket fields will be pre-filled with the original issue and diagnostic history.")
+            navigate_to_mode("🎫 Create Ticket")
 
 
 def run_relational_diagnostic_tree(tree_code, issue_title=None):
@@ -3544,19 +4372,55 @@ def run_relational_diagnostic_tree(tree_code, issue_title=None):
 
     session_key = f"diagnostic_current_node_{tree_code}"
     path_key = f"diagnostic_path_{tree_code}"
+    audit_session_key = f"diagnostic_session_id_{tree_code}"
+    viewed_solution_key = f"diagnostic_solution_viewed_{tree_code}"
 
     if session_key not in st.session_state:
         st.session_state[session_key] = root["diagnostic_node_id"]
         st.session_state[path_key] = []
+        st.session_state[audit_session_key] = create_troubleshooting_session(
+            tree_code,
+            root["diagnostic_node_id"],
+            issue_title=issue_title,
+        )
+        st.session_state[viewed_solution_key] = set()
+        log_troubleshooting_event(
+            st.session_state[audit_session_key],
+            root["diagnostic_node_id"],
+            "SESSION_STARTED",
+            issue_title or root.get("title", tree_code),
+        )
 
     st.subheader(f"🧭 {issue_title or root.get('title', 'Guided Diagnostic')}")
+    render_mvp_flow_steps("question")
 
     current_audience = get_current_diagnostic_audience()
     st.caption(f"Diagnostic audience: {current_audience.title()}")
 
     if st.button("🔄 Restart diagnostic", key=f"restart_diag_{tree_code}"):
+        previous_session_id = st.session_state.get(audit_session_key, "")
+        previous_node_id = st.session_state.get(session_key)
+        log_troubleshooting_event(
+            previous_session_id,
+            previous_node_id,
+            "SESSION_RESTARTED",
+            "User restarted diagnostic flow.",
+        )
+        update_troubleshooting_session(previous_session_id, status="Abandoned")
         st.session_state[session_key] = root["diagnostic_node_id"]
         st.session_state[path_key] = []
+        st.session_state[audit_session_key] = create_troubleshooting_session(
+            tree_code,
+            root["diagnostic_node_id"],
+            issue_title=issue_title,
+        )
+        st.session_state[viewed_solution_key] = set()
+        log_troubleshooting_event(
+            st.session_state[audit_session_key],
+            root["diagnostic_node_id"],
+            "SESSION_STARTED",
+            issue_title or root.get("title", tree_code),
+        )
         st.rerun()
 
     current_node = get_diagnostic_node(st.session_state[session_key])
@@ -3577,11 +4441,36 @@ def run_relational_diagnostic_tree(tree_code, issue_title=None):
             return
 
         first_child = children[0]
+        log_troubleshooting_event(
+            st.session_state.get(audit_session_key, ""),
+            current_node["diagnostic_node_id"],
+            "CATEGORY_SELECTED",
+            current_node.get("title", "Category selected"),
+        )
+        update_troubleshooting_session(
+            st.session_state.get(audit_session_key, ""),
+            current_node_id=first_child["diagnostic_node_id"],
+            status="In Progress",
+        )
         st.session_state[session_key] = first_child["diagnostic_node_id"]
         st.rerun()
 
     if current_node["node_type"] == "solution":
         solution = get_solution_by_id(current_node.get("solution_id"))
+        viewed_solutions = st.session_state.setdefault(viewed_solution_key, set())
+        if current_node["diagnostic_node_id"] not in viewed_solutions:
+            log_troubleshooting_event(
+                st.session_state.get(audit_session_key, ""),
+                current_node["diagnostic_node_id"],
+                "SOLUTION_VIEWED",
+                solution.get("title", "Solution viewed") if solution else current_node.get("title", "Solution viewed"),
+            )
+            update_troubleshooting_session(
+                st.session_state.get(audit_session_key, ""),
+                current_node_id=current_node["diagnostic_node_id"],
+                status="Solution Viewed",
+            )
+            viewed_solutions.add(current_node["diagnostic_node_id"])
 
         if current_node.get("condition_label") and current_node.get("condition_value"):
             st.caption(f"Based on: {current_node['condition_label']} → {current_node['condition_value']}")
@@ -3600,6 +4489,10 @@ def run_relational_diagnostic_tree(tree_code, issue_title=None):
         return
 
     # Question/check/instruction nodes.
+    diagnostic_path = st.session_state.get(path_key, [])
+    if diagnostic_path:
+        st.caption("Breadcrumb: " + " › ".join(diagnostic_path[-3:]))
+
     if current_node.get("title"):
         st.markdown(f"### {current_node['title']}")
 
@@ -3646,7 +4539,19 @@ def run_relational_diagnostic_tree(tree_code, issue_title=None):
 
     if st.button("Continue", key=f"diag_continue_{current_node['diagnostic_node_id']}"):
         condition_value = selected_child.get("condition_value") or selected_label
-        st.session_state[path_key].append(f"{prompt} → {condition_value}")
+        event_note = f"{prompt} → {condition_value}"
+        st.session_state[path_key].append(event_note)
+        log_troubleshooting_event(
+            st.session_state.get(audit_session_key, ""),
+            current_node["diagnostic_node_id"],
+            "SYMPTOM_SELECTED",
+            event_note,
+        )
+        update_troubleshooting_session(
+            st.session_state.get(audit_session_key, ""),
+            current_node_id=selected_child["diagnostic_node_id"],
+            status="In Progress",
+        )
         st.session_state[session_key] = selected_child["diagnostic_node_id"]
         st.rerun()
 
@@ -4040,25 +4945,60 @@ def show_no_diagnostic_tree_message(issue):
 
 def show_guided_troubleshooting():
     st.title("🧭 Guided Troubleshooting Assistant")
+    render_mvp_flow_steps("category")
 
-    issue_titles = [issue["title"] for issue in issues]
+    if MVP_CONTENT_FOCUS_ENABLED:
+        st.info(MVP_CONTENT_FOCUS_NOTE)
+
+    visible_issues = filter_visible_mvp_issues(issues)
     diagnostic_issue_titles = get_relational_diagnostic_issue_titles()
 
     if diagnostic_issue_titles:
-        st.success(
+        st.caption(
             f"Database-driven diagnostics available for {len(diagnostic_issue_titles)} issue(s)."
         )
     else:
         st.warning("No database-driven diagnostic trees are available yet.")
 
-    selected_issue = st.selectbox(
-        "Select an issue",
-        ["Other"] + issue_titles,
-        help="Choose the issue that best matches your problem.",
+    categories = sorted({issue.get("category", "Other") for issue in visible_issues if issue.get("category")})
+    if not categories:
+        st.warning("No visible MVP troubleshooting issues are currently available.")
+        return
+
+    if "Other" not in categories:
+        categories.append("Other")
+
+    selected_category = st.selectbox(
+        "1. Select problem category",
+        categories,
+        help="Start with the broad area of the problem. This keeps the demo flow clear and portfolio-friendly.",
+        key="guided_problem_category",
     )
 
-    if selected_issue == "Other":
-        st.info("Select a known issue from the list, or create a support ticket if your issue is not listed.")
+    category_issues = [
+        issue for issue in visible_issues
+        if issue.get("category", "Other") == selected_category
+    ]
+
+    issue_options = [issue["title"] for issue in category_issues]
+    selected_issue = st.selectbox(
+        "2. Select the issue that best matches the symptom",
+        ["Other / Not listed"] + issue_options,
+        help="Choose the closest match. If nothing fits, create a ticket with your own description.",
+        key="guided_issue_selection",
+    )
+
+    if selected_issue == "Other / Not listed":
+        st.info("This issue is not in the guided tree yet. Create a ticket and describe what is happening.")
+        if st.button("Create ticket for an unlisted issue", key="create_unlisted_ticket_from_guided"):
+            st.session_state["prefill_ticket_issue"] = f"{selected_category} issue - not listed"
+            st.session_state["prefill_ticket_description"] = (
+                f"Problem category: {selected_category}\n\n"
+                "The issue was not listed in Guided Troubleshooting. Please review and continue troubleshooting."
+            )
+            st.session_state["prefill_ticket_severity"] = "Medium"
+            st.session_state["prefill_diagnostic_context"] = {}
+            navigate_to_mode("🎫 Create Ticket")
         return
 
     issue = find_issue_by_title(selected_issue)
@@ -4069,8 +5009,10 @@ def show_guided_troubleshooting():
 
     tree_code = issue.get("problem_code") or PROBLEM_CODE_BY_ISSUE_TITLE.get(selected_issue) or make_problem_code(selected_issue)
 
+    st.divider()
+
     if diagnostic_tree_exists(tree_code):
-        st.caption("Using database-driven diagnostic tree.")
+        st.caption("Using reusable database-driven diagnostic page.")
         run_relational_diagnostic_tree(tree_code, selected_issue)
         return
 
@@ -4507,8 +5449,10 @@ def load_issues():
     relational_issues = load_issues_from_relational_kb()
 
     if relational_issues:
+        visible_relational_issues = filter_visible_mvp_issues(relational_issues)
         issues.clear()
-        issues.extend(relational_issues)
+        issues.extend(visible_relational_issues)
+        st.session_state["issues"] = issues
         return
 
     # Fallback for older databases that do not have relational KB rows yet.
@@ -4516,8 +5460,10 @@ def load_issues():
     db_issues = load_issues_from_db()
 
     if db_issues:
+        visible_db_issues = filter_visible_mvp_issues(db_issues)
         issues.clear()
-        issues.extend(db_issues)
+        issues.extend(visible_db_issues)
+        st.session_state["issues"] = issues
 
 
 def save_issues():
@@ -4540,13 +5486,12 @@ def save_issues():
 def show_knowledge_base():
     st.title("🔧 IT Troubleshooting Knowledge Base")
 
-    st.subheader("🔥 Common Issues")
+    if MVP_CONTENT_FOCUS_ENABLED:
+        st.info(MVP_CONTENT_FOCUS_NOTE)
+
+    st.subheader("⭐ Featured MVP Issue")
     common_titles = [
-        "No Internet Connection",
-        "Login Failure",
-        "Wi-Fi Drops Frequently",
-        "Email Not Sending",
-        "DNS Resolution Failure",
+        "Printer Failure",
     ]
 
     common_issues = [issue for issue in issues if issue["title"] in common_titles]
@@ -4571,10 +5516,11 @@ def show_knowledge_base():
         "🔍 Search issues",
         value=st.session_state.pop("kb_search_focus", ""),
         placeholder="Search by title, tag, symptom, cause, or step...",
+        key="kb_search_query",
     )
 
-    selected_category = st.selectbox("Filter by Category", get_categories())
-    selected_severity = st.selectbox("Filter by Severity", ["All", "Low", "Medium", "High"])
+    selected_category = st.selectbox("Filter by Category", get_categories(), key="kb_filter_category")
+    selected_severity = st.selectbox("Filter by Severity", ["All", "Low", "Medium", "High"], key="kb_filter_severity")
 
     matching_issues = []
 
@@ -4693,7 +5639,7 @@ def show_admin_kb_editor():
         )
         steps_text = st.text_area("Advanced IT Steps", placeholder="Enter technical admin steps, one per line", key="kb_steps")
 
-        submitted = st.form_submit_button("Add Issue")
+        submitted = st.form_submit_button("Add Issue", key="add_issue_submit")
 
     if submitted:
         errors = validate_issue_form(title, category, symptoms_text, steps_text)
@@ -4869,6 +5815,109 @@ def normalize_ticket_status(status):
 def is_ticket_completed(status):
     """Return True if a ticket should no longer count against active SLA."""
     return status in ["Resolved", "Closed"]
+
+def get_ticket_widget_key(ticket, fallback_index=None):
+    """Return a stable, safe key fragment for ticket widgets.
+
+    Streamlit widget keys should not depend only on the visible row number because
+    filtering/sorting can move tickets around between reruns. This helper prefers
+    database IDs and falls back to a stable ticket ID when available.
+    """
+    raw_key = (
+        ticket.get("db_id")
+        or ticket.get("ticket_id")
+        or ticket.get("id")
+        or ticket.get("created_at")
+        or fallback_index
+        or uuid.uuid4().hex
+    )
+    return re.sub(r"[^A-Za-z0-9_-]", "_", str(raw_key))
+
+
+def get_status_stage_index(status):
+    """Return the progress-stage index for the current ticket status."""
+    ordered_statuses = ["Open", "Assigned", "In Progress", "Waiting on User", "Resolved", "Closed"]
+    normalized = normalize_ticket_status(status)
+    return ordered_statuses.index(normalized) if normalized in ordered_statuses else 0
+
+
+def render_ticket_status_tracker(status):
+    """Render a compact status tracker for reviewers and support agents."""
+    stages = ["Open", "Assigned", "In Progress", "Waiting on User", "Resolved", "Closed"]
+    current_index = get_status_stage_index(status)
+
+    cols = st.columns(len(stages))
+    for index, (col, stage) in enumerate(zip(cols, stages)):
+        is_current = index == current_index
+        is_done = index < current_index or status == "Closed"
+        marker = "Done" if is_done else ("Now" if is_current else "Next")
+        border_color = "#22c55e" if is_done else ("#4e89ff" if is_current else "#d8dee9")
+        background = "#f0fdf4" if is_done else ("#eef5ff" if is_current else "#ffffff")
+        col.markdown(
+            f"""
+            <div style="padding:0.6rem; border:1px solid {border_color}; background:{background}; border-radius:10px; text-align:center; min-height:68px;">
+                <div style="font-size:0.72rem; color:#6b7280; font-weight:700;">{marker}</div>
+                <div style="font-size:0.78rem; color:#374151; font-weight:600;">{stage}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def get_effective_ticket_status(previous_status, selected_status, assigned_to):
+    """Automatically move newly assigned open tickets into Assigned status.
+
+    Support agents can still manually choose In Progress, Waiting on User,
+    Resolved, or Closed. This helper only handles the common case where an
+    agent assigns an Open ticket and forgets to change the Status dropdown.
+    """
+    normalized_status = normalize_ticket_status(selected_status)
+
+    if (
+        previous_status == "Open"
+        and normalized_status == "Open"
+        and assigned_to
+        and assigned_to != "Unassigned"
+    ):
+        return "Assigned"
+
+    return normalized_status
+
+
+def validate_ticket_update(previous_status, new_status, new_assigned_to, new_resolution_notes):
+    """Return validation messages before saving an admin ticket update."""
+    errors = []
+    warnings = []
+
+    cleaned_notes = (new_resolution_notes or "").strip()
+
+    if new_status in {"Resolved", "Closed"} and not cleaned_notes:
+        errors.append("Add resolution notes before marking a ticket Resolved or Closed.")
+
+    if new_status == "Closed" and previous_status not in {"Resolved", "Closed"}:
+        warnings.append("This closes the ticket directly. For a realistic support workflow, consider moving it to Resolved first.")
+
+    if new_status == "Waiting on User" and not cleaned_notes:
+        warnings.append("Add a short note explaining what information is needed from the user.")
+
+    return errors, warnings
+
+
+def apply_ticket_status_timestamps(ticket, previous_status, new_status):
+    """Apply lifecycle timestamps when status changes."""
+    now = get_current_timestamp()
+
+    if new_status == "Assigned" and not ticket.get("assigned_at"):
+        ticket["assigned_at"] = now
+    if new_status == "Waiting on User" and not ticket.get("waiting_on_user_at"):
+        ticket["waiting_on_user_at"] = now
+    if new_status == "Resolved" and not ticket.get("resolved_at"):
+        ticket["resolved_at"] = now
+    if new_status == "Closed" and not ticket.get("closed_at"):
+        ticket["closed_at"] = now
+    if previous_status in {"Resolved", "Closed"} and new_status not in {"Resolved", "Closed"}:
+        ticket["reopened_at"] = now
+
 
 # -----------------------------
 # SLA HELPERS
@@ -5124,6 +6173,11 @@ def load_tickets():
             "activity_log": [],
             "selected_resolution_template": "Select a template",
             "diagnostic_context": {},
+            "business_impact": row_dict.get("business_impact", ""),
+            "contact_method": row_dict.get("contact_method", ""),
+            "device_or_location": row_dict.get("device_or_location", ""),
+            "troubleshooting_session_id": row_dict.get("troubleshooting_session_id", ""),
+            "troubleshooting_summary_snapshot": row_dict.get("troubleshooting_summary_snapshot", ""),
             "admin_unread_type": "new_ticket",
             "user_unread_type": "",
         })
@@ -5131,141 +6185,204 @@ def load_tickets():
     st.session_state["tickets"] = loaded_tickets
 
 
+TICKET_STORAGE_COLUMNS = [
+    "username",
+    "email",
+    "issue",
+    "description",
+    "severity",
+    "priority",
+    "status",
+    "assigned_to",
+    "resolution_notes",
+    "likely_infrastructure",
+    "unread_for_admin",
+    "unread_for_user",
+    "business_impact",
+    "contact_method",
+    "device_or_location",
+    "troubleshooting_session_id",
+    "troubleshooting_summary_snapshot",
+    "ticket_data",
+]
+
+
+def prepare_ticket_for_storage(ticket):
+    """Return a normalized ticket payload and SQL values.
+
+    Step 4 keeps the database safer by storing each ticket individually instead
+    of deleting and rewriting the entire tickets table on every save.
+    """
+    ticket.setdefault("created_at", get_current_timestamp())
+    ticket["updated_at"] = get_current_timestamp()
+
+    ticket_data = json.dumps(ticket, indent=4)
+
+    values = {
+        "username": ticket.get("username") or ticket.get("name", ""),
+        "email": ticket.get("email", ""),
+        "issue": ticket.get("issue", ""),
+        "description": ticket.get("description", ""),
+        "severity": ticket.get("severity", "Medium"),
+        "priority": ticket.get("priority", "Medium"),
+        "status": ticket.get("status", "Open"),
+        "assigned_to": ticket.get("assigned_to", "Unassigned"),
+        "resolution_notes": ticket.get("resolution_notes", ""),
+        "likely_infrastructure": 1 if ticket.get("likely_infrastructure") else 0,
+        "unread_for_admin": 1 if ticket.get("unread_for_admin") else 0,
+        "unread_for_user": 1 if ticket.get("unread_for_user") else 0,
+        "business_impact": ticket.get("business_impact", ""),
+        "contact_method": ticket.get("contact_method", ""),
+        "device_or_location": ticket.get("device_or_location", ""),
+        "troubleshooting_session_id": ticket.get("troubleshooting_session_id", ""),
+        "troubleshooting_summary_snapshot": ticket.get("troubleshooting_summary_snapshot", ""),
+        "ticket_data": ticket_data,
+    }
+    return values
+
+
+def save_ticket_record(cursor, ticket):
+    """Insert or update one ticket without clearing unrelated database rows."""
+    values = prepare_ticket_for_storage(ticket)
+    db_id = ticket.get("db_id")
+
+    if db_id:
+        set_clause = ", ".join([f"{column} = ?" for column in TICKET_STORAGE_COLUMNS])
+        cursor.execute(
+            f"UPDATE tickets SET {set_clause} WHERE id = ?",
+            [values[column] for column in TICKET_STORAGE_COLUMNS] + [db_id],
+        )
+
+        if cursor.rowcount:
+            return db_id
+
+    placeholders = ", ".join(["?"] * len(TICKET_STORAGE_COLUMNS))
+    column_list = ", ".join(TICKET_STORAGE_COLUMNS)
+    cursor.execute(
+        f"INSERT INTO tickets ({column_list}) VALUES ({placeholders})",
+        [values[column] for column in TICKET_STORAGE_COLUMNS],
+    )
+    ticket["db_id"] = cursor.lastrowid
+
+    # Store the db_id inside ticket_data after the database assigns it.
+    values = prepare_ticket_for_storage(ticket)
+    cursor.execute(
+        "UPDATE tickets SET ticket_data = ? WHERE id = ?",
+        (values["ticket_data"], ticket["db_id"]),
+    )
+    return ticket["db_id"]
+
+
 def save_tickets():
-    """Save tickets from session state into SQLite."""
+    """Save tickets from session state into SQLite without deleting history.
+
+    Earlier versions rewrote the whole tickets table. This version upserts each
+    known ticket, which is safer for demos and avoids accidental data loss if the
+    app is interrupted while saving.
+    """
     tickets = st.session_state.get("tickets", [])
 
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Simple migration approach: session state is the source of truth for ticket objects.
-    cursor.execute("DELETE FROM tickets")
-
     for ticket in tickets:
-        ticket_data = json.dumps(ticket, indent=4)
-        cursor.execute(
-            """
-            INSERT INTO tickets (
-                username,
-                email,
-                issue,
-                description,
-                severity,
-                priority,
-                status,
-                assigned_to,
-                resolution_notes,
-                likely_infrastructure,
-                unread_for_admin,
-                unread_for_user,
-                ticket_data
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                ticket.get("username") or ticket.get("name", ""),
-                ticket.get("email", ""),
-                ticket.get("issue", ""),
-                ticket.get("description", ""),
-                ticket.get("severity", "Medium"),
-                ticket.get("priority", "Medium"),
-                ticket.get("status", "Open"),
-                ticket.get("assigned_to", "Unassigned"),
-                ticket.get("resolution_notes", ""),
-                1 if ticket.get("likely_infrastructure") else 0,
-                1 if ticket.get("unread_for_admin") else 0,
-                1 if ticket.get("unread_for_user") else 0,
-                ticket_data,
-            ),
-        )
+        save_ticket_record(cursor, ticket)
 
     connection.commit()
     connection.close()
-
-
-# -----------------------------
-# TICKET SYSTEM (STEP 5)
-# -----------------------------
-def suggest_issues_from_text(description, title="", max_results=3):
-    """Suggest likely issues based on ticket title and description."""
-    suggestions = []
-    combined_text = f"{title} {description}".strip()
-
-    for issue in issues:
-        score = calculate_search_score(issue, combined_text)
-        if score > 0:
-            suggestions.append((issue, score))
-
-    suggestions.sort(key=lambda item: item[1], reverse=True)
-    return suggestions[:max_results]
-
 
 
 def insert_ticket_directly(ticket):
-    """Insert one new ticket directly into SQLite and update its db_id.
-
-    This is safer for ticket creation than rewriting the whole tickets table.
-    """
+    """Insert one new ticket directly into SQLite and update its db_id."""
     connection = get_db_connection()
     cursor = connection.cursor()
-
-    ticket_data = json.dumps(ticket, indent=4)
-
-    cursor.execute(
-        """
-        INSERT INTO tickets (
-            username,
-            email,
-            issue,
-            description,
-            severity,
-            priority,
-            status,
-            assigned_to,
-            resolution_notes,
-            likely_infrastructure,
-            unread_for_admin,
-            unread_for_user,
-            ticket_data
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            ticket.get("username") or ticket.get("name", ""),
-            ticket.get("email", ""),
-            ticket.get("issue", ""),
-            ticket.get("description", ""),
-            ticket.get("severity", "Medium"),
-            ticket.get("priority", "Medium"),
-            ticket.get("status", "Open"),
-            ticket.get("assigned_to", "Unassigned"),
-            ticket.get("resolution_notes", ""),
-            1 if ticket.get("likely_infrastructure") else 0,
-            1 if ticket.get("unread_for_admin") else 0,
-            1 if ticket.get("unread_for_user") else 0,
-            ticket_data,
-        ),
-    )
-
-    ticket["db_id"] = cursor.lastrowid
-    ticket_data = json.dumps(ticket, indent=4)
-
-    cursor.execute(
-        "UPDATE tickets SET ticket_data = ? WHERE id = ?",
-        (ticket_data, ticket["db_id"]),
-    )
-
+    db_id = save_ticket_record(cursor, ticket)
     connection.commit()
     connection.close()
+    return db_id
 
-    return ticket["db_id"]
+def delete_ticket_from_storage(ticket):
+    """Delete one ticket and its related comments/attachment metadata from SQLite."""
+    db_id = ticket.get("db_id")
+    if not db_id:
+        return False
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM ticket_comments WHERE ticket_id = ?", (db_id,))
+    cursor.execute("DELETE FROM ticket_attachments WHERE ticket_id = ?", (db_id,))
+    cursor.execute("DELETE FROM tickets WHERE id = ?", (db_id,))
+    deleted = cursor.rowcount > 0
+    connection.commit()
+    connection.close()
+    return deleted
+
+
+def delete_ticket_attachment_files(ticket):
+    """Best-effort cleanup for files attached to a deleted test ticket."""
+    for attachment in ticket.get("attachments", []):
+        candidate_paths = []
+        if attachment.get("path"):
+            candidate_paths.append(attachment.get("path"))
+        if attachment.get("saved_name"):
+            candidate_paths.append(os.path.join(UPLOAD_FOLDER, attachment.get("saved_name")))
+
+        for file_path in candidate_paths:
+            try:
+                if file_path and os.path.exists(file_path):
+                    os.remove(file_path)
+            except OSError:
+                pass
+
+
+def delete_ticket(ticket):
+    """Delete one ticket from session state and persistent storage."""
+    deleted = delete_ticket_from_storage(ticket)
+    delete_ticket_attachment_files(ticket)
+
+    db_id = ticket.get("db_id")
+    st.session_state["tickets"] = [
+        existing_ticket
+        for existing_ticket in st.session_state.get("tickets", [])
+        if existing_ticket.get("db_id") != db_id
+    ]
+    return deleted
+
+def validate_ticket_submission(issue_title, description, business_impact, contact_method, device_or_location):
+    """Validate and normalize ticket form values before saving."""
+    normalized = {
+        "issue_title": str(issue_title or "").strip(),
+        "description": str(description or "").strip(),
+        "business_impact": str(business_impact or "").strip(),
+        "contact_method": str(contact_method or "").strip(),
+        "device_or_location": str(device_or_location or "").strip(),
+    }
+
+    errors = []
+    if not normalized["issue_title"]:
+        errors.append("Issue Title is required.")
+    if not normalized["description"]:
+        errors.append("Description is required.")
+    if normalized["description"] and len(normalized["description"]) < 10:
+        errors.append("Description should include at least a brief symptom or error message.")
+    if not normalized["business_impact"]:
+        errors.append("Business impact is required so support can prioritize the ticket.")
+    if not normalized["device_or_location"]:
+        errors.append("Device or location is required so support knows where to investigate.")
+
+    return normalized, errors
+
 
 def show_ticket_form():
     st.title("🎫 Create Support Ticket")
+    render_mvp_flow_steps("ticket")
 
     if "ticket_created_message" in st.session_state:
         st.success(st.session_state.pop("ticket_created_message"))
-        st.info("Go to 📋 View Tickets as Admin, or 🎟 My Tickets as User, to review the new ticket.")
+        target = "📋 View Tickets" if st.session_state.get("role") == "Admin" else "🎟 My Tickets"
+        st.info("Open your ticket list to review the submitted troubleshooting trail.")
+        if st.button("Open ticket list", key="open_ticket_list_after_create_message"):
+            navigate_to_mode(target)
 
     current_username = st.session_state.get("username", "Unknown")
     current_user = get_user(current_username) or {}
@@ -5275,85 +6392,138 @@ def show_ticket_form():
     if current_email:
         st.caption(f"Email: {current_email}")
 
-    with st.form("ticket_form"):
-        prefill_issue = st.session_state.get("prefill_ticket_issue", "")
-        prefill_description = st.session_state.get("prefill_ticket_description", "")
-        prefill_severity = st.session_state.get("prefill_ticket_severity", "Medium")
-        prefill_diagnostic_context = st.session_state.get("prefill_diagnostic_context", {})
-        severity_options = ["Low", "Medium", "High"]
-        if prefill_severity not in severity_options:
-            prefill_severity = "Medium"
+    prefill_issue = st.session_state.get("prefill_ticket_issue", "")
+    prefill_description = st.session_state.get("prefill_ticket_description", "")
+    prefill_severity = st.session_state.get("prefill_ticket_severity", "Medium")
+    prefill_diagnostic_context = st.session_state.get("prefill_diagnostic_context", {})
 
-        issue_title = st.text_input("Issue Title", value=prefill_issue)
-        description = st.text_area("Describe the issue", value=prefill_description)
+    severity_options = ["Low", "Medium", "High"]
+    if prefill_severity not in severity_options:
+        prefill_severity = "Medium"
+
+    if prefill_diagnostic_context:
+        st.success("This ticket is linked to a guided troubleshooting session. The trail will be saved with the ticket.")
+        with st.expander("Preview troubleshooting trail", expanded=False):
+            snapshot = build_troubleshooting_summary_snapshot(prefill_diagnostic_context)
+            st.text(snapshot or "No troubleshooting trail was captured yet.")
+    else:
+        st.info("💡 If you are not sure how to fix the issue, try Guided Troubleshooting before creating a ticket.")
+
+    with st.form("ticket_form"):
+        issue_title = st.text_input("Issue Title", value=prefill_issue, key="ticket_issue_title")
+        description = st.text_area("Describe the issue", value=prefill_description, key="ticket_description")
+        business_impact = st.text_area(
+            "Business impact",
+            placeholder="Example: I cannot print shipping labels for customer orders.",
+            key="ticket_business_impact",
+        )
+        contact_method = st.selectbox(
+            "Preferred contact method",
+            ["Email", "Phone", "Chat", "In person"],
+            key="ticket_contact_method",
+        )
+        device_or_location = st.text_input(
+            "Device or location",
+            placeholder="Example: Laptop asset tag, printer name, office, floor, or room.",
+            key="ticket_device_or_location",
+        )
         severity = st.selectbox(
             "Severity",
             severity_options,
             index=severity_options.index(prefill_severity),
+            key="ticket_severity",
         )
         uploaded_files = st.file_uploader(
             "Attach screenshots or log files (optional)",
             type=["png", "jpg", "jpeg", "txt", "log", "pdf"],
             accept_multiple_files=True,
+            key="ticket_attachments",
         )
 
-        st.info("💡 If you are not sure how to fix the issue, try Guided Troubleshooting before creating a ticket.")
+        submitted = st.form_submit_button("Create Ticket", key="create_ticket_submit")
 
-        submitted = st.form_submit_button("Create Ticket")
+    if not submitted:
+        return
 
-        if submitted:
-            if not issue_title or not description:
-                st.error("Issue Title and Description are required")
-                return
+    normalized, validation_errors = validate_ticket_submission(
+        issue_title,
+        description,
+        business_impact,
+        contact_method,
+        device_or_location,
+    )
 
-            attachments = save_uploaded_attachments(uploaded_files)
-            priority = calculate_ticket_priority(description, severity)
+    if validation_errors:
+        for error in validation_errors:
+            st.error(error)
+        return
 
-            ticket = {
-                "name": current_username,
-                "username": current_username,
-                "email": current_email,
-                "issue": issue_title,
-                "description": description,
-                "severity": severity,
-                "priority": priority,
-                "status": "Open",
-                "assigned_to": "Unassigned",
-                "resolution_notes": "",
-                "assigned_at": "",
-                "waiting_on_user_at": "",
-                "closed_at": "",
-                "suggestions": [],
-                "diagnostic_context": prefill_diagnostic_context,
-                "likely_infrastructure": is_likely_infrastructure_issue(description),
-                "attachments": attachments,
-                "comments": [],
-                "unread_for_admin": True,
-                "unread_for_user": False,
-                "admin_unread_type": "new_ticket",
-                "user_unread_type": "",
-                "created_at": get_current_timestamp(),
-                "updated_at": get_current_timestamp(),
-                "activity_log": [],
-            }
-            if "tickets" not in st.session_state:
-                st.session_state["tickets"] = []
+    attachments = save_uploaded_attachments(uploaded_files)
+    priority = calculate_ticket_priority(normalized["description"], severity)
 
-            st.session_state["tickets"].append(ticket)
-            save_tickets()
+    troubleshooting_summary_snapshot = build_troubleshooting_summary_snapshot(prefill_diagnostic_context)
+    troubleshooting_session_id = prefill_diagnostic_context.get("troubleshooting_session_id", "") if prefill_diagnostic_context else ""
 
-            st.success("✅ Ticket created successfully")
+    ticket = {
+        "name": current_username,
+        "username": current_username,
+        "email": current_email,
+        "issue": normalized["issue_title"],
+        "description": normalized["description"],
+        "severity": severity,
+        "priority": priority,
+        "business_impact": normalized["business_impact"],
+        "contact_method": normalized["contact_method"],
+        "device_or_location": normalized["device_or_location"],
+        "troubleshooting_session_id": troubleshooting_session_id,
+        "troubleshooting_summary_snapshot": troubleshooting_summary_snapshot,
+        "status": "Open",
+        "assigned_to": "Unassigned",
+        "resolution_notes": "",
+        "assigned_at": "",
+        "waiting_on_user_at": "",
+        "closed_at": "",
+        "suggestions": [],
+        "diagnostic_context": prefill_diagnostic_context,
+        "likely_infrastructure": is_likely_infrastructure_issue(normalized["description"]),
+        "attachments": attachments,
+        "comments": [],
+        "unread_for_admin": True,
+        "unread_for_user": False,
+        "admin_unread_type": "new_ticket",
+        "user_unread_type": "",
+        "created_at": get_current_timestamp(),
+        "updated_at": get_current_timestamp(),
+        "activity_log": [],
+    }
 
-            if attachments:
-                st.info(f"📎 {len(attachments)} attachment(s) saved with this ticket")
+    if "tickets" not in st.session_state:
+        st.session_state["tickets"] = []
 
-            show_priority_badge(priority)
+    db_id = insert_ticket_directly(ticket)
+    ticket["db_id"] = db_id
+    st.session_state["tickets"].insert(0, ticket)
 
-            if is_likely_infrastructure_issue(description):
-                st.warning("This looks like a possible wider IT or infrastructure issue.")
+    if troubleshooting_session_id:
+        log_troubleshooting_event(
+            troubleshooting_session_id,
+            None,
+            "TICKET_SUBMITTED",
+            f"Ticket submitted: {normalized['issue_title']}",
+        )
+        update_troubleshooting_session(troubleshooting_session_id, status="Ticket Submitted")
 
+    for key in [
+        "prefill_ticket_issue",
+        "prefill_ticket_description",
+        "prefill_ticket_severity",
+        "prefill_diagnostic_context",
+    ]:
+        st.session_state.pop(key, None)
 
-
+    attachment_note = f" {len(attachments)} attachment(s) saved." if attachments else ""
+    st.session_state["ticket_created_message"] = f"✅ Ticket created successfully.{attachment_note}"
+    st.rerun()
 
 def get_priority_rank(priority):
     """Return sorting rank for ticket priority."""
@@ -5373,23 +6543,31 @@ def show_ticket_list():
     tickets = st.session_state.get("tickets", [])
 
     if not tickets:
-        st.info("No tickets submitted yet")
+        render_empty_ticket_state(
+            "No tickets submitted yet. Start guided troubleshooting first to create a ticket with a useful diagnostic trail.",
+            "admin_empty_start_guided",
+        )
         return
 
-    status_filter = st.selectbox(
-        "Filter by status",
-        ["All"] + TICKET_STATUSES,
-    )
-
-    priority_filter = st.selectbox(
-        "Filter by priority",
-        ["All", "Critical", "High", "Medium", "Low"],
-    )
-
-    diagnostic_filter = st.selectbox(
-        "Filter by diagnostic source",
-        ["All", "Created after Guided Troubleshooting", "Created manually"],
-    )
+    filter_col1, filter_col2, filter_col3 = st.columns(3)
+    with filter_col1:
+        status_filter = st.selectbox(
+            "Filter by status",
+            ["All"] + TICKET_STATUSES,
+            key="admin_ticket_status_filter",
+        )
+    with filter_col2:
+        priority_filter = st.selectbox(
+            "Filter by priority",
+            ["All", "Critical", "High", "Medium", "Low"],
+            key="admin_ticket_priority_filter",
+        )
+    with filter_col3:
+        diagnostic_filter = st.selectbox(
+            "Filter by diagnostic source",
+            ["All", "Created after Guided Troubleshooting", "Created manually"],
+            key="admin_ticket_diagnostic_filter",
+        )
 
     sorted_tickets = sorted(
         tickets,
@@ -5418,6 +6596,7 @@ def show_ticket_list():
             continue
 
         visible_ticket_count += 1
+        ticket_key = get_ticket_widget_key(ticket, i)
 
         status = ticket.get("status", "Open")
         assigned_to = ticket.get("assigned_to", "Unassigned")
@@ -5439,6 +6618,7 @@ def show_ticket_list():
             st.markdown(f"**Priority Label:** {format_priority_text(priority)}", unsafe_allow_html=True)
             show_sla_badge(ticket)
             st.write(f"**Status:** {status}")
+            render_ticket_status_tracker(status)
             if ticket.get("created_at"):
                 st.write(f"**Created:** {ticket.get('created_at')}")
             if ticket.get("assigned_at"):
@@ -5453,6 +6633,7 @@ def show_ticket_list():
             st.markdown("**📝 Description**")
             render_description_box(ticket.get("description", ""))
 
+            render_ticket_mvp_summary(ticket, i)
             show_ticket_diagnostic_context(ticket)
 
             if ticket.get("likely_infrastructure"):
@@ -5495,7 +6676,7 @@ def show_ticket_list():
                                 label=f"⬇️ Download {file_name}",
                                 data=attachment_bytes,
                                 file_name=file_name,
-                                key=f"download_db_{i}_{attachment_index}",
+                                key=f"download_db_{ticket_key}_{attachment_index}",
                             )
                     elif resolved_path and os.path.exists(resolved_path):
                         if file_type.startswith("image"):
@@ -5506,7 +6687,7 @@ def show_ticket_list():
                                     label=f"⬇️ Download {file_name}",
                                     data=file,
                                     file_name=file_name,
-                                    key=f"download_{i}_{attachment_index}",
+                                    key=f"download_{ticket_key}_{attachment_index}",
                                 )
                     else:
                         st.warning("Attachment file was not found.")
@@ -5530,7 +6711,7 @@ def show_ticket_list():
                 "Status",
                 TICKET_STATUSES,
                 index=TICKET_STATUSES.index(current_status),
-                key=f"status_{i}",
+                key=f"status_{ticket_key}",
             )
 
             assignment_options = ASSIGNMENT_OPTIONS.copy()
@@ -5541,19 +6722,19 @@ def show_ticket_list():
                 "Assigned To",
                 assignment_options,
                 index=assignment_options.index(assigned_to),
-                key=f"assigned_{i}",
+                key=f"assigned_{ticket_key}",
             )
 
             new_priority = st.selectbox(
                 "Priority",
                 ["Critical", "High", "Medium", "Low"],
                 index=["Critical", "High", "Medium", "Low"].index(priority),
-                key=f"priority_{i}",
+                key=f"priority_{ticket_key}",
             )
 
-            template_key = f"resolution_template_{i}"
-            notes_key = f"resolution_{i}"
-            previous_template_key = f"previous_resolution_template_{i}"
+            template_key = f"resolution_template_{ticket_key}"
+            notes_key = f"resolution_{ticket_key}"
+            previous_template_key = f"previous_resolution_template_{ticket_key}"
 
             stored_template = ticket.get("selected_resolution_template", "Select a template")
             if stored_template not in RESOLUTION_TEMPLATES:
@@ -5582,7 +6763,7 @@ def show_ticket_list():
                 if not existing_notes:
                     st.session_state[notes_key] = template_text
                 elif template_text not in existing_notes:
-                    st.session_state[notes_key] = existing_notes + "" + template_text
+                    st.session_state[notes_key] = existing_notes + "\n\n" + template_text
 
             st.session_state[previous_template_key] = selected_template
 
@@ -5591,34 +6772,48 @@ def show_ticket_list():
                 key=notes_key,
             )
 
-            if st.button("Save Ticket Updates", key=f"save_ticket_{i}"):
+            if st.button("Save Ticket Updates", key=f"save_ticket_{ticket_key}"):
                 previous_status = ticket.get("status", "Open")
                 previous_assigned_to = ticket.get("assigned_to", "Unassigned")
                 previous_priority = ticket.get("priority", "Medium")
                 previous_resolution_notes = ticket.get("resolution_notes", "")
                 previous_template = ticket.get("selected_resolution_template", "Select a template")
 
-                ticket["status"] = new_status
+                effective_status = get_effective_ticket_status(
+                    previous_status,
+                    new_status,
+                    new_assigned_to,
+                )
+
+                update_errors, update_warnings = validate_ticket_update(
+                    previous_status,
+                    effective_status,
+                    new_assigned_to,
+                    new_resolution_notes,
+                )
+
+                if update_errors:
+                    for error in update_errors:
+                        st.error(error)
+                    st.stop()
+
+                for warning in update_warnings:
+                    st.warning(warning)
+
+                ticket["status"] = effective_status
                 ticket["priority"] = new_priority
                 ticket["assigned_to"] = new_assigned_to
                 ticket["resolution_notes"] = new_resolution_notes
                 ticket["selected_resolution_template"] = selected_template
                 ticket["updated_at"] = get_current_timestamp()
 
-                if new_status == "Assigned" and not ticket.get("assigned_at"):
-                    ticket["assigned_at"] = get_current_timestamp()
-                if new_status == "Waiting on User" and not ticket.get("waiting_on_user_at"):
-                    ticket["waiting_on_user_at"] = get_current_timestamp()
-                if new_status == "Resolved" and not ticket.get("resolved_at"):
-                    ticket["resolved_at"] = get_current_timestamp()
-                if new_status == "Closed" and not ticket.get("closed_at"):
-                    ticket["closed_at"] = get_current_timestamp()
+                apply_ticket_status_timestamps(ticket, previous_status, effective_status)
 
-                if previous_status != new_status:
+                if previous_status != effective_status:
                     add_ticket_activity(
                         ticket,
                         "status_change",
-                        f"Status changed from {previous_status} to {new_status}.",
+                        f"Status changed from {previous_status} to {effective_status}.",
                         actor=st.session_state.get("username", "Unknown"),
                         role=st.session_state.get("role", "Admin"),
                     )
@@ -5669,7 +6864,26 @@ def show_ticket_list():
                     ticket["unread_for_user"] = True
                     ticket["user_unread_type"] = "resolution"
                 save_tickets()
+                if new_status != effective_status:
+                    st.info("Status automatically changed to Assigned because the ticket now has an assignee.")
                 st.success("✅ Ticket updated successfully")
+
+            st.divider()
+            with st.expander("Danger zone - delete test ticket"):
+                st.warning("Use this only for test tickets or mistaken demo entries. Deletion removes the ticket from the database.")
+                confirm_delete = st.checkbox(
+                    "I understand this will permanently delete this ticket.",
+                    key=f"confirm_delete_ticket_{ticket_key}",
+                )
+                if st.button(
+                    "Delete Ticket",
+                    key=f"delete_ticket_{ticket_key}",
+                    type="secondary",
+                    disabled=not confirm_delete,
+                ):
+                    delete_ticket(ticket)
+                    st.success("Ticket deleted.")
+                    st.rerun()
 
             if ticket.get("resolution_notes"):
                 st.write("**Saved Resolution Notes:**")
@@ -5677,7 +6891,7 @@ def show_ticket_list():
                     st.caption(f"Template used: {ticket.get('selected_resolution_template')}")
                 st.write(ticket["resolution_notes"])
 
-            show_ticket_comments(ticket, i)
+            show_ticket_comments(ticket, ticket_key)
 
 
     if visible_ticket_count == 0:
@@ -5970,6 +7184,7 @@ def show_export_tools(tickets):
         data=csv_data,
         file_name="tickets_export.csv",
         mime="text/csv",
+        key="download_tickets_csv",
     )
 
     st.caption("CSV export includes ticket status, priority, SLA status, comments count, and attachments count.")
@@ -6268,7 +7483,7 @@ def show_admin_dashboard():
     st.info(f"🧭 Tickets from Guided Troubleshooting: {diagnostic_tickets}")
 
     diagnostic_coverage = len(get_relational_diagnostic_issue_titles())
-    st.info(f"🧭 Relational diagnostic trees available for {diagnostic_coverage} Knowledge Base issue(s).")
+    st.info(f"🧭 Visible MVP diagnostic trees available for {diagnostic_coverage} focused issue(s).")
 
     st.divider()
 
@@ -6281,7 +7496,7 @@ def show_admin_dashboard():
         col_demo1, col_demo2 = st.columns(2)
 
         with col_demo1:
-            if st.button("📦 Load sample demo tickets"):
+            if st.button("📦 Load sample demo tickets", key="admin_empty_load_sample_tickets"):
                 added_count = load_sample_tickets()
                 if added_count:
                     st.success(f"✅ Loaded {added_count} sample ticket(s).")
@@ -6290,7 +7505,7 @@ def show_admin_dashboard():
                     st.info("Sample tickets are already loaded.")
 
         with col_demo2:
-            if st.button("♻️ Reset demo tickets"):
+            if st.button("♻️ Reset demo tickets", key="admin_empty_reset_demo_tickets"):
                 added_count = reset_demo_tickets()
                 st.success(f"✅ Demo reset complete. Loaded {added_count} sample ticket(s).")
                 st.rerun()
@@ -6303,7 +7518,7 @@ def show_admin_dashboard():
         col_demo1, col_demo2 = st.columns(2)
 
         with col_demo1:
-            if st.button("📦 Load sample demo tickets"):
+            if st.button("📦 Load sample demo tickets", key="admin_expander_load_sample_tickets"):
                 added_count = load_sample_tickets()
                 if added_count:
                     st.success(f"✅ Loaded {added_count} sample ticket(s).")
@@ -6312,7 +7527,7 @@ def show_admin_dashboard():
                     st.info("Sample tickets are already loaded.")
 
         with col_demo2:
-            if st.button("♻️ Reset demo tickets"):
+            if st.button("♻️ Reset demo tickets", key="admin_expander_reset_demo_tickets"):
                 added_count = reset_demo_tickets()
                 st.success(f"✅ Demo reset complete. Loaded {added_count} sample ticket(s).")
                 st.rerun()
@@ -6369,7 +7584,10 @@ def show_my_tickets():
     ]
 
     if not user_tickets:
-        st.info("No tickets found for your account.")
+        render_empty_ticket_state(
+            "No tickets found for your account. Start guided troubleshooting to capture a trail before escalating to IT.",
+            "user_empty_start_guided",
+        )
         return
 
     for i, ticket in enumerate(user_tickets, 1):
@@ -6389,6 +7607,7 @@ def show_my_tickets():
             st.markdown("**📝 Description**")
             render_description_box(ticket.get("description", ""))
 
+            render_ticket_mvp_summary(ticket, i)
             show_ticket_diagnostic_context(ticket)
 
             if ticket.get("resolution_notes"):
@@ -6400,6 +7619,486 @@ def show_my_tickets():
 
 
 
+def get_portfolio_health_metrics():
+    """Return lightweight demo-readiness metrics for the portfolio home page."""
+    tickets = st.session_state.get("tickets", [])
+    issues_count = len(st.session_state.get("issues", []))
+    diagnostic_tickets = sum(1 for ticket in tickets if ticket_has_diagnostic_context(ticket))
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute("SELECT COUNT(*) AS count FROM diagnostic_tree WHERE is_active = 1 AND base_tree_code IN ('PRINTER_FAILURE')")
+        diagnostic_tree_count = cursor.fetchone()["count"]
+
+        cursor.execute("SELECT COUNT(*) AS count FROM troubleshooting_event")
+        event_count = cursor.fetchone()["count"]
+
+        cursor.execute("SELECT COUNT(*) AS count FROM solution_step")
+        solution_step_count = cursor.fetchone()["count"]
+    except sqlite3.Error:
+        diagnostic_tree_count = 0
+        event_count = 0
+        solution_step_count = 0
+    finally:
+        connection.close()
+
+    return {
+        "issues_count": issues_count,
+        "diagnostic_tree_count": diagnostic_tree_count,
+        "ticket_count": len(tickets),
+        "diagnostic_ticket_count": diagnostic_tickets,
+        "event_count": event_count,
+        "solution_step_count": solution_step_count,
+    }
+
+
+def render_portfolio_health_snapshot():
+    """Show a compact snapshot of why the MVP is portfolio-ready."""
+    metrics = get_portfolio_health_metrics()
+    st.subheader("Portfolio MVP Snapshot")
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Visible MVP issues", metrics["issues_count"])
+    col2.metric("Diagnostic trees", metrics["diagnostic_tree_count"])
+    col3.metric("Solution steps", metrics["solution_step_count"])
+    col4.metric("Audit events", metrics["event_count"])
+
+    if metrics["ticket_count"]:
+        st.caption(
+            f"Tickets in this local demo database: {metrics['ticket_count']} | "
+            f"with guided troubleshooting trail: {metrics['diagnostic_ticket_count']}"
+        )
+    else:
+        st.caption("No tickets have been submitted in this local demo database yet.")
+
+    st.info(
+        "For the strongest demo, start with Guided Troubleshooting, view a solution, choose that it did not fix the issue, "
+        "then submit a ticket and review the saved trail."
+    )
+
+
+
+def get_database_readiness_status():
+    """Return whether key MVP tables exist in the local SQLite database."""
+    expected_tables = [
+        "users",
+        "diagnostic_node",
+        "solution_step",
+        "troubleshooting_session",
+        "troubleshooting_event",
+        "tickets",
+    ]
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    existing_tables = set()
+    try:
+        cursor.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+        existing_tables = {row["name"] for row in cursor.fetchall()}
+    except sqlite3.Error:
+        existing_tables = set()
+    finally:
+        connection.close()
+
+    return {
+        table_name: table_name in existing_tables
+        for table_name in expected_tables
+    }
+
+
+def build_portfolio_demo_script():
+    """Return a concise script the developer can use during portfolio demos."""
+    return """Portfolio demo script - IT Support Troubleshooting Portal
+
+1. Log in as a regular user.
+2. Open Guided Troubleshooting.
+3. Choose a category, such as Printer or Internet / Network.
+4. Select a specific issue and answer the guided symptom questions.
+5. Review the suggested solution and ordered steps.
+6. Choose that the solution did not fix the problem.
+7. Submit a support ticket with business impact and device/location details.
+8. Open the submitted ticket and show the saved troubleshooting trail.
+9. Log in as Admin and confirm the ticket contains enough context for IT support to continue without asking the user to repeat the same troubleshooting steps.
+
+Portfolio explanation:
+This app demonstrates a database-driven troubleshooting tree, session/event audit tracking, role-aware support workflows, and unresolved-issue escalation into a ticket with a historical trail snapshot. The ticketing features are intentionally lightweight because the portfolio focus is guided troubleshooting, not building a full help-desk platform.
+
+Tradeoff explanation:
+For the MVP, the app uses parent-child diagnostic trees instead of a full reusable graph model. This keeps the project finished, explainable, and demoable while leaving graph reuse, workflow approvals, SLA automation, and enterprise SSO as future enhancements.
+"""
+
+
+def build_portfolio_readme_markdown():
+    """Return a README starter that matches the current MVP+ implementation."""
+    metrics = get_portfolio_health_metrics()
+    return f"""# IT Support Troubleshooting Portal
+
+## Project Overview
+
+This is a guided IT self-service support application built with Python, Streamlit, and SQLite. It helps users troubleshoot common IT issues, view suggested solutions, and escalate unresolved problems into support tickets with the troubleshooting trail attached.
+
+## Problem Being Solved
+
+IT support teams often receive tickets with missing context. This app improves ticket quality by guiding users through a structured troubleshooting flow before escalation. When a user submits a ticket, the app saves the diagnostic trail so IT support can see what was already attempted.
+
+## Key Features
+
+- Local login and role-aware navigation
+- Category-first guided troubleshooting
+- Database-driven diagnostic trees
+- Ordered solution steps for users and technicians
+- Troubleshooting session and event audit tracking
+- Support ticket submission with business impact and device/location details
+- Ticket trail snapshot for unresolved issues
+- Lightweight admin ticket review for escalated issues
+- Knowledge Base and diagnostic tree viewer
+
+## Tech Stack
+
+- Python
+- Streamlit
+- SQLite
+- HTML/CSS styling inside Streamlit
+
+## Current Demo Metrics
+
+- Visible MVP issues: {metrics['issues_count']}
+- Active diagnostic trees: {metrics['diagnostic_tree_count']}
+- Role-specific solution steps: {metrics['solution_step_count']}
+- Troubleshooting audit events: {metrics['event_count']}
+- Tickets in local database: {metrics['ticket_count']}
+- Tickets with guided troubleshooting trail: {metrics['diagnostic_ticket_count']}
+
+## User Flow
+
+1. User logs in.
+2. User starts Guided Troubleshooting.
+3. User selects a category and issue.
+4. User answers 1-3 symptom questions.
+5. App displays a relevant solution with ordered steps.
+6. User marks the issue fixed or not fixed.
+7. If unresolved, user submits a support ticket.
+8. Ticket includes the saved troubleshooting trail.
+9. Admin reviews the ticket context and can update the ticket when follow-up is needed.
+
+## Database Design
+
+Core MVP+ tables include:
+
+- `users`
+- `problem`
+- `solution`
+- `diagnostic_tree`
+- `diagnostic_node`
+- `solution_step`
+- `kb_article` and KB child tables
+- `troubleshooting_session`
+- `troubleshooting_event`
+- `tickets`
+- `ticket_comments`
+- `ticket_attachments`
+
+## Sample Troubleshooting Tree
+
+Example flow:
+
+```text
+Printer
+└── Printer Failure
+    ├── Check power / display / hardware warnings
+    ├── Check USB or network reachability
+    ├── Check queue / spooler / offline state
+    └── Show solution or escalate ticket
+```
+
+## Tradeoffs
+
+For the MVP, this project uses a parent-child diagnostic tree instead of a reusable graph model. This keeps routing, database design, and the portfolio demo easier to explain while still proving the core workflow. A future version could introduce a node-link table so symptoms and solutions can be reused across multiple branches.
+
+The project uses local authentication rather than enterprise SSO. That keeps the portfolio app runnable on a local machine while still demonstrating user-specific sessions and tickets.
+
+## Future Enhancements
+
+- Enterprise SSO
+- Reusable node-link graph model
+- Admin approval workflow for Knowledge Base changes
+- Search across tickets and KB articles
+- SLA automation and notifications
+- Import/export tools for troubleshooting trees
+- Separate reporting or analytics module outside the core MVP
+
+## How to Run Locally
+
+```bash
+pip install streamlit
+streamlit run app.py
+```
+
+Before demoing a new version, back up the local SQLite database:
+
+```bash
+cp it_support.db it_support_backup_before_demo.db
+```
+"""
+
+
+def build_database_backup_guide():
+    """Return plain-text backup and restore guidance for the local SQLite demo database."""
+    return f"""Database safety guide - IT Support Troubleshooting Portal
+
+The app uses this local SQLite database file:
+{DATABASE_FILE}
+
+Before running a new app version, make a backup:
+
+macOS / Linux / Git Bash:
+cp {DATABASE_FILE} it_support_backup_before_update.db
+
+Windows PowerShell:
+Copy-Item {DATABASE_FILE} it_support_backup_before_update.db
+
+Windows Command Prompt:
+copy {DATABASE_FILE} it_support_backup_before_update.db
+
+To restore a backup, stop Streamlit first, then copy the backup over the active database file.
+
+This app version is designed to use non-destructive migrations such as CREATE TABLE IF NOT EXISTS and ALTER TABLE ADD COLUMN where needed. It should not empty or reset the database during normal startup.
+"""
+
+
+def build_database_erd_mermaid():
+    """Return a lightweight Mermaid ERD for README documentation."""
+    return """erDiagram
+    users ||--o{ troubleshooting_session : starts
+    troubleshooting_session ||--o{ troubleshooting_event : records
+    troubleshooting_session ||--o{ tickets : escalates
+    problem ||--o{ diagnostic_tree : has
+    diagnostic_tree ||--o{ diagnostic_node : contains
+    diagnostic_node ||--o{ diagnostic_node : branches_to
+    solution ||--o{ solution_step : has
+    solution ||--o{ diagnostic_node : resolves
+    tickets ||--o{ ticket_comments : has
+    tickets ||--o{ ticket_attachments : has
+"""
+
+
+def get_database_file_status():
+    """Return local database file status for demo safety visibility."""
+    if not os.path.exists(DATABASE_FILE):
+        return {
+            "exists": False,
+            "size_kb": 0,
+            "modified_at": "Not found",
+        }
+
+    stat = os.stat(DATABASE_FILE)
+    return {
+        "exists": True,
+        "size_kb": round(stat.st_size / 1024, 1),
+        "modified_at": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+
+def render_portfolio_export_pack():
+    """Show downloadable reviewer materials and database safety guidance."""
+    st.subheader("Reviewer export pack")
+    st.caption("Download these starter materials for your GitHub README, demo notes, and project documentation.")
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.download_button(
+            "Download README starter",
+            data=build_portfolio_readme_markdown(),
+            file_name="README_portfolio_starter.md",
+            mime="text/markdown",
+            key="download_readme_portfolio_starter",
+        )
+    with col2:
+        st.download_button(
+            "Download database safety guide",
+            data=build_database_backup_guide(),
+            file_name="database_backup_guide.txt",
+            mime="text/plain",
+            key="download_database_backup_guide",
+        )
+    with col3:
+        st.download_button(
+            "Download Mermaid ERD",
+            data=build_database_erd_mermaid(),
+            file_name="database_erd.mmd",
+            mime="text/plain",
+            key="download_database_erd_mermaid",
+        )
+
+    db_status = get_database_file_status()
+    st.subheader("Local database safety status")
+    if db_status["exists"]:
+        st.success(
+            f"Database file detected: `{DATABASE_FILE}` | Size: {db_status['size_kb']} KB | "
+            f"Last modified: {db_status['modified_at']}"
+        )
+        st.code(f"cp {DATABASE_FILE} it_support_backup_before_demo.db", language="bash")
+        st.caption("Stop Streamlit before restoring a backup over the active database file.")
+    else:
+        st.warning(f"Database file `{DATABASE_FILE}` was not found yet. It is usually created when the app starts.")
+
+
+def render_demo_readiness_checklist():
+    """Show a reviewer-friendly checklist of portfolio readiness signals."""
+    metrics = get_portfolio_health_metrics()
+    table_status = get_database_readiness_status()
+
+    checklist = [
+        (
+            "Login and role-aware navigation",
+            table_status.get("users", False),
+            "Users table exists and the app separates regular-user and admin experiences.",
+        ),
+        (
+            "Database-driven diagnostic tree",
+            table_status.get("diagnostic_node", False) and metrics["diagnostic_tree_count"] > 0,
+            f"{metrics['diagnostic_tree_count']} active diagnostic tree(s) detected.",
+        ),
+        (
+            "Ordered solution steps",
+            table_status.get("solution_step", False) and metrics["solution_step_count"] > 0,
+            f"{metrics['solution_step_count']} role-specific solution step(s) detected.",
+        ),
+        (
+            "Session and event tracking",
+            table_status.get("troubleshooting_session", False) and table_status.get("troubleshooting_event", False),
+            "Troubleshooting session and event tables are available for audit trails.",
+        ),
+        (
+            "Ticket escalation with trail snapshot",
+            table_status.get("tickets", False),
+            "Tickets can store business impact, device/location, and troubleshooting summary snapshot fields.",
+        ),
+        (
+            "Demo and README-ready explanation",
+            True,
+            "The Portfolio Demo Guide explains scope, tradeoffs, database design, and future enhancements.",
+        ),
+    ]
+
+    st.subheader("Demo readiness checklist")
+    for label, passed, detail in checklist:
+        icon = "✅" if passed else "⚠️"
+        st.write(f"{icon} **{label}** — {detail}")
+
+    if all(passed for _, passed, _ in checklist):
+        st.success("This local build has the main MVP+ portfolio signals ready for a demo.")
+    else:
+        st.warning("One or more readiness signals need attention before a polished demo.")
+
+    st.download_button(
+        "Download demo script",
+        data=build_portfolio_demo_script(),
+        file_name="portfolio_demo_script.txt",
+        mime="text/plain",
+        key="download_portfolio_demo_script",
+    )
+
+def show_portfolio_demo_guide():
+    """Portfolio reviewer guide explaining the MVP scope, architecture, and tradeoffs."""
+    st.title("📘 Portfolio Demo Guide")
+
+    st.markdown(
+        """
+This page helps a reviewer understand the project quickly without reading the source code first.
+
+**Portfolio statement:** This is a guided IT self-service support app. It uses a database-driven troubleshooting tree, records the user's path through the decision flow, displays relevant solution steps, and escalates unresolved issues into a support ticket with the troubleshooting trail attached.
+"""
+    )
+
+    st.subheader("Recommended 3-minute demo path")
+    demo_steps = [
+        "Log in as a regular user.",
+        "Open Guided Troubleshooting.",
+        "Choose a category such as Printer or Internet / Network.",
+        "Answer 1-3 symptom questions until a solution appears.",
+        "Click that the solution did not fix the issue.",
+        "Submit a ticket with business impact and device/location details.",
+        "Open My Tickets or View Tickets and inspect the saved troubleshooting trail.",
+    ]
+    for step_number, step_text in enumerate(demo_steps, start=1):
+        st.write(f"{step_number}. {step_text}")
+
+    render_demo_readiness_checklist()
+    render_portfolio_export_pack()
+
+    st.subheader("Implemented MVP+ capabilities")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(
+            """
+- Basic login and role-aware navigation
+- Category-first guided troubleshooting
+- Reusable diagnostic page driven by database nodes
+- Solution display with ordered steps
+- Support ticket submission
+"""
+        )
+    with col2:
+        st.markdown(
+            """
+- Troubleshooting session tracking
+- Event audit trail
+- Ticket trail snapshot
+- Lightweight admin ticket review for escalated issues
+- Knowledge Base and diagnostic tree viewer
+"""
+        )
+
+    st.subheader("MVP scope boundary")
+    st.markdown(
+        """
+This app is intentionally centered on **guided troubleshooting**. Ticket creation and ticket review are included only to show what happens when self-service troubleshooting does not resolve the issue. A full analytics dashboard, assignment queue, SLA engine, and reporting module are intentionally outside the visible MVP.
+"""
+    )
+
+    st.subheader("Core database design")
+    st.markdown(
+        """
+The MVP centers around these tables:
+
+| Area | Tables |
+|---|---|
+| Authentication | `users` |
+| Knowledge and diagnostics | `problem`, `solution`, `diagnostic_tree`, `diagnostic_node`, `solution_step`, `kb_article` and child tables |
+| Workflow tracking | `troubleshooting_session`, `troubleshooting_event` |
+| Escalation | `tickets`, `ticket_comments`, `ticket_attachments` |
+"""
+    )
+
+    st.subheader("Intentional tradeoffs")
+    st.markdown(
+        """
+- The troubleshooting model uses parent-child trees instead of a full reusable graph model, keeping routing simple and explainable.
+- Authentication is local and portfolio-friendly rather than enterprise SSO.
+- The admin Knowledge Base editor is useful for demos, but advanced versioning and approvals are intentionally left for future work.
+- Search, notifications, SLA automation, dashboards, and assignment queues are intentionally left out of the visible MVP so the core guided-troubleshooting workflow stays finished and demoable.
+- Ticketing is included only as the escalation endpoint for unresolved troubleshooting, not as the main product focus.
+"""
+    )
+
+    st.subheader("Future enhancements")
+    st.markdown(
+        """
+- Full SSO integration
+- Reusable node-link graph model
+- Dynamic ticket questions by category
+- Email or chat notifications
+- SLA escalation automation
+- Import/export tools for troubleshooting trees
+"""
+    )
+
+    st.subheader("Current local demo health")
+    render_portfolio_health_snapshot()
+
+
 # -----------------------------
 # HOME / OVERVIEW PAGE
 # -----------------------------
@@ -6408,33 +8107,34 @@ def show_home_page():
 
     role = st.session_state.get("role", "User")
 
+    st.markdown(
+        """
+        This portfolio MVP demonstrates a complete support workflow:
+        **login → category selection → guided diagnostic questions → solution steps → ticket with troubleshooting trail**.
+        """
+    )
+
+    render_support_action_cards()
+
+    st.divider()
+    render_portfolio_health_snapshot()
+
+    st.divider()
+
     if role == "Admin":
         st.markdown("""
 ### 👨‍💼 Admin Overview
 
-Use this system to:
-- Review and manage support tickets
-- Assign and update ticket status
-- Monitor priorities and critical issues
-- Manage Knowledge Base articles
-- Track support activity and trends
+Use this system to review escalated support tickets, inspect diagnostic trees, and maintain Knowledge Base content. The visible MVP intentionally stays focused on troubleshooting rather than analytics.
 """)
+        st.info("💡 Start with View Tickets to review, assign, update, or delete test tickets. Use Guided Troubleshooting to demo the main application flow.")
     else:
         st.markdown("""
 ### 👤 User Overview
 
-Use this system to:
-- Troubleshoot common IT issues
-- Search the Knowledge Base
-- Create and track support tickets
-- Upload screenshots or logs
-- Communicate with IT support
+Use this system to troubleshoot common IT issues, create support tickets, and track updates from IT support.
 """)
-
-    if role == "Admin":
-        st.info("💡 Start with the Dashboard to review critical tickets, unread comments, and ticket trends.")
-    else:
-        st.info("💡 Start with Guided Troubleshooting before creating a ticket.")
+        st.info("💡 For the best support trail, start with Guided Troubleshooting before creating a ticket.")
 
 
 
@@ -6535,7 +8235,7 @@ def show_about_page():
 
 This application is a portfolio project designed to simulate a real-world IT helpdesk workflow.
 It combines a Knowledge Base, guided troubleshooting, ticket management, attachments, comments,
-notifications, SLA tracking, and an admin dashboard.
+notifications, SLA tracking, and admin ticket-management views.
 
 The goal is to demonstrate practical IT Support / Help Desk skills and show how common support
 processes can be organized into a working web application.
@@ -6562,7 +8262,7 @@ processes can be organized into a working web application.
     with col2:
         st.markdown("""
 ### 👨‍💼 Admin Features
-- Ticket dashboard with analytics
+- Ticket review, assignment, comments, and lifecycle management
 - Priority and SLA tracking
 - Ticket assignment and lifecycle management
 - Activity timeline for audit/history
@@ -6581,7 +8281,7 @@ processes can be organized into a working web application.
 - **SQLite** — local database persistence for demo/testing
 - **Session State** — user interaction and state handling
 - **File Uploads / Base64** — attachment preview and storage support
-- **Charts** — dashboard analytics and ticket trends
+- **Operational views** — ticket filters, lifecycle tracking, and audit history
 """)
 
     st.divider()
@@ -6595,7 +8295,7 @@ processes can be organized into a working web application.
 - CRUD operations
 - Database-backed application design
 - User/admin workflow separation
-- Dashboard analytics
+- Ticket lifecycle and audit trail logic
 - SLA and priority logic
 - Attachment handling
 - Audit-style activity timelines
@@ -6611,8 +8311,8 @@ processes can be organized into a working web application.
     )
 
     st.info(
-        "For demos, admins can use Dashboard → Demo Data Tools to load or reset sample tickets. "
-        "This keeps the application clean and easy to review."
+        "For demos, admins can use View Tickets to review ticket lifecycle behavior and delete test tickets created during testing. "
+        "This keeps the application focused on troubleshooting while still supporting escalation."
     )
 
     st.caption("Built as a practical IT Support / Help Desk portfolio project.")
@@ -6643,6 +8343,7 @@ def get_diagnostic_tree_records_for_admin():
         FROM diagnostic_tree dt
         LEFT JOIN problem p
             ON dt.problem_id = p.problem_id
+        WHERE dt.base_tree_code IN ('PRINTER_FAILURE')
         ORDER BY
             COALESCE(p.category, ''),
             COALESCE(p.title, dt.title),
@@ -6838,6 +8539,7 @@ def show_admin_diagnostic_tree_viewer():
     audience_filter = st.selectbox(
         "Filter by audience",
         ["All", "user", "technician", "admin"],
+        key="diag_tree_audience_filter",
     )
 
     problem_options = ["All"] + sorted(
@@ -6847,7 +8549,7 @@ def show_admin_diagnostic_tree_viewer():
         }
     )
 
-    problem_filter = st.selectbox("Filter by problem", problem_options)
+    problem_filter = st.selectbox("Filter by problem", problem_options, key="diag_tree_problem_filter")
 
     filtered_trees = []
 
@@ -6870,7 +8572,7 @@ def show_admin_diagnostic_tree_viewer():
         for tree in filtered_trees
     ]
 
-    selected_label = st.selectbox("Select a diagnostic tree", tree_labels)
+    selected_label = st.selectbox("Select a diagnostic tree", tree_labels, key="diag_tree_selected_label")
     selected_index = tree_labels.index(selected_label)
     selected_tree = filtered_trees[selected_index]
 
@@ -6912,7 +8614,10 @@ def main():
     initialize_database()
     load_users()
     load_issues()
+    st.session_state["issues"] = issues
     load_tickets()
+
+    restore_login_from_auth_session()
 
     if not st.session_state.get("logged_in"):
         show_login_page()
@@ -6921,7 +8626,7 @@ def main():
     st.sidebar.write(f"Logged in as: **{st.session_state.get('username')}**")
     st.sidebar.write(f"Role: **{st.session_state.get('role')}**")
 
-    if st.sidebar.button("Logout"):
+    if st.sidebar.button("Logout", key="sidebar_logout_button"):
         logout_user()
         st.rerun()
 
@@ -6940,8 +8645,8 @@ def main():
 
         menu_options = [
             "ℹ️ About This App",
+            "📘 Portfolio Demo Guide",
             "🏠 Home",
-            build_menu_label("📊 Dashboard", admin_notifications["total"]),
             "🧭 Guided Troubleshooting",
             "🔍 Knowledge Base",
             "🎫 Create Ticket",
@@ -6960,6 +8665,7 @@ def main():
 
         menu_options = [
             "ℹ️ About This App",
+            "📘 Portfolio Demo Guide",
             "🏠 Home",
             "🧭 Guided Troubleshooting",
             "🔍 Knowledge Base",
@@ -6967,9 +8673,19 @@ def main():
             build_menu_label("🎟 My Tickets", user_notifications["unread_updates"]),
         ]
 
+    requested_mode = st.session_state.pop("selected_mode_request", None)
+    requested_index = 0
+    if requested_mode:
+        for index, option in enumerate(menu_options):
+            if normalize_menu_choice(option) == normalize_menu_choice(requested_mode):
+                requested_index = index
+                break
+
     selected_mode = st.sidebar.radio(
         "Select Mode",
         menu_options,
+        index=requested_index,
+        key="main_sidebar_mode",
     )
 
     mode = normalize_menu_choice(selected_mode)
@@ -6986,10 +8702,10 @@ def main():
 
     if mode == "ℹ️ About This App":
         show_about_page()
+    elif mode == "📘 Portfolio Demo Guide":
+        show_portfolio_demo_guide()
     elif mode == "🏠 Home":
         show_home_page()
-    elif mode == "📊 Dashboard":
-        show_admin_dashboard()
     elif mode == "🧭 Guided Troubleshooting":
         show_guided_troubleshooting()
     elif mode == "🔍 Knowledge Base":
