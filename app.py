@@ -578,7 +578,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
     "Printer Failure, Password Reset Request, Account Locked, and Multi-factor Authentication Issue. Other sample issues are hidden until they "
@@ -3543,6 +3543,251 @@ def seed_shared_drive_access_tree(cursor, audience, tree_code, title, descriptio
                 updated_at=CURRENT_TIMESTAMP
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
+
+# -----------------------------
+# REMOTE DESKTOP CONNECTION ISSUE CONTENT
+# -----------------------------
+REMOTE_DESKTOP_CONNECTION_PROBLEM = (
+    'REMOTE_DESKTOP_CONNECTION_ISSUE',
+    'Remote Desktop Connection Issue',
+    'Network, Remote Access & Storage',
+    'Medium',
+    'User cannot connect to a remote computer, server, virtual desktop, or remote desktop session.',
+)
+
+REMOTE_DESKTOP_CONNECTION_KB = {
+    'title': 'Remote Desktop Connection Issue',
+    'summary': 'Use this guide when Remote Desktop cannot connect, credentials fail, access is denied, the session disconnects, or remote desktop performance is slow.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-20 minutes',
+    'escalation_required': 1,
+    'escalation_notes': 'Escalate if VPN/internal access is broken, DNS or reachability fails, remote logon permission is missing, the RDP service or gateway is unavailable, or multiple users are affected.',
+    'tags': ['remote desktop', 'RDP', 'remote access', 'VPN', 'DNS', 'firewall', 'ACL', 'credentials', 'remote host', 'gateway'],
+    'symptoms': [
+        'Remote Desktop will not connect or says the remote computer cannot be found.',
+        'Credentials are rejected or the user is not allowed to log on remotely.',
+        'The remote desktop session connects and then disconnects, shows a black screen, or is very slow.',
+        'VPN is connected, but the user cannot reach the office computer, server, or virtual desktop.',
+        'Remote Desktop works from one network but fails from another.',
+        'The issue started after a password change, device change, VPN issue, or network update.',
+        'Multiple users cannot connect to the same remote desktop gateway, server, or environment.',
+    ],
+    'causes': [
+        'Common: missing VPN/internal access, incorrect remote computer name or IP, target computer powered off or asleep, account locked or password expired, old saved credentials, missing remote logon permission, Remote Desktop disabled, local or remote firewall block, or network path unavailable.',
+        'Advanced: stale DNS record, DHCP/DNS mismatch, RDP service stopped, Remote Desktop Gateway issue, network ACL blocking RDP from VPN subnet, routing issue between VPN pool and endpoint subnet, endpoint compliance block, NLA/CredSSP issue, gateway certificate problem, duplicate IP, wrong VLAN, or security policy restricting remote logon rights.',
+    ],
+    'user_steps': [
+        'Confirm you are connected to the company VPN if working remotely.',
+        'Confirm the remote computer name or server name is correct.',
+        'Check whether you can access other internal resources.',
+        'Restart the Remote Desktop app and try again.',
+        'Make sure your username is entered in the correct format if required.',
+        'If prompted, use your current company password.',
+        'Do not repeatedly retry old passwords if credentials fail.',
+        'If connecting to your office computer, confirm it is powered on and connected to the network.',
+        'Take a screenshot of the exact error message.',
+        'Submit a ticket with the remote computer name, error message, and whether VPN is connected.',
+    ],
+    'it_steps': [
+        'Tier 1: Confirm the user, device name, location, remote target name, VPN status, and exact error message.',
+        'Tier 1: Identify whether the user is connecting directly to an office computer, through a Remote Desktop Gateway, to a virtual desktop, or to a server.',
+        'Tier 1: Confirm normal internet and VPN are working before isolating Remote Desktop.',
+        'Tier 1: Confirm whether the user can access other internal resources.',
+        'Tier 1: Confirm the remote hostname/IP is correct and whether the target computer should be powered on.',
+        'Tier 1: Check account status, including locked account, expired password, disabled account, MFA/conditional access issue, and recent password changes.',
+        'Tier 1: Remove or update old saved RDP credentials if needed.',
+        'Tier 1: Capture the error message, timestamp, target name, and source network.',
+        'Tier 2: Test DNS resolution for the remote host and compare hostname vs FQDN resolution.',
+        'Tier 2: Check whether the remote host responds to approved reachability tests.',
+        'Tier 2: Confirm the user VPN adapter has valid IP, DNS, and routes.',
+        'Tier 2: Check whether the remote host subnet is reachable from the user VPN segment.',
+        'Tier 2: Test whether the RDP port/service is reachable according to company tools and policy.',
+        'Tier 2: Determine whether the issue is DNS, device offline, authentication, authorization, firewall/ACL, routing, RDP service, or gateway/service outage.',
+        'Tier 2: Check for local subnet overlap if the remote user is on a home network.',
+        'Tier 2: If the remote computer is reachable but RDP fails, check whether Remote Desktop is enabled and the service is running.',
+        'Tier 2: If multiple users are affected, check for gateway, VPN, firewall, or network outage.',
+        'Escalate with target hostname, IP, VPN status, DNS result, reachability tests, error text, timestamp, and affected scope.',
+    ],
+}
+
+REMOTE_DESKTOP_CONNECTION_SOLUTIONS = [
+    ('FIX_RDP_CONNECT_VPN_FIRST','Connect to VPN Before Remote Desktop','Remote Desktop usually requires VPN or approved internal network access before connecting.','Connect to VPN or approved remote access, confirm internal access, and retry Remote Desktop.',0,'Escalate or route to VPN troubleshooting if VPN or approved remote access does not work.','medium'),
+    ('FIX_RDP_INTERNAL_ACCESS_FIRST','Fix VPN/Internal Network Access First','Remote Desktop cannot be isolated until VPN/internal network access is working.','Confirm VPN adapter IP, DNS, routes, and access to another internal resource before continuing RDP troubleshooting.',1,'Escalate if VPN, DNS, routing, or internal access is broken for the user or multiple users.','high'),
+    ('FIX_RDP_VERIFY_TARGET_REACHABILITY','Verify Remote Computer Name and Reachability','The remote computer may be offline, incorrectly named, or unreachable.','Confirm target hostname/FQDN/IP, test DNS and approved reachability, and determine whether the target is offline or blocked.',1,'Escalate if the target device or subnet is unreachable, DNS is incorrect, or the remote host appears offline.','medium'),
+    ('FIX_RDP_ACCOUNT_SAVED_CREDENTIALS','Check Account, Password, and Saved RDP Credentials','Old saved credentials or account problems may prevent Remote Desktop sign-in.','Check account status, username format, saved credentials, and route to password/account troubleshooting if needed.',0,'Escalate if account policy, conditional access, or identity permissions block Remote Desktop access.','medium'),
+    ('FIX_RDP_PERMISSION_REVIEW','Verify Remote Desktop Permission','The user may not have permission to log on remotely to the target system.','Confirm target, access purpose, group membership, and approval requirements for remote logon.',1,'Escalate to Identity/Access Management or system owner if group membership or remote logon rights are missing.','medium'),
+    ('FIX_RDP_DNS_RESOLUTION','Troubleshoot Remote Host DNS Resolution','The remote host cannot be resolved by name.','Test DNS resolution for hostname and FQDN, compare expected IP when known, and flush DNS cache when appropriate.',1,'Escalate if DNS records are stale, missing, or multiple users are affected.','high'),
+    ('FIX_RDP_REACHABILITY_ESCALATE','Escalate Remote Host or Network Reachability Issue','The remote host is not reachable from the user network path.','Confirm DNS resolution, test approved reachability, compare VPN/onsite access, and escalate with evidence.',1,'Escalate to Endpoint, Network, or Systems team depending on whether the host, subnet, firewall/ACL, or gateway is suspected.','high'),
+    ('FIX_RDP_SERVICE_GATEWAY_SESSION','Troubleshoot RDP Service, Gateway, or Session Issue','The remote host is reachable, but Remote Desktop itself fails due to service, gateway, firewall, or session problems.','Confirm target reachability, RDP service/gateway status, firewall/security policy, and affected scope.',1,'Escalate to Endpoint, Systems, Network, or VDI/Gateway support with evidence.','high'),
+    ('FIX_RDP_SLOW_PERFORMANCE','Report Slow Remote Desktop Performance','Remote Desktop connects but performs slowly due to network latency, VPN performance, remote host load, or gateway issue.','Determine scope, compare source networks, check basic latency/packet loss, and escalate with timestamps and affected scope.',1,'Escalate if multiple users, gateway performance, VPN latency, or remote host resource issues are suspected.','medium'),
+]
+
+REMOTE_DESKTOP_CONNECTION_SOLUTION_STEPS = {
+    'FIX_RDP_CONNECT_VPN_FIRST': {
+        'user': ['Connect to the company VPN or approved remote access service.', 'Wait until the connection shows connected.', 'Try Remote Desktop again.', 'If VPN fails, use the VPN troubleshooting flow.'],
+        'technician': ['Confirm whether the user is remote or onsite.', 'Confirm VPN connection status.', 'Confirm internal resources are reachable before RDP testing.', 'Route to VPN troubleshooting if VPN does not work.'],
+        'admin': ['Escalate if approved remote access is unavailable or multiple users cannot connect.'],
+    },
+    'FIX_RDP_INTERNAL_ACCESS_FIRST': {
+        'user': ['Confirm VPN shows connected.', 'Try opening an internal website or shared drive.', 'If internal resources do not work, submit a ticket with VPN status and screenshots.'],
+        'technician': ['Confirm VPN adapter IP, DNS, and routes.', 'Test access to another internal resource.', 'Determine whether issue is VPN, DNS, routing, or RDP-specific.', 'Continue RDP troubleshooting after internal network access is confirmed.'],
+        'admin': ['Escalate to Network or VPN support if internal access fails across resources or multiple users are affected.'],
+    },
+    'FIX_RDP_VERIFY_TARGET_REACHABILITY': {
+        'user': ['Confirm the remote computer name is typed correctly.', 'Confirm the computer should be powered on.', 'Try again after connecting to VPN.', 'Send IT the exact computer name and error message.'],
+        'technician': ['Confirm target hostname, FQDN, or IP.', 'Test DNS resolution for the remote host.', 'Check approved reachability to the remote host.', 'Determine whether target is offline, DNS is wrong, or network path is blocked.', 'Escalate if the device or subnet is unreachable.'],
+        'admin': ['Escalate with target hostname/IP, DNS result, reachability test, source network, VPN status, and timestamp.'],
+    },
+    'FIX_RDP_ACCOUNT_SAVED_CREDENTIALS': {
+        'user': ['Confirm your username is entered correctly.', 'Use your current company password.', 'If you recently changed your password, remove old saved credentials.', 'Avoid repeated failed attempts to prevent account lockout.'],
+        'technician': ['Check whether the account is locked, disabled, or password expired.', 'Confirm username format required for RDP.', 'Remove or update saved RDP credentials.', 'Retest login after credential cleanup.', 'Route to Password Reset or Account Locked troubleshooting if needed.'],
+        'admin': ['Escalate if identity policy, conditional access, or remote gateway authentication blocks access.'],
+    },
+    'FIX_RDP_PERMISSION_REVIEW': {
+        'user': ['Send IT the exact remote computer/server name.', 'Provide the access reason and manager approval if required.', 'Wait for confirmation before retrying.'],
+        'technician': ['Confirm the target system and access purpose.', 'Check whether the user is allowed to use remote desktop for that device/system.', 'Verify group membership or Remote Desktop Users permission if accessible.', 'Route access request if approval is required.', 'Ask user to sign out/in after permission changes if needed.'],
+        'admin': ['Escalate to Access Management or the system owner if remote logon rights or group membership must be changed.'],
+    },
+    'FIX_RDP_DNS_RESOLUTION': {
+        'user': ['Confirm VPN is connected.', 'Confirm the remote computer name with IT.', 'Submit the exact error screenshot.'],
+        'technician': ['Test DNS resolution for hostname and FQDN.', 'Compare DNS result with expected IP if known.', 'Flush DNS cache if appropriate.', 'Check whether the remote device recently changed networks.', 'Escalate if DNS records are stale, missing, or multiple users are affected.'],
+        'admin': ['Escalate to Network/DNS or Endpoint team with hostname, FQDN, DNS output, expected IP if known, and affected scope.'],
+    },
+    'FIX_RDP_REACHABILITY_ESCALATE': {
+        'user': ['Provide the remote computer/server name.', 'Confirm whether you are remote or onsite.', 'Provide the exact error screenshot.', 'Wait for IT to verify the device or network path.'],
+        'technician': ['Confirm DNS resolves the remote host.', 'Test approved reachability to the target.', 'Check whether issue affects one user, one target, one subnet, or multiple users.', 'Compare VPN and onsite access if possible.', 'Escalate with source network, target hostname/IP, VPN status, timestamps, and test results.'],
+        'admin': ['Route to Endpoint, Network, or Systems team based on whether the evidence points to host availability, routing/firewall/ACL, or server/gateway reachability.'],
+    },
+    'FIX_RDP_SERVICE_GATEWAY_SESSION': {
+        'user': ['Take a screenshot of the error or black screen.', 'Note whether the connection fails immediately or after login.', 'Submit the target name and time of failure.'],
+        'technician': ['Confirm target is reachable but RDP fails.', 'Check whether RDP service/gateway is available according to support tools.', 'Confirm firewall/security policy is not blocking the session.', 'Check whether multiple users are affected.', 'Escalate to Endpoint, Systems, or Network team with evidence.'],
+        'admin': ['Escalate to Endpoint, Systems, Network, or VDI/Gateway support with the target, user, timestamp, error, and affected scope.'],
+    },
+    'FIX_RDP_SLOW_PERFORMANCE': {
+        'user': ['Close unnecessary apps inside the remote session.', 'Try again from a stable network.', 'Record when the slowness happens.', 'Report whether other remote apps are also slow.'],
+        'technician': ['Determine whether slowness affects one user, one remote host, or many users.', 'Compare performance from VPN, onsite, and alternate network if possible.', 'Check basic latency and packet loss to internal resources.', 'Ask whether remote host CPU/memory load is high if endpoint tools are available.', 'Escalate with timestamps, source network, target host, and affected scope.'],
+        'admin': ['Escalate if slowness suggests VPN, gateway, remote host resource, or network path performance issues.'],
+    },
+}
+
+REMOTE_DESKTOP_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_RDP_USER',None,'category','Remote Desktop Connection Issue','User cannot connect to a remote computer, server, virtual desktop, or remote desktop session.',None,None,None,None,1),
+    ('Q_RDP_VPN_CONNECTED_USER','ROOT_RDP_USER','question','Check Remote Access Connection',None,'Are you connected to VPN or approved remote access?',None,None,None,1),
+    ('S_RDP_CONNECT_VPN_USER','Q_RDP_VPN_CONNECTED_USER','solution','Connect to VPN Before Remote Desktop',None,None,'Are you connected to VPN or approved remote access?','No','FIX_RDP_CONNECT_VPN_FIRST',1),
+    ('Q_RDP_INTERNAL_ACCESS_USER','Q_RDP_VPN_CONNECTED_USER','question','Check Internal Access',None,'Can you access other internal resources?', 'Are you connected to VPN or approved remote access?','Yes',None,2),
+    ('S_RDP_INTERNAL_ACCESS_USER','Q_RDP_INTERNAL_ACCESS_USER','solution','Fix VPN/Internal Network Access First',None,None,'Can you access other internal resources?','No','FIX_RDP_INTERNAL_ACCESS_FIRST',1),
+    ('Q_RDP_ERROR_TYPE_USER','Q_RDP_INTERNAL_ACCESS_USER','question','Identify Remote Desktop Error',None,'What error do you see?', 'Can you access other internal resources?','Yes',None,2),
+    ('S_RDP_TARGET_USER','Q_RDP_ERROR_TYPE_USER','solution','Verify Remote Computer Name and Reachability',None,None,'What error do you see?','Remote computer not found','FIX_RDP_VERIFY_TARGET_REACHABILITY',1),
+    ('S_RDP_CREDS_USER','Q_RDP_ERROR_TYPE_USER','solution','Check Account, Password, and Saved Credentials',None,None,'What error do you see?','Credentials did not work','FIX_RDP_ACCOUNT_SAVED_CREDENTIALS',2),
+    ('S_RDP_PERMISSION_USER','Q_RDP_ERROR_TYPE_USER','solution','Request Remote Desktop Permission Review',None,None,'What error do you see?','Not allowed to log on remotely','FIX_RDP_PERMISSION_REVIEW',3),
+    ('S_RDP_SESSION_USER','Q_RDP_ERROR_TYPE_USER','solution','Report Remote Session or Endpoint Issue',None,None,'What error do you see?','Black screen / disconnects','FIX_RDP_SERVICE_GATEWAY_SESSION',4),
+    ('S_RDP_SLOW_USER','Q_RDP_ERROR_TYPE_USER','solution','Report Slow Remote Desktop Performance',None,None,'What error do you see?','Slow session','FIX_RDP_SLOW_PERFORMANCE',5),
+]
+
+REMOTE_DESKTOP_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_RDP_TECH',None,'category','Remote Desktop Connection Issue - IT Support Specialist Diagnostic','IT Support Specialist diagnostic tree for VPN dependency, DNS, reachability, credentials, permissions, RDP service, and gateway issues.',None,None,None,None,1),
+    ('Q_RDP_REMOTE_ACCESS_TECH','ROOT_RDP_TECH','question','Confirm VPN or Approved Remote Access',None,'Is VPN or approved remote access connected?',None,None,None,1),
+    ('S_RDP_CONNECT_VPN_TECH','Q_RDP_REMOTE_ACCESS_TECH','solution','Connect User to VPN Before RDP Testing',None,None,'Is VPN or approved remote access connected?','No','FIX_RDP_CONNECT_VPN_FIRST',1),
+    ('Q_RDP_DNS_TECH','Q_RDP_REMOTE_ACCESS_TECH','question','Check Remote Host DNS',None,'Does DNS resolve the remote host?', 'Is VPN or approved remote access connected?','Yes',None,2),
+    ('S_RDP_DNS_TECH','Q_RDP_DNS_TECH','solution','Troubleshoot Remote Host DNS Resolution',None,None,'Does DNS resolve the remote host?','No','FIX_RDP_DNS_RESOLUTION',1),
+    ('Q_RDP_REACHABLE_TECH','Q_RDP_DNS_TECH','question','Check Remote Host Reachability',None,'Is the remote host reachable?', 'Does DNS resolve the remote host?','Yes',None,2),
+    ('S_RDP_REACHABILITY_TECH','Q_RDP_REACHABLE_TECH','solution','Escalate Remote Host or Network Reachability Issue',None,None,'Is the remote host reachable?','No','FIX_RDP_REACHABILITY_ESCALATE',1),
+    ('Q_RDP_AUTH_TECH','Q_RDP_REACHABLE_TECH','question','Separate Authentication from Network',None,'Is the error authentication or credentials related?', 'Is the remote host reachable?','Yes',None,2),
+    ('S_RDP_CREDS_TECH','Q_RDP_AUTH_TECH','solution','Check Account and Saved RDP Credentials',None,None,'Is the error authentication or credentials related?','Yes','FIX_RDP_ACCOUNT_SAVED_CREDENTIALS',1),
+    ('Q_RDP_PERMISSION_TECH','Q_RDP_AUTH_TECH','question','Check Remote Logon Permission',None,'Does the user have remote logon permission?', 'Is the error authentication or credentials related?','No',None,2),
+    ('S_RDP_PERMISSION_TECH','Q_RDP_PERMISSION_TECH','solution','Verify Remote Desktop Permission',None,None,'Does the user have remote logon permission?','No / Not sure','FIX_RDP_PERMISSION_REVIEW',1),
+    ('S_RDP_SERVICE_TECH','Q_RDP_PERMISSION_TECH','solution','Troubleshoot RDP Service, Gateway, or Session Issue',None,None,'Does the user have remote logon permission?','Yes','FIX_RDP_SERVICE_GATEWAY_SESSION',2),
+]
+
+def seed_remote_desktop_connection_content(cursor):
+    """Seed Remote Desktop Connection Issue KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = REMOTE_DESKTOP_CONNECTION_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, REMOTE_DESKTOP_CONNECTION_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, REMOTE_DESKTOP_CONNECTION_KB['title'], REMOTE_DESKTOP_CONNECTION_KB['summary'], REMOTE_DESKTOP_CONNECTION_KB['difficulty'], REMOTE_DESKTOP_CONNECTION_KB['estimated_time'], REMOTE_DESKTOP_CONNECTION_KB['escalation_required'], REMOTE_DESKTOP_CONNECTION_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, REMOTE_DESKTOP_CONNECTION_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, REMOTE_DESKTOP_CONNECTION_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, REMOTE_DESKTOP_CONNECTION_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, REMOTE_DESKTOP_CONNECTION_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, REMOTE_DESKTOP_CONNECTION_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, REMOTE_DESKTOP_CONNECTION_SOLUTIONS)
+    for solution_code, audience_steps in REMOTE_DESKTOP_CONNECTION_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_remote_desktop_connection_tree(cursor, 'user', 'REMOTE_DESKTOP_CONNECTION_ISSUE_USER', 'Remote Desktop Connection Issue - User Diagnostic', 'User-friendly diagnostic tree for VPN dependency, internal access, common RDP errors, credentials, permissions, and performance.', REMOTE_DESKTOP_USER_DIAGNOSTIC_NODES)
+    seed_remote_desktop_connection_tree(cursor, 'technician', 'REMOTE_DESKTOP_CONNECTION_ISSUE_TECHNICIAN', 'Remote Desktop Connection Issue - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for VPN, DNS, reachability, credentials, permissions, RDP service, and gateway root-cause isolation.', REMOTE_DESKTOP_TECH_DIAGNOSTIC_NODES)
+
+def seed_remote_desktop_connection_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'REMOTE_DESKTOP_CONNECTION_ISSUE')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'REMOTE_DESKTOP_CONNECTION_ISSUE', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
 def initialize_database():
     """Create SQLite tables if they do not already exist."""
     connection = get_db_connection()
@@ -3560,6 +3805,7 @@ def initialize_database():
     seed_mfa_issue_content(cursor)
     seed_vpn_connection_failure_content(cursor)
     seed_shared_drive_access_content(cursor)
+    seed_remote_desktop_connection_content(cursor)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
