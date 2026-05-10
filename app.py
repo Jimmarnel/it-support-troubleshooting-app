@@ -566,6 +566,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Account Locked": "ACCOUNT_LOCKED",
     "Multi-factor Authentication Issue": "MULTI_FACTOR_AUTHENTICATION_ISSUE",
     "Slow Computer Performance": "SLOW_COMPUTER_PERFORMANCE",
+    "Application Not Opening": "APPLICATION_NOT_OPENING",
 }
 
 
@@ -579,7 +580,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
     "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, and Slow Computer Performance. Other sample issues are hidden until they "
@@ -4040,6 +4041,233 @@ def seed_slow_computer_performance_tree(cursor, audience, tree_code, title, desc
 
 
 # -----------------------------
+# APPLICATION NOT OPENING CONTENT
+# -----------------------------
+APPLICATION_NOT_OPENING_PROBLEM = (
+    'APPLICATION_NOT_OPENING',
+    'Application Not Opening',
+    'Software & Applications',
+    'Medium',
+    'Application does not open, closes immediately, gets stuck loading, or shows launch, sign-in, licensing, or access errors.',
+)
+
+APPLICATION_NOT_OPENING_KB = {
+    'title': 'Application Not Opening',
+    'summary': 'Use this guide when an application does not open, closes immediately, gets stuck loading, or shows a launch, sign-in, licensing, or access error.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-20 minutes',
+    'escalation_required': 0,
+    'escalation_notes': 'Escalate if the application is business-critical, multiple users are affected, repair/reinstall fails, endpoint security blocks the app, or a backend/service outage is suspected.',
+    'tags': ['application', 'app not opening', 'software', 'repair app', 'reset app', 'reinstall', 'license', 'endpoint security', 'Event Viewer', 'application support'],
+    'symptoms': [
+        'Nothing happens when the user clicks the application.',
+        'Application opens and closes immediately.',
+        'Application is stuck on the loading screen.',
+        'Application shows a launch error, sign-in error, or licensing message.',
+        'Application worked previously but does not open now.',
+        'Only one user or one device is affected while others can open the app.',
+        'Multiple users cannot open the same application, suggesting a service/backend issue.',
+    ],
+    'causes': [
+        'Common: stuck application process, pending restart, outdated application, corrupted cache/profile, sign-in or license issue, damaged installation, missing dependency/runtime, endpoint security block, VPN/internal network dependency, unavailable backend service, or recent Windows/application update.',
+        'Advanced: corrupted Windows user profile, damaged configuration files, package registration problem, Group Policy or endpoint-management block, certificate issue, stopped required service, database/backend connection failure, proxy/DNS issue, clean-boot software conflict, version mismatch, or plug-in/add-in conflict.',
+    ],
+    'user_steps': [
+        'Close the application completely and try opening it again.',
+        'Restart the computer and try again.',
+        'Confirm whether other applications open normally.',
+        'Check whether you see an error message and take a screenshot.',
+        'If the app requires sign-in, confirm you are using the correct company account.',
+        'If the app requires VPN or internal network access, connect to VPN and try again.',
+        'Check whether coworkers can open the same application.',
+        'Do not reinstall software from unapproved websites.',
+        'Submit a ticket if the application still does not open after restart.',
+    ],
+    'it_steps': [
+        'Tier 1: Confirm the user, device name, OS version, application name/version, and exact error message.',
+        'Tier 1: Ask when the issue started and whether a Windows update, application update, password change, VPN/network change, or new installation happened recently.',
+        'Tier 1: Determine scope: one user, one device, one application, multiple users, or multiple devices.',
+        'Tier 1: Confirm whether the app fails immediately, hangs, shows a sign-in/licensing message, or crashes.',
+        'Tier 1: Close stuck application processes in Task Manager if safe, then retest.',
+        'Tier 1: Restart the computer and retest application launch.',
+        'Tier 1: Confirm whether VPN/internal network access is required for the app.',
+        'Tier 1: Confirm whether the user is licensed or authorized to use the application.',
+        'Tier 1: Check for pending application or Windows updates.',
+        'Tier 1: Use approved repair/reset options when available or reinstall only from approved company sources.',
+        'Tier 2 / Desktop/Application Support: Check Event Viewer or application logs for launch errors.',
+        'Tier 2 / Desktop/Application Support: Check whether local app cache/profile can be reset or renamed according to vendor/company guidance.',
+        'Tier 2 / Desktop/Application Support: Check whether endpoint security quarantined or blocked application files.',
+        'Tier 2 / Desktop/Application Support: Check whether required services, runtimes, dependencies, DNS, proxy, VPN, or backend services are available.',
+        'Tier 2 / Desktop/Application Support: Compare affected user/device against a known-good user/device and determine whether the cause is install corruption, user profile/cache, licensing/access, endpoint security, network/backend dependency, or application-wide outage.',
+        'Escalate with logs, screenshots, affected scope, version, timestamps, and test results when repair/reset does not resolve the issue.',
+    ],
+}
+
+APPLICATION_NOT_OPENING_SOLUTIONS = [
+    ('FIX_APP_NOT_OPENING_RESTART_RETRY','Restart Computer and Retry Application','A restart can clear stuck background processes and pending updates that prevent app launch.','Restart the computer, wait for startup to finish, then open the application again.',0,'Escalate if the application still fails after restart and other evidence points to install, license, security, or backend issues.','low'),
+    ('FIX_APP_NOT_OPENING_CLOSE_STUCK_PROCESS','Close Stuck App Process and Retry','The application may already be running in the background or stuck during launch.','Close the stuck process if safe, restart the app, and confirm whether the app remains running.',0,'Escalate if the app repeatedly hangs or crashes at launch after the process is cleared.','medium'),
+    ('FIX_APP_NOT_OPENING_REPAIR_RESET','Repair or Reset Application','The application installation, cache, or local profile may be damaged.','Use approved repair/reset options or reset local app cache according to company/vendor guidance.',0,'Escalate if repair/reset requires admin rights, fails, or data/configuration needs preservation.','medium'),
+    ('FIX_APP_NOT_OPENING_SIGNIN_LICENSE_ACCESS','Check App Sign-In, License, or Access','The app may not open because the user is not signed in, not licensed, or lacks access.','Confirm company sign-in, license/entitlement, required access group, and SSO/MFA status.',0,'Escalate to Identity/App Support if entitlement appears correct but launch still fails.','medium'),
+    ('FIX_APP_NOT_OPENING_SERVICE_OUTAGE','Report Possible Application Service Outage','Multiple users affected may indicate an application backend, server, database, cloud service, or deployment issue.','Confirm scope, collect errors/timestamps/versions, and escalate to Application/System support.',1,'Escalate as High if a business-critical application or multiple users are affected.','high'),
+    ('FIX_APP_NOT_OPENING_LOGS_DEPENDENCIES_SECURITY','Troubleshoot Logs, Dependencies, or Security Block','App launch may fail due to missing dependency, app log error, endpoint security block, or configuration issue.','Review application/Event Viewer logs, dependencies, required services, and endpoint-security events.',1,'Escalate to Endpoint, Security, or Application Support with logs and evidence.','high'),
+    ('FIX_APP_NOT_OPENING_APPROVED_REINSTALL','Perform Approved Repair, Reset, or Reinstall','If simpler fixes fail, the app may need approved repair, reset, or reinstall.','Repair, reset, or reinstall from approved software source while preserving required user configuration.',0,'Escalate if managed deployment, admin rights, licensing, or repeated install failure is involved.','medium'),
+]
+
+APPLICATION_NOT_OPENING_SOLUTION_STEPS = {
+    'FIX_APP_NOT_OPENING_RESTART_RETRY': {
+        'user': ['Save your work.', 'Restart the computer.', 'Wait a few minutes after signing in.', 'Open the application again.', 'Submit a ticket if the app still does not open.'],
+        'technician': ['Tier 1: Check device uptime and pending restart status.', 'Tier 1: Ask the user to restart if uptime is high or updates are pending.', 'Tier 1: Retest application launch after restart.', 'Tier 1: Document whether restart resolved the issue.'],
+        'admin': ['Escalation notes: escalate if restart does not help and the app is business-critical, multiple users are affected, or logs/security alerts show deeper failure.'],
+    },
+    'FIX_APP_NOT_OPENING_CLOSE_STUCK_PROCESS': {
+        'user': ['Close the application if it appears open.', 'Restart the computer if you cannot close it.', 'Try opening the app again.', 'Report if nothing happens when launching.'],
+        'technician': ['Tier 1: Check Task Manager for stuck application processes.', 'Tier 1: End only the affected user app process if safe.', 'Tier 1: Restart the application.', 'Tier 1: Confirm whether the process appears and remains running.', 'Tier 1: Continue to repair/reset if launch still fails.'],
+        'admin': ['Escalation notes: escalate repeated stuck launch behavior to Application or Endpoint support with process name, user/device, time, and screenshots.'],
+    },
+    'FIX_APP_NOT_OPENING_REPAIR_RESET': {
+        'user': ['Restart the computer first.', 'Do not uninstall or reinstall from unapproved websites.', 'Contact IT if the app still does not open.'],
+        'technician': ['Tier 1: Use approved Windows repair/change option when available.', 'Tier 1: Use approved app repair/reset/reinstall guidance for Store or managed apps when applicable.', 'Tier 2 / Desktop/Application Support: Reset local app cache/profile only according to company/vendor guidance.', 'Tier 1: Retest after repair or reset.', 'Escalate if repair/reset requires admin rights or fails.'],
+        'admin': ['Escalation notes: preserve required user settings/data before destructive reset; escalate managed app repair failures to Endpoint/Desktop Support.'],
+    },
+    'FIX_APP_NOT_OPENING_SIGNIN_LICENSE_ACCESS': {
+        'user': ['Confirm you are signing in with your company account.', 'Take a screenshot of any sign-in, license, or access message.', 'Contact IT if you recently changed roles or need access.'],
+        'technician': ['Tier 1: Confirm the user account and affected application.', 'Tier 1: Check whether the user has the required license, entitlement, or access group.', 'Tier 1: Check password/MFA status if the app uses SSO.', 'Tier 1: Route access request if approval is needed.', 'Escalate to Identity/App Support if entitlement appears correct but launch still fails.'],
+        'admin': ['Escalation notes: route access/entitlement issues to Identity or application owner; include user, app, group/license, screenshots, and approval status.'],
+    },
+    'FIX_APP_NOT_OPENING_SERVICE_OUTAGE': {
+        'user': ['Ask whether coworkers have the same issue.', 'Record the time the issue started.', 'Capture the error message.', 'Submit a ticket and avoid repeated reinstall attempts.'],
+        'technician': ['Tier 1: Confirm scope across users, devices, and locations.', 'Tier 1: Check known service-status channels or internal outage notes if available.', 'Tier 1: Capture version, error messages, timestamps, and affected users.', 'Escalate to Application Support/System team.', 'Update the ticket with outage or incident details.'],
+        'admin': ['Escalation notes: treat as High priority when multiple users or a business-critical app are affected; provide scope and timestamps.'],
+    },
+    'FIX_APP_NOT_OPENING_LOGS_DEPENDENCIES_SECURITY': {
+        'user': ['Do not download missing files or fix tools from the internet.', 'Take a screenshot of the error.', 'Report whether the issue started after an update or installation.'],
+        'technician': ['Tier 2 / Desktop/Application Support: Check Event Viewer or application logs for launch error.', 'Tier 2 / Desktop/Application Support: Check whether required services or dependencies are installed/running.', 'Tier 2 / Desktop/Application Support: Check endpoint security alerts or quarantine events.', 'Tier 2 / Desktop/Application Support: Compare with a known-good device if possible.', 'Escalate to Endpoint, Security, or Application Support with logs and evidence.'],
+        'admin': ['Escalation notes: do not bypass endpoint protection; route security blocks or suspicious behavior to Security with evidence.'],
+    },
+    'FIX_APP_NOT_OPENING_APPROVED_REINSTALL': {
+        'user': ['Save any app-related work if possible.', 'Do not uninstall unless IT instructs you.', 'Use only approved company software sources.'],
+        'technician': ['Tier 1: Confirm install source and app version.', 'Tier 1: Back up or preserve required user configuration if applicable.', 'Tier 1: Uninstall/reinstall or redeploy from approved software portal.', 'Tier 1: Confirm license and access after reinstall.', 'Tier 1: Document the version installed and result.'],
+        'admin': ['Escalation notes: escalate repeated reinstall failures, admin-rights requirements, or managed-deployment failures to Endpoint/Desktop Support.'],
+    },
+}
+
+APPLICATION_NOT_OPENING_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_APP_NOT_OPEN_USER',None,'category','Application Not Opening','User-friendly diagnostic tree for application launch, restart, process, sign-in, licensing, and outage symptoms.',None,None,None,None,1),
+    ('Q_APP_RESTARTED_USER','ROOT_APP_NOT_OPEN_USER','question','Check Restart State',None,'Have you restarted the computer since the issue started?',None,None,None,1),
+    ('S_APP_RESTART_USER','Q_APP_RESTARTED_USER','solution','Restart Computer and Retry Application',None,None,'Have you restarted the computer since the issue started?','No','FIX_APP_NOT_OPENING_RESTART_RETRY',1),
+    ('Q_APP_LAUNCH_BEHAVIOR_USER','Q_APP_RESTARTED_USER','question','Check Launch Behavior',None,'What happens when you open the app?','Have you restarted the computer since the issue started?','Yes',None,2),
+    ('S_APP_STUCK_PROCESS_USER','Q_APP_LAUNCH_BEHAVIOR_USER','solution','Close Stuck App Process and Retry',None,None,'What happens when you open the app?','Nothing happens / stuck loading','FIX_APP_NOT_OPENING_CLOSE_STUCK_PROCESS',1),
+    ('S_APP_REPAIR_USER','Q_APP_LAUNCH_BEHAVIOR_USER','solution','Repair or Reset Application',None,None,'What happens when you open the app?','Opens then closes','FIX_APP_NOT_OPENING_REPAIR_RESET',2),
+    ('S_APP_SIGNIN_USER','Q_APP_LAUNCH_BEHAVIOR_USER','solution','Check App Sign-In, License, or Access',None,None,'What happens when you open the app?','Sign-in or license error','FIX_APP_NOT_OPENING_SIGNIN_LICENSE_ACCESS',3),
+    ('Q_APP_OTHERS_AFFECTED_USER','Q_APP_LAUNCH_BEHAVIOR_USER','question','Check Scope',None,'Are other users affected?','What happens when you open the app?','Error message',None,4),
+    ('S_APP_OUTAGE_USER','Q_APP_OTHERS_AFFECTED_USER','solution','Report Possible Application Service Outage',None,None,'Are other users affected?','Yes','FIX_APP_NOT_OPENING_SERVICE_OUTAGE',1),
+    ('S_APP_TICKET_USER','Q_APP_OTHERS_AFFECTED_USER','solution','Submit Ticket with Error and App Details',None,None,'Are other users affected?','No / Not sure','FIX_APP_NOT_OPENING_LOGS_DEPENDENCIES_SECURITY',2),
+]
+
+APPLICATION_NOT_OPENING_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_APP_NOT_OPEN_TECH',None,'category','Application Not Opening - IT Support Specialist Diagnostic','IT Support Specialist diagnostic tree for scope, launch behavior, access, logs, dependencies, security, and reinstall decisions.',None,None,None,None,1),
+    ('Q_APP_SCOPE_TECH','ROOT_APP_NOT_OPEN_TECH','question','Check Application Scope',None,'Are multiple users or devices affected?',None,None,None,1),
+    ('S_APP_OUTAGE_TECH','Q_APP_SCOPE_TECH','solution','Escalate Possible Application Service or Backend Issue',None,None,'Are multiple users or devices affected?','Yes','FIX_APP_NOT_OPENING_SERVICE_OUTAGE',1),
+    ('Q_APP_PROCESS_TECH','Q_APP_SCOPE_TECH','question','Check Launch Process',None,'Is the app process stuck or failing immediately at launch?','Are multiple users or devices affected?','No',None,2),
+    ('S_APP_PROCESS_REPAIR_TECH','Q_APP_PROCESS_TECH','solution','Close Stuck Process and Repair Application',None,None,'Is the app process stuck or failing immediately at launch?','Yes','FIX_APP_NOT_OPENING_CLOSE_STUCK_PROCESS',1),
+    ('Q_APP_ACCESS_TECH','Q_APP_PROCESS_TECH','question','Check Access or License Error',None,'Is there a sign-in, license, permission, or access error?','Is the app process stuck or failing immediately at launch?','No',None,2),
+    ('S_APP_ACCESS_TECH','Q_APP_ACCESS_TECH','solution','Verify App Access, License, and Authentication',None,None,'Is there a sign-in, license, permission, or access error?','Yes','FIX_APP_NOT_OPENING_SIGNIN_LICENSE_ACCESS',1),
+    ('Q_APP_LOGS_TECH','Q_APP_ACCESS_TECH','question','Check Logs and Endpoint Tools',None,'Do logs or endpoint tools show app, dependency, or security errors?','Is there a sign-in, license, permission, or access error?','No',None,2),
+    ('S_APP_LOGS_TECH','Q_APP_LOGS_TECH','solution','Troubleshoot Logs, Dependencies, or Security Block',None,None,'Do logs or endpoint tools show app, dependency, or security errors?','Yes','FIX_APP_NOT_OPENING_LOGS_DEPENDENCIES_SECURITY',1),
+    ('S_APP_REINSTALL_TECH','Q_APP_LOGS_TECH','solution','Perform Approved Repair, Reset, or Reinstall',None,None,'Do logs or endpoint tools show app, dependency, or security errors?','No','FIX_APP_NOT_OPENING_APPROVED_REINSTALL',2),
+]
+
+def seed_application_not_opening_content(cursor):
+    """Seed Application Not Opening KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = APPLICATION_NOT_OPENING_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, APPLICATION_NOT_OPENING_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, APPLICATION_NOT_OPENING_KB['title'], APPLICATION_NOT_OPENING_KB['summary'], APPLICATION_NOT_OPENING_KB['difficulty'], APPLICATION_NOT_OPENING_KB['estimated_time'], APPLICATION_NOT_OPENING_KB['escalation_required'], APPLICATION_NOT_OPENING_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, APPLICATION_NOT_OPENING_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, APPLICATION_NOT_OPENING_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, APPLICATION_NOT_OPENING_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, APPLICATION_NOT_OPENING_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, APPLICATION_NOT_OPENING_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, APPLICATION_NOT_OPENING_SOLUTIONS)
+    for solution_code, audience_steps in APPLICATION_NOT_OPENING_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_application_not_opening_tree(cursor, 'user', 'APPLICATION_NOT_OPENING_USER', 'Application Not Opening - User Diagnostic', 'User-friendly diagnostic tree for restart, launch behavior, sign-in/license errors, and outage scope.', APPLICATION_NOT_OPENING_USER_DIAGNOSTIC_NODES)
+    seed_application_not_opening_tree(cursor, 'technician', 'APPLICATION_NOT_OPENING_TECHNICIAN', 'Application Not Opening - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for application scope, process, access, logs, dependencies, and approved repair/reinstall.', APPLICATION_NOT_OPENING_TECH_DIAGNOSTIC_NODES)
+
+def seed_application_not_opening_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'APPLICATION_NOT_OPENING')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'APPLICATION_NOT_OPENING', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
+
+# -----------------------------
 # EXISTING ISSUE ROLE ALIGNMENT PATCH
 # -----------------------------
 # This patch keeps the current two working audiences clear:
@@ -4400,6 +4628,7 @@ def initialize_database():
     seed_shared_drive_access_content(cursor)
     seed_remote_desktop_connection_content(cursor)
     seed_slow_computer_performance_content(cursor)
+    seed_application_not_opening_content(cursor)
     seed_existing_issue_role_alignment(cursor)
 
     cursor.execute("""
