@@ -567,6 +567,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Multi-factor Authentication Issue": "MULTI_FACTOR_AUTHENTICATION_ISSUE",
     "Slow Computer Performance": "SLOW_COMPUTER_PERFORMANCE",
     "Application Not Opening": "APPLICATION_NOT_OPENING",
+    "Application Crashing / Freezing": "APPLICATION_CRASHING_FREEZING",
 }
 
 
@@ -580,10 +581,10 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
-    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, and Slow Computer Performance. Other sample issues are hidden until they "
+    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, and Application Crashing / Freezing. Other sample issues are hidden until they "
     "are expanded with detailed symptoms, causes, user steps, and technician steps."
 )
 
@@ -4268,6 +4269,252 @@ def seed_application_not_opening_tree(cursor, audience, tree_code, title, descri
 
 
 # -----------------------------
+# APPLICATION CRASHING / FREEZING CONTENT
+# -----------------------------
+APPLICATION_CRASHING_FREEZING_PROBLEM = (
+    'APPLICATION_CRASHING_FREEZING',
+    'Application Crashing / Freezing',
+    'Software & Applications',
+    'Medium',
+    'Application opens but freezes, stops responding, closes unexpectedly, crashes during a task, or becomes unstable.',
+)
+
+APPLICATION_CRASHING_FREEZING_KB = {
+    'title': 'Application Crashing / Freezing',
+    'summary': 'Use this guide when an application opens but freezes, shows Not Responding, closes unexpectedly, crashes during a task, or becomes unstable.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-25 minutes',
+    'escalation_required': 0,
+    'escalation_notes': 'Escalate if the app is business-critical, multiple users are affected, crashes cause data loss, endpoint security blocks the app, or backend/service dependency is suspected.',
+    'tags': ['application crash', 'app freezing', 'not responding', 'Event Viewer', 'Reliability Monitor', 'app logs', 'repair app', 'add-in', 'plugin', 'endpoint security'],
+    'symptoms': [
+        'Application freezes or shows Not Responding.',
+        'Application closes unexpectedly or crashes during work.',
+        'Application crashes when opening a file, saving, printing, exporting, or signing in.',
+        'Application works for a few minutes and then stops responding.',
+        'Crash happens with one file, one task, or one user/device.',
+        'Crash happens only on VPN, shared drives, or internal/backend access.',
+        'Multiple users experience the same crash, suggesting app service/version/backend issue.',
+    ],
+    'causes': [
+        'Common: app bug or unstable version, corrupted app cache/profile, high resource usage, outdated app, add-in/plugin conflict, damaged file, printer/export driver issue, endpoint security block, network/backend dependency, or local install corruption.',
+        'Advanced: faulting DLL/runtime dependency, corrupted Windows user profile, display/GPU driver or hardware acceleration issue, database timeout, proxy/DNS/VPN/routing issue, permissions on app cache/workspace, certificate/authentication issue, version mismatch, memory leak, endpoint management/GPO conflict, or damaged deployment package.',
+    ],
+    'user_steps': [
+        'Save your work frequently if the app is unstable.',
+        'Close the application and reopen it.',
+        'Restart the computer.',
+        'Identify what action causes the crash, such as opening a file, saving, printing, exporting, or signing in.',
+        'Check whether the crash happens with one file or all files.',
+        'Check whether the crash happens only on VPN, shared drives, or internal resources.',
+        'Take a screenshot of any error message.',
+        'Ask whether coworkers using the same app have the same issue.',
+        'Do not uninstall or reinstall the app from unapproved websites.',
+        'Submit a ticket with the app name, task that causes the crash, screenshots, and time of failure.',
+    ],
+    'it_steps': [
+        'Tier 1: Confirm the user, device name, OS version, application name/version, and exact crash or freezing behavior.',
+        'Tier 1: Ask when the issue started and whether an application update, Windows update, driver update, password/MFA change, VPN/network change, new printer, new file/template, or plugin change happened recently.',
+        'Tier 1: Determine scope: one user, one device, one file, one workflow, multiple users, or multiple devices.',
+        'Tier 1: Reproduce the issue if possible and safe, especially the exact action before the crash.',
+        'Tier 1: Confirm whether the app freezes, shows Not Responding, closes, or displays an error code.',
+        'Tier 1: Restart the app and computer, then retest.',
+        'Tier 1: Check Task Manager for high CPU, memory, disk, or network usage during the freeze.',
+        'Tier 1: Test whether the issue happens with a different file or a basic test workflow.',
+        'Tier 1: Disable app add-ins/plugins only if allowed and documented.',
+        'Tier 2 / Desktop/Application Support: Check Reliability Monitor, Event Viewer, or app logs for crash details.',
+        'Tier 2 / Desktop/Application Support: Record faulting application, faulting module, exception code, event ID, and crash timestamp.',
+        'Tier 2 / Desktop/Application Support: Check whether app cache, temporary files, or local profile can be reset according to vendor/company guidance.',
+        'Tier 2 / Desktop/Application Support: Check whether endpoint protection blocked or quarantined app components.',
+        'Tier 2 / Desktop/Application Support: Test local file vs network/shared file behavior and check DNS/VPN/proxy connectivity if the app depends on backend services.',
+        'Tier 2 / Desktop/Application Support: Compare affected user/device with a known-good user/device to isolate profile, install, network/backend, or app-wide causes.',
+        'Escalate with logs, screenshots, reproduction steps, app version, affected scope, and tests already completed.',
+    ],
+}
+
+APPLICATION_CRASHING_FREEZING_SOLUTIONS = [
+    ('FIX_APP_CRASH_CONFIRM_AFTER_RESTART','Confirm App Stability After Restart','Restarting may clear temporary app hangs, stuck processes, or pending updates.','Restart the app/computer, reproduce the task, and confirm whether the app remains stable.',0,'Escalate if crashes return, affect a business-critical app, or multiple users are impacted.','low'),
+    ('FIX_APP_CRASH_TEST_DIFFERENT_FILE','Test Different File or Document','The crash may be related to one corrupted file, template, or document.','Test with a different file or blank document and preserve the original file.',0,'Escalate if file corruption, permission, sync, or application bug is suspected.','medium'),
+    ('FIX_APP_CRASH_PRINT_EXPORT','Report Print or Export Crash','Printing or exporting can crash an app due to printer driver, PDF export, add-in, or rendering issue.','Test a simple file and alternate printer/export path if allowed, then document the crash trigger.',0,'Escalate if printer driver, app rendering, or export component appears to be the cause.','medium'),
+    ('FIX_APP_CRASH_SIGNIN_BACKEND_ACCESS','Check App Sign-In or Backend Access','The app may freeze or crash while connecting to authentication, cloud, database, or internal services.','Check VPN/internal access, authentication, and backend dependency indicators.',0,'Escalate if authentication, database, internal API, proxy, DNS, or backend service is suspected.','high'),
+    ('FIX_APP_CRASH_CAPTURE_DETAILS','Capture Crash Details and Submit Ticket','Random or unclear crashes require evidence for support to reproduce and investigate.','Collect app name/version, timestamp, user action, file/path, screenshots, and repeatability.',0,'Escalate if crashes repeat, cause data loss, or show meaningful logs/security alerts.','medium'),
+    ('FIX_APP_CRASH_ESCALATE_SERVICE_VERSION','Escalate Possible App Service or Version Issue','Multiple users affected may indicate application service, backend, deployment, or version problem.','Confirm affected users/devices/versions and escalate to Application/System support.',1,'Escalate as High when multiple users or a business-critical app are affected.','high'),
+    ('FIX_APP_CRASH_LOGS_REPAIR','Analyze Crash Logs and Repair App','Crash logs may identify the faulting module, exception, dependency, or repair path.','Review Reliability Monitor, Event Viewer, or app logs and run approved repair/update when appropriate.',0,'Escalate if logs show security, dependency, driver, or vendor-specific issues.','high'),
+    ('FIX_APP_CRASH_ISOLATE_FILE_ADDIN_PRINT','Isolate File, Add-in, or Print Driver Cause','Crashes may be caused by a specific file, add-in/plugin, template, printer, or export driver.','Test with blank file, disabled add-ins/plugins, alternate printer/export path, and known-good workflow where allowed.',0,'Escalate when the cause requires vendor/app-specific fix, driver remediation, or file recovery.','medium'),
+    ('FIX_APP_CRASH_NETWORK_BACKEND_DEPENDENCY','Isolate Network or Backend Dependency','The app may freeze or crash when backend, database, VPN, DNS, proxy, or shared resource access fails.','Compare VPN/onsite/hotspot behavior and test relevant internal resources where appropriate.',1,'Escalate to Network/Application/System team with connectivity and scope evidence.','high'),
+    ('FIX_APP_CRASH_REPAIR_RESET_REINSTALL','Repair, Reset, or Reinstall App from Approved Source','If evidence points to local app corruption, use approved repair, reset, or reinstall process.','Preserve required configuration, repair/reset/reinstall from approved source, and retest the crash scenario.',0,'Escalate if managed deployment, admin rights, licensing, or repeated repair failure is involved.','medium'),
+]
+
+APPLICATION_CRASHING_FREEZING_SOLUTION_STEPS = {
+    'FIX_APP_CRASH_CONFIRM_AFTER_RESTART': {
+        'user': ['Reopen the application.', 'Repeat the task that was failing.', 'Save your work frequently.', 'Submit a ticket if the app freezes or crashes again.'],
+        'technician': ['Tier 1: Confirm the app works after restart.', 'Tier 1: Check whether updates or a long-running process caused the issue.', 'Tier 1: Document the result and close the issue if stable.'],
+        'admin': ['Escalation notes: escalate if crashes return, cause data loss, or affect multiple users/business-critical work.'],
+    },
+    'FIX_APP_CRASH_TEST_DIFFERENT_FILE': {
+        'user': ['Try opening a different file.', 'Try creating a new blank file.', 'Do not overwrite the original file.', 'Send IT the file name/path and error screenshot.'],
+        'technician': ['Tier 1: Determine whether crash occurs with one file or all files.', 'Tier 1: Test a copy of the file if policy allows.', 'Tier 1: Check file location: local, shared drive, cloud, or email attachment.', 'Tier 2: Escalate if file corruption, permissions, sync, or application bug is suspected.'],
+        'admin': ['Escalation notes: include file path, file type, storage location, user permissions, and whether a known-good file works.'],
+    },
+    'FIX_APP_CRASH_PRINT_EXPORT': {
+        'user': ['Try printing/exporting a simple test file.', 'Try another printer or PDF export if available.', 'Record exactly when the crash happens.', 'Submit screenshots and the file type.'],
+        'technician': ['Tier 1: Confirm whether crash happens with print, PDF export, or a specific printer.', 'Tier 1: Test with another printer or generic PDF printer if allowed.', 'Tier 2: Check printer driver/version and default printer.', 'Tier 2: Check whether crash occurs with one file or all files.', 'Tier 2: Escalate to Desktop/Application Support if driver or app rendering issue is suspected.'],
+        'admin': ['Escalation notes: include app version, printer name/driver, file type, export path, and whether alternate printer/export works.'],
+    },
+    'FIX_APP_CRASH_SIGNIN_BACKEND_ACCESS': {
+        'user': ['Confirm VPN is connected if the app requires internal access.', 'Try signing in again.', 'Capture the error or loading screen.', 'Report whether other internal apps work.'],
+        'technician': ['Tier 1: Confirm whether app depends on SSO, VPN, proxy, database, or internal API.', 'Tier 1: Check whether user can access related internal resources.', 'Tier 2: Test DNS/connectivity to required services where appropriate.', 'Tier 2: Determine whether issue is authentication, network, or backend-related.', 'Tier 2: Escalate with timestamps, affected service, and connectivity results.'],
+        'admin': ['Escalation notes: route to Identity, Network, Application, or Systems team based on whether authentication, DNS/routing/proxy, API, or database dependency fails.'],
+    },
+    'FIX_APP_CRASH_CAPTURE_DETAILS': {
+        'user': ['Write down what you were doing before the crash.', 'Record the time of the crash.', 'Take a screenshot of any error message.', 'Note whether the issue happens repeatedly.', 'Submit a ticket with the app name and details.'],
+        'technician': ['Tier 1: Collect app name/version, timestamp, user action, file/path, and screenshots.', 'Tier 1: Ask user to reproduce only if safe and no data-loss risk.', 'Tier 2: Check Event Viewer or Reliability Monitor for matching crash events.', 'Tier 2: Continue with app repair, logs, or escalation based on evidence.'],
+        'admin': ['Escalation notes: include reproduction steps, timestamps, screenshots, app version, and whether crash is random or consistent.'],
+    },
+    'FIX_APP_CRASH_ESCALATE_SERVICE_VERSION': {
+        'user': ['Ask whether coworkers see the same issue.', 'Stop repeated troubleshooting if many users are affected.', 'Submit the error message and time the issue started.'],
+        'technician': ['Tier 1: Confirm affected users, devices, locations, and app versions.', 'Tier 1: Check known outage/status channels if available.', 'Tier 2: Compare affected and unaffected app versions.', 'Tier 2: Escalate to Application Support/System team with scope and evidence.'],
+        'admin': ['Escalation notes: include affected scope, app version, backend/service status if known, timestamps, and business impact.'],
+    },
+    'FIX_APP_CRASH_LOGS_REPAIR': {
+        'user': ['Keep a note of the time the crash happened.', 'Avoid reinstalling from unapproved sources.', 'Wait for IT to review the issue.'],
+        'technician': ['Tier 2: Check Reliability Monitor, Event Viewer, or app logs for crash details.', 'Tier 2: Record faulting app/module, error code, and timestamp.', 'Tier 2: Run approved repair/reset if available.', 'Tier 2: Update the app from approved source.', 'Tier 2: Escalate if logs show security, dependency, driver, or vendor-specific issue.'],
+        'admin': ['Escalation notes: include event ID, faulting module, exception code, app version, and repair/update result.'],
+    },
+    'FIX_APP_CRASH_ISOLATE_FILE_ADDIN_PRINT': {
+        'user': ['Tell IT which file, printer, add-in, or action triggers the crash.', 'Try a different file or printer only if safe.', 'Do not delete business files while testing.'],
+        'technician': ['Tier 1: Test with a blank/new file.', 'Tier 1: Test with another printer or export option if relevant.', 'Tier 2: Test with add-ins/plugins disabled if supported.', 'Tier 2: Check whether issue follows the file, user profile, device, or app version.', 'Tier 2: Escalate if vendor/app-specific fix is needed.'],
+        'admin': ['Escalation notes: include plugin/add-in list, file/template path, printer driver, export type, and known-good comparison results.'],
+    },
+    'FIX_APP_CRASH_NETWORK_BACKEND_DEPENDENCY': {
+        'user': ['Note whether the crash happens only on VPN or internal network.', 'Try again when connected to a stable company network if possible.', 'Report which resource or task causes the issue.'],
+        'technician': ['Tier 1: Confirm whether the app depends on internal resources.', 'Tier 2: Test DNS/VPN/proxy connectivity where appropriate.', 'Tier 2: Compare behavior on VPN, onsite network, and hotspot if applicable.', 'Tier 2: Check whether related internal apps/resources are slow or unavailable.', 'Tier 2: Escalate to Network/Application/System team with results.'],
+        'admin': ['Escalation notes: include VPN status, DNS/proxy tests, backend resource name, timestamps, affected users, and network path comparison.'],
+    },
+    'FIX_APP_CRASH_REPAIR_RESET_REINSTALL': {
+        'user': ['Save or back up app-related work if instructed.', 'Do not download installers from unapproved websites.', 'Follow IT instructions for repair or reinstall.'],
+        'technician': ['Tier 1: Confirm approved install source and version.', 'Tier 1: Preserve required configuration where applicable.', 'Tier 2: Repair/reset/reinstall using approved company process.', 'Tier 2: Retest the crash scenario.', 'Tier 2: Document version and result.'],
+        'admin': ['Escalation notes: escalate if managed deployment, licensing, admin rights, profile preservation, or repeated repair failure is involved.'],
+    },
+}
+
+APPLICATION_CRASHING_FREEZING_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_APP_CRASH_USER',None,'category','Application Crashing / Freezing','User-friendly diagnostic tree for application freezing, crashing, and Not Responding symptoms.',None,None,None,None,1),
+    ('Q_APP_CRASH_RESTARTED_USER','ROOT_APP_CRASH_USER','question','Check Restart Result',None,'Did restarting the app and computer help?',None,None,None,1),
+    ('S_APP_CRASH_STABLE_USER','Q_APP_CRASH_RESTARTED_USER','solution','Confirm App Stability After Restart',None,None,'Did restarting the app and computer help?','Yes','FIX_APP_CRASH_CONFIRM_AFTER_RESTART',1),
+    ('Q_APP_CRASH_ACTION_USER','Q_APP_CRASH_RESTARTED_USER','question','Identify Crash Trigger',None,'Does the crash happen during a specific action?','Did restarting the app and computer help?','No / Not tried',None,2),
+    ('S_APP_CRASH_FILE_USER','Q_APP_CRASH_ACTION_USER','solution','Test Different File or Document',None,None,'Does the crash happen during a specific action?','Opening one file','FIX_APP_CRASH_TEST_DIFFERENT_FILE',1),
+    ('S_APP_CRASH_PRINT_USER','Q_APP_CRASH_ACTION_USER','solution','Report Print or Export Crash',None,None,'Does the crash happen during a specific action?','Printing/exporting','FIX_APP_CRASH_PRINT_EXPORT',2),
+    ('S_APP_CRASH_SIGNIN_USER','Q_APP_CRASH_ACTION_USER','solution','Check App Sign-In or Backend Access',None,None,'Does the crash happen during a specific action?','Signing in','FIX_APP_CRASH_SIGNIN_BACKEND_ACCESS',3),
+    ('S_APP_CRASH_RANDOM_USER','Q_APP_CRASH_ACTION_USER','solution','Capture Crash Details and Submit Ticket',None,None,'Does the crash happen during a specific action?','Randomly / freezes','FIX_APP_CRASH_CAPTURE_DETAILS',4),
+    ('S_APP_CRASH_DOC_STEPS_USER','Q_APP_CRASH_ACTION_USER','solution','Document Reproduction Steps',None,None,'Does the crash happen during a specific action?','Not sure','FIX_APP_CRASH_CAPTURE_DETAILS',5),
+]
+
+APPLICATION_CRASHING_FREEZING_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_APP_CRASH_TECH',None,'category','Application Crashing / Freezing - IT Support Specialist Diagnostic','IT Support Specialist diagnostic tree for app crashes, logs, add-ins, files, print/export, network/backend dependencies, and repair paths.',None,None,None,None,1),
+    ('Q_APP_CRASH_SCOPE_TECH','ROOT_APP_CRASH_TECH','question','Check Crash Scope',None,'Are multiple users or devices affected?',None,None,None,1),
+    ('S_APP_CRASH_SERVICE_TECH','Q_APP_CRASH_SCOPE_TECH','solution','Escalate Possible App Service or Version Issue',None,None,'Are multiple users or devices affected?','Yes','FIX_APP_CRASH_ESCALATE_SERVICE_VERSION',1),
+    ('Q_APP_CRASH_REPRO_TECH','Q_APP_CRASH_SCOPE_TECH','question','Check Reproducibility',None,'Can the crash be reproduced with clear steps?','Are multiple users or devices affected?','No',None,2),
+    ('S_APP_CRASH_EVIDENCE_TECH','Q_APP_CRASH_REPRO_TECH','solution','Collect Crash Evidence and Monitor',None,None,'Can the crash be reproduced with clear steps?','No','FIX_APP_CRASH_CAPTURE_DETAILS',1),
+    ('Q_APP_CRASH_LOGS_TECH','Q_APP_CRASH_REPRO_TECH','question','Check Logs',None,'Do logs show a faulting app/module or exception?','Can the crash be reproduced with clear steps?','Yes',None,2),
+    ('S_APP_CRASH_LOGS_TECH','Q_APP_CRASH_LOGS_TECH','solution','Analyze Crash Logs and Repair App',None,None,'Do logs show a faulting app/module or exception?','Yes','FIX_APP_CRASH_LOGS_REPAIR',1),
+    ('Q_APP_CRASH_DEPENDENCY_TECH','Q_APP_CRASH_LOGS_TECH','question','Check Trigger or Dependency',None,'Is the crash tied to file, add-in, printer, or network/backend access?','Do logs show a faulting app/module or exception?','No / Not checked',None,2),
+    ('S_APP_CRASH_FILE_ADDIN_PRINT_TECH','Q_APP_CRASH_DEPENDENCY_TECH','solution','Isolate File, Add-in, or Print Driver Cause',None,None,'Is the crash tied to file, add-in, printer, or network/backend access?','File/add-in/printer','FIX_APP_CRASH_ISOLATE_FILE_ADDIN_PRINT',1),
+    ('S_APP_CRASH_NETWORK_BACKEND_TECH','Q_APP_CRASH_DEPENDENCY_TECH','solution','Isolate Network or Backend Dependency',None,None,'Is the crash tied to file, add-in, printer, or network/backend access?','Network/backend','FIX_APP_CRASH_NETWORK_BACKEND_DEPENDENCY',2),
+    ('S_APP_CRASH_REINSTALL_TECH','Q_APP_CRASH_DEPENDENCY_TECH','solution','Repair, Reset, or Reinstall App from Approved Source',None,None,'Is the crash tied to file, add-in, printer, or network/backend access?','No / Not sure','FIX_APP_CRASH_REPAIR_RESET_REINSTALL',3),
+]
+
+def seed_application_crashing_freezing_content(cursor):
+    """Seed Application Crashing / Freezing KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = APPLICATION_CRASHING_FREEZING_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, APPLICATION_CRASHING_FREEZING_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, APPLICATION_CRASHING_FREEZING_KB['title'], APPLICATION_CRASHING_FREEZING_KB['summary'], APPLICATION_CRASHING_FREEZING_KB['difficulty'], APPLICATION_CRASHING_FREEZING_KB['estimated_time'], APPLICATION_CRASHING_FREEZING_KB['escalation_required'], APPLICATION_CRASHING_FREEZING_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, APPLICATION_CRASHING_FREEZING_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, APPLICATION_CRASHING_FREEZING_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, APPLICATION_CRASHING_FREEZING_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, APPLICATION_CRASHING_FREEZING_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, APPLICATION_CRASHING_FREEZING_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, APPLICATION_CRASHING_FREEZING_SOLUTIONS)
+    for solution_code, audience_steps in APPLICATION_CRASHING_FREEZING_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_application_crashing_freezing_tree(cursor, 'user', 'APPLICATION_CRASHING_FREEZING_USER', 'Application Crashing / Freezing - User Diagnostic', 'User-friendly diagnostic tree for app crashes, freezing, Not Responding symptoms, crash triggers, and ticket evidence.', APPLICATION_CRASHING_FREEZING_USER_DIAGNOSTIC_NODES)
+    seed_application_crashing_freezing_tree(cursor, 'technician', 'APPLICATION_CRASHING_FREEZING_TECHNICIAN', 'Application Crashing / Freezing - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for crash scope, reproducibility, logs, file/add-in/print triggers, backend dependencies, and approved repair.', APPLICATION_CRASHING_FREEZING_TECH_DIAGNOSTIC_NODES)
+
+def seed_application_crashing_freezing_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'APPLICATION_CRASHING_FREEZING')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'APPLICATION_CRASHING_FREEZING', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
+
+# -----------------------------
 # EXISTING ISSUE ROLE ALIGNMENT PATCH
 # -----------------------------
 # This patch keeps the current two working audiences clear:
@@ -4629,6 +4876,7 @@ def initialize_database():
     seed_remote_desktop_connection_content(cursor)
     seed_slow_computer_performance_content(cursor)
     seed_application_not_opening_content(cursor)
+    seed_application_crashing_freezing_content(cursor)
     seed_existing_issue_role_alignment(cursor)
 
     cursor.execute("""
