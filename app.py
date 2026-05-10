@@ -578,7 +578,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
     "Printer Failure, Password Reset Request, Account Locked, and Multi-factor Authentication Issue. Other sample issues are hidden until they "
@@ -3304,6 +3304,245 @@ def seed_vpn_connection_failure_tree(cursor, audience, tree_code, title, descrip
                 updated_at=CURRENT_TIMESTAMP
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
+
+# -----------------------------
+# SHARED DRIVE / NETWORK DRIVE ACCESS ISSUE RELATIONAL SEED DATA
+# -----------------------------
+SHARED_DRIVE_ACCESS_PROBLEM = (
+    'SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE',
+    'Shared Drive / Network Drive Access Issue',
+    'Network, Remote Access & Storage',
+    'Medium',
+    'User cannot access a shared drive, mapped network drive, file server folder, or shared company location.',
+)
+
+SHARED_DRIVE_ACCESS_KB = {
+    'title': 'Shared Drive / Network Drive Access Issue',
+    'summary': 'Use this guide when a mapped drive is missing, a shared drive has a red X, a folder shows Access Denied, or a network path cannot be found.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-20 minutes',
+    'escalation_required': 1,
+    'escalation_notes': 'Escalate to Access Management/Identity for missing folder permissions or group membership, Systems/Server Team for file server/share/DFS problems, Network Team for DNS/routing/firewall/ACL or VPN-to-file-server reachability issues, and Endpoint/Desktop Support for mapped-drive policy, cached credentials, offline files, or user-profile problems.',
+    'tags': ['shared drive', 'network drive', 'mapped drive', 'file server', 'UNC path', 'SMB', 'VPN', 'DNS', 'access denied', 'permissions'],
+    'symptoms': [
+        'Shared drive is missing or shows a red X.',
+        'User cannot open a department folder or mapped network drive.',
+        'Access Denied appears for a specific folder or share.',
+        'Network Path Not Found appears when opening the drive or UNC path.',
+        'Shared drive works in the office but not from home or VPN.',
+        'User can access some folders but not a specific protected folder.',
+        'Files on the shared drive open slowly or repeatedly prompt for credentials.',
+    ],
+    'causes': [
+        'Common: user is not connected to VPN, VPN internal DNS is not working, network drive mapping is disconnected, file server hostname cannot resolve, mapped path is outdated, user lacks folder permission, saved credentials are old, file server/share is temporarily unavailable, user is on guest/public network, group membership has not refreshed, or restart/sign-out is needed after an access change.',
+        'Advanced: SMB traffic blocked by firewall or ACL, routing issue between VPN subnet and file server subnet, DNS suffix/search domain issue, DFS namespace referral issue, file server service down, NTFS/share permission mismatch, Group Policy drive mapping failure, Kerberos/authentication issue, time skew, offline files cache corruption, duplicate drive mapping using different credentials, file server quota/storage issue, or department share migration with old path still in use.',
+    ],
+    'user_steps': [
+        'Confirm you are connected to the company network or VPN.',
+        'Try opening another internal resource to confirm VPN or internal access works.',
+        'Sign out and sign back in if your access was recently changed.',
+        'Restart the computer if the shared drive still shows disconnected.',
+        'Confirm the exact drive letter or folder path you are trying to open.',
+        'Check whether coworkers can access the same shared location.',
+        'If you see Access Denied, request access or contact IT.',
+        'If you see Network Path Not Found, take a screenshot of the error.',
+        'Do not delete or rename shared folders while troubleshooting.',
+        'Submit a ticket with the folder path, error message, and whether VPN is connected.',
+    ],
+    'it_steps': [
+        'Tier 1: Confirm the user, device name, location, network type, and whether the user is remote or onsite.',
+        'Tier 1: Ask for the exact error message: Access Denied, Network Path Not Found, disconnected drive/red X, credential prompt, or slow access.',
+        'Tier 1: Confirm whether the user is connected to VPN if remote and whether other internal resources work.',
+        'Tier 1: Confirm the exact drive letter and UNC path if known.',
+        'Tier 1: Ask whether other users can access the same share and whether the user recently changed team, role, department, or device.',
+        'Tier 1: Have the user sign out/in or restart after recent permission changes.',
+        'Tier 1: Determine whether the issue affects one folder, one share, or all network drives and capture screenshots and the exact path.',
+        'Tier 2: Test the file server by hostname and FQDN.',
+        'Tier 2: Test DNS resolution for the file server.',
+        'Tier 2: Test reachability to the file server by IP address where allowed.',
+        'Tier 2: Compare access by hostname versus IP to separate DNS from connectivity.',
+        'Tier 2: Test the UNC path directly, for example \\\\server\\share.',
+        'Tier 2: Confirm whether SMB/file-sharing traffic is reachable according to company tools and policy.',
+        'Tier 2: Check whether the user VPN adapter has correct IP, DNS, and routes.',
+        'Tier 2: Check whether the file server subnet is reachable from the user network or VPN segment.',
+        'Tier 2: Check for local subnet overlap if the user is remote.',
+        'Tier 2: Check mapped drive configuration and remove/re-map the drive if the path is outdated.',
+        'Tier 2: Check whether cached credentials are being used.',
+        'Tier 2: Confirm the user AD/security group membership or access group.',
+        'Tier 2: Distinguish between connectivity, DNS, authentication, authorization/permission, file server/share outage, and client mapping/cache issues before escalation.',
+    ],
+}
+
+SHARED_DRIVE_ACCESS_SOLUTIONS = [
+    ('FIX_SHARED_DRIVE_CONNECT_VPN','Connect to VPN or Company Network','Shared drives usually require connection to the company network or VPN.','Connect to VPN or the company network, confirm internal access, and retry the shared drive before deeper troubleshooting.',0,'Escalate to VPN or Network support if the user cannot connect to VPN or internal resources remain unreachable.','medium'),
+    ('FIX_SHARED_DRIVE_PERMISSION_REQUEST','Request or Verify Shared Folder Permission','User can reach the share but does not have permission to access the folder.','Confirm the exact folder path, verify access requirements, and route an access request if approval is required.',1,'Escalate to Access Management or the folder owner if required group membership or approval is missing.','medium'),
+    ('FIX_SHARED_DRIVE_REMAP','Reconnect or Remap Network Drive','The mapped drive may be disconnected, stale, or pointing to an old path.','Test the UNC path, remove stale mappings if needed, and remap the drive to the correct path.',0,'Escalate if Group Policy or login script drive mapping is failing for multiple users.','medium'),
+    ('FIX_SHARED_DRIVE_CLEAR_CACHED_CREDENTIALS','Clear Saved Credentials and Sign In Again','Old or incorrect saved credentials may block access to the shared drive.','Remove old saved credentials, have the user sign out/in, and retest the UNC path.',0,'Escalate if repeated credential prompts continue or account lockout occurs.','medium'),
+    ('FIX_SHARED_DRIVE_DNS_RESOLUTION','Troubleshoot File Server DNS Resolution','The computer cannot resolve the file server hostname.','Test DNS resolution for the file server hostname/FQDN, compare VPN/onsite results, and flush DNS cache when appropriate.',1,'Escalate to Network/DNS team if DNS records, VPN DNS assignment, or multiple users are affected.','high'),
+    ('FIX_SHARED_DRIVE_SERVER_REACHABILITY','Escalate File Server Network Reachability Issue','The file server or share cannot be reached from the user network path.','Confirm DNS, test approved reachability, compare affected scope, and escalate with path, network, VPN status, and timestamps.',1,'Escalate to Network or Systems team if the server/share is unreachable or a routing/firewall/ACL/server issue is suspected.','high'),
+    ('FIX_SHARED_DRIVE_PERMISSION_CONFIG_ESCALATE','Escalate Permission or Share Configuration Issue','User appears to have access group membership, but folder access still fails.','Confirm group membership and path, compare with a known-good user if allowed, then escalate with evidence.',1,'Escalate to Systems or Access Management for NTFS/share permission mismatch, approval, or configuration review.','high'),
+    ('FIX_SHARED_DRIVE_SLOW_PERFORMANCE','Report Slow Shared Drive Performance','Shared drive is accessible but slow due to network latency, VPN, server load, file size, or sync issues.','Identify whether slowness affects one file, one share, VPN only, onsite too, or multiple users, then escalate with timing and scope.',1,'Escalate to Network or Systems team if multiple users, server load, VPN latency, or storage issues are suspected.','medium'),
+]
+
+SHARED_DRIVE_ACCESS_SOLUTION_STEPS = {
+    'FIX_SHARED_DRIVE_CONNECT_VPN': {
+        'user': ['Connect to the company VPN if working remotely.','Wait until VPN shows connected.','Try opening the shared drive again.','If VPN will not connect, use the VPN troubleshooting flow.'],
+        'technician': ['Confirm whether the user is remote or onsite.','Confirm VPN status and internal network access.','Check whether other internal resources work.','Continue shared-drive troubleshooting after network access is confirmed.'],
+        'admin': ['Escalate to VPN or Network support if the user cannot establish VPN or cannot reach any internal resources after VPN connects.'],
+    },
+    'FIX_SHARED_DRIVE_PERMISSION_REQUEST': {
+        'user': ['Confirm the folder path you need.','Ask your manager or folder owner to approve access if required.','Submit a ticket with the folder path and business reason.','Sign out and back in after access is granted.'],
+        'technician': ['Confirm the exact folder/share path.','Confirm whether the error is Access Denied.','Check the required access group or folder owner if known.','Verify whether the user is in the correct group.','Submit or route an access request if approval is required.','Ask the user to sign out/in after group membership changes.'],
+        'admin': ['Escalate to Access Management or the folder owner when approval, group membership, or protected-folder access is required.'],
+    },
+    'FIX_SHARED_DRIVE_REMAP': {
+        'user': ['Restart your computer.','Try opening the shared location again.','If you know the folder path, try opening it directly.','Contact IT if the drive is still missing or disconnected.'],
+        'technician': ['Confirm the drive letter and UNC path.','Test the UNC path directly.','Remove stale mappings if needed.','Re-map the drive to the correct path.','Check whether Group Policy or login script drive mapping should apply.'],
+        'admin': ['Escalate if drive mappings fail for multiple users or managed Group Policy/login script deployment appears broken.'],
+    },
+    'FIX_SHARED_DRIVE_CLEAR_CACHED_CREDENTIALS': {
+        'user': ['Sign out and sign back in.','If prompted, enter your current company username and password.','Do not repeatedly try old passwords.','Contact IT if the credential prompt returns.'],
+        'technician': ['Check whether Windows Credential Manager or saved credentials are being used.','Remove old saved credentials for the file server if appropriate.','Have the user sign out/in.','Retest the UNC path.','Watch for account lockout caused by repeated old-password attempts.'],
+        'admin': ['Escalate if credential prompts continue after cached credentials are cleared or if repeated lockouts suggest a wider authentication issue.'],
+    },
+    'FIX_SHARED_DRIVE_DNS_RESOLUTION': {
+        'user': ['Confirm VPN is connected if remote.','Try again after reconnecting VPN.','Submit a ticket with the shared drive path and screenshot.'],
+        'technician': ['Test DNS resolution for the file server hostname and FQDN.','Compare DNS results while connected to VPN and from onsite network if possible.','Confirm DNS servers assigned to the VPN or network adapter.','Flush DNS cache if appropriate.','Escalate to Network/DNS team if multiple users or DNS records are affected.'],
+        'admin': ['Escalate to Network/DNS team with hostname, FQDN, DNS server used, VPN status, nslookup results, affected scope, and timestamps.'],
+    },
+    'FIX_SHARED_DRIVE_SERVER_REACHABILITY': {
+        'user': ['Record the error message.','Note whether you are remote, onsite, or connected to VPN.','Ask whether coworkers have the same issue.','Submit a ticket with the folder path and screenshot.'],
+        'technician': ['Confirm DNS resolves the file server.','Test approved reachability to the file server.','Check whether the issue affects one user, one network segment, or multiple users.','Compare onsite versus VPN behavior if possible.','Escalate to Network or Systems team with DNS results, path, user network, VPN status, timestamps, and affected scope.'],
+        'admin': ['Escalate to Network or Systems team when the file server/share is unreachable, the VPN subnet cannot reach the server subnet, SMB appears blocked, or multiple users are affected.'],
+    },
+    'FIX_SHARED_DRIVE_PERMISSION_CONFIG_ESCALATE': {
+        'user': ['Provide the exact folder path.','Provide the error screenshot.','Confirm whether coworkers with the same role can access it.','Wait for IT or the folder owner to verify access.'],
+        'technician': ['Confirm the user group membership.','Confirm the folder/share path.','Compare access with another user in the same group if allowed.','Check whether sign-out/in or group token refresh is needed.','Escalate to Systems/Access Management with path, username, group membership, error, and approval details.'],
+        'admin': ['Escalate to Systems or Access Management for NTFS/share permission mismatch, group membership mismatch, DFS/share configuration, or protected-folder approval review.'],
+    },
+    'FIX_SHARED_DRIVE_SLOW_PERFORMANCE': {
+        'user': ['Try opening a smaller file from the same share.','Note whether the issue happens only on VPN or also onsite.','Record the time of the slowdown.','Submit a ticket if the issue continues.'],
+        'technician': ['Confirm whether the issue is one file, one folder, one share, or all shares.','Compare VPN versus onsite performance if possible.','Check basic network latency to internal resources.','Ask whether multiple users are affected.','Escalate with timestamps, file path, file size, network type, and affected scope.'],
+        'admin': ['Escalate to Network or Systems team if performance affects multiple users, a department share, VPN path, server load, or storage subsystem.'],
+    },
+}
+
+SHARED_DRIVE_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_SHARED_DRIVE_USER',None,'category','Shared Drive / Network Drive Access Issue','User cannot access a shared drive, mapped network drive, file server folder, or shared company location.',None,None,None,None,1),
+    ('Q_SHARED_VPN_CONNECTED_USER','ROOT_SHARED_DRIVE_USER','question','Check Company Network or VPN',None,'Are you connected to the company network or VPN?',None,None,None,1),
+    ('S_SHARED_CONNECT_VPN_USER','Q_SHARED_VPN_CONNECTED_USER','solution','Connect to VPN or Company Network',None,None,'Are you connected to the company network or VPN?','No','FIX_SHARED_DRIVE_CONNECT_VPN',1),
+    ('Q_SHARED_ERROR_TYPE_USER','Q_SHARED_VPN_CONNECTED_USER','question','Identify Shared Drive Error',None,'What error do you see?','Are you connected to the company network or VPN?','Yes',None,2),
+    ('S_SHARED_PERMISSION_USER','Q_SHARED_ERROR_TYPE_USER','solution','Request or Verify Shared Folder Permission',None,None,'What error do you see?','Access denied','FIX_SHARED_DRIVE_PERMISSION_REQUEST',1),
+    ('S_SHARED_SERVER_REACHABILITY_USER','Q_SHARED_ERROR_TYPE_USER','solution','Report Network Path or File Server Reachability Issue',None,None,'What error do you see?','Network path not found','FIX_SHARED_DRIVE_SERVER_REACHABILITY',2),
+    ('S_SHARED_REMAP_USER','Q_SHARED_ERROR_TYPE_USER','solution','Reconnect or Remap Network Drive',None,None,'What error do you see?','Drive disconnected / red X','FIX_SHARED_DRIVE_REMAP',3),
+    ('S_SHARED_CACHED_CREDS_USER','Q_SHARED_ERROR_TYPE_USER','solution','Clear Saved Credentials and Sign In Again',None,None,'What error do you see?','Credentials prompt','FIX_SHARED_DRIVE_CLEAR_CACHED_CREDENTIALS',4),
+    ('S_SHARED_SLOW_USER','Q_SHARED_ERROR_TYPE_USER','solution','Report Slow Shared Drive Performance',None,None,'What error do you see?','Slow access','FIX_SHARED_DRIVE_SLOW_PERFORMANCE',5),
+]
+
+SHARED_DRIVE_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_SHARED_DRIVE_TECH',None,'category','Shared Drive / Network Drive Access Issue - IT Support Specialist Diagnostic','IT Support Specialist diagnostic tree for shared drive permissions, DNS, reachability, VPN, and mapping issues.',None,None,None,None,1),
+    ('Q_SHARED_REMOTE_VPN_TECH','ROOT_SHARED_DRIVE_TECH','question','Confirm VPN or Onsite Access',None,'Is the user remote and connected to VPN?',None,None,None,1),
+    ('S_SHARED_CONNECT_VPN_TECH','Q_SHARED_REMOTE_VPN_TECH','solution','Connect User to VPN Before Testing Shared Drive',None,None,'Is the user remote and connected to VPN?','No','FIX_SHARED_DRIVE_CONNECT_VPN',1),
+    ('Q_SHARED_DNS_TECH','Q_SHARED_REMOTE_VPN_TECH','question','Check File Server DNS',None,'Does DNS resolve the file server hostname?','Is the user remote and connected to VPN?','Yes / Onsite',None,2),
+    ('S_SHARED_DNS_TECH','Q_SHARED_DNS_TECH','solution','Troubleshoot File Server DNS Resolution',None,None,'Does DNS resolve the file server hostname?','No','FIX_SHARED_DRIVE_DNS_RESOLUTION',1),
+    ('Q_SHARED_REACHABILITY_TECH','Q_SHARED_DNS_TECH','question','Check File Server Reachability',None,'Can the file server be reached by approved connectivity test?','Does DNS resolve the file server hostname?','Yes',None,2),
+    ('S_SHARED_REACHABILITY_TECH','Q_SHARED_REACHABILITY_TECH','solution','Escalate File Server Network Reachability Issue',None,None,'Can the file server be reached by approved connectivity test?','No','FIX_SHARED_DRIVE_SERVER_REACHABILITY',1),
+    ('Q_SHARED_ACCESS_DENIED_TECH','Q_SHARED_REACHABILITY_TECH','question','Separate Permissions from Connectivity',None,'Is the error Access Denied?','Can the file server be reached by approved connectivity test?','Yes',None,2),
+    ('Q_SHARED_GROUP_TECH','Q_SHARED_ACCESS_DENIED_TECH','question','Check Access Group',None,'Is the user in the required access group?','Is the error Access Denied?','Yes',None,1),
+    ('S_SHARED_PERMISSION_REQUEST_TECH','Q_SHARED_GROUP_TECH','solution','Verify or Request Shared Folder Permission',None,None,'Is the user in the required access group?','No / Not sure','FIX_SHARED_DRIVE_PERMISSION_REQUEST',1),
+    ('S_SHARED_PERMISSION_CONFIG_TECH','Q_SHARED_GROUP_TECH','solution','Escalate Permission or Share Configuration Issue',None,None,'Is the user in the required access group?','Yes','FIX_SHARED_DRIVE_PERMISSION_CONFIG_ESCALATE',2),
+    ('S_SHARED_REMAP_TECH','Q_SHARED_ACCESS_DENIED_TECH','solution','Reconnect or Recreate Mapped Drive',None,None,'Is the error Access Denied?','No','FIX_SHARED_DRIVE_REMAP',2),
+]
+
+def seed_shared_drive_access_content(cursor):
+    """Seed Shared Drive / Network Drive Access Issue KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = SHARED_DRIVE_ACCESS_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, SHARED_DRIVE_ACCESS_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, SHARED_DRIVE_ACCESS_KB['title'], SHARED_DRIVE_ACCESS_KB['summary'], SHARED_DRIVE_ACCESS_KB['difficulty'], SHARED_DRIVE_ACCESS_KB['estimated_time'], SHARED_DRIVE_ACCESS_KB['escalation_required'], SHARED_DRIVE_ACCESS_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, SHARED_DRIVE_ACCESS_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, SHARED_DRIVE_ACCESS_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, SHARED_DRIVE_ACCESS_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, SHARED_DRIVE_ACCESS_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, SHARED_DRIVE_ACCESS_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, SHARED_DRIVE_ACCESS_SOLUTIONS)
+    for solution_code, audience_steps in SHARED_DRIVE_ACCESS_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_shared_drive_access_tree(cursor, 'user', 'SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE_USER', 'Shared Drive / Network Drive Access Issue - User Diagnostic', 'User-friendly diagnostic tree for missing drives, Access Denied, Network Path Not Found, credentials, and slow shared drive access.', SHARED_DRIVE_USER_DIAGNOSTIC_NODES)
+    seed_shared_drive_access_tree(cursor, 'technician', 'SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE_TECHNICIAN', 'Shared Drive / Network Drive Access Issue - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for VPN, DNS, reachability, permissions, and mapped-drive root-cause isolation.', SHARED_DRIVE_TECH_DIAGNOSTIC_NODES)
+
+def seed_shared_drive_access_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
 def initialize_database():
     """Create SQLite tables if they do not already exist."""
     connection = get_db_connection()
@@ -3320,6 +3559,7 @@ def initialize_database():
     seed_account_locked_content(cursor)
     seed_mfa_issue_content(cursor)
     seed_vpn_connection_failure_content(cursor)
+    seed_shared_drive_access_content(cursor)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
