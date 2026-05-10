@@ -565,6 +565,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Password Reset Request": "PASSWORD_RESET_REQUEST",
     "Account Locked": "ACCOUNT_LOCKED",
     "Multi-factor Authentication Issue": "MULTI_FACTOR_AUTHENTICATION_ISSUE",
+    "Slow Computer Performance": "SLOW_COMPUTER_PERFORMANCE",
 }
 
 
@@ -578,10 +579,10 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
-    "Printer Failure, Password Reset Request, Account Locked, and Multi-factor Authentication Issue. Other sample issues are hidden until they "
+    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, and Slow Computer Performance. Other sample issues are hidden until they "
     "are expanded with detailed symptoms, causes, user steps, and technician steps."
 )
 
@@ -3788,6 +3789,255 @@ def seed_remote_desktop_connection_tree(cursor, audience, tree_code, title, desc
                 updated_at=CURRENT_TIMESTAMP
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
+
+# -----------------------------
+# SLOW COMPUTER PERFORMANCE CONTENT
+# -----------------------------
+SLOW_COMPUTER_PERFORMANCE_PROBLEM = (
+    'SLOW_COMPUTER_PERFORMANCE',
+    'Slow Computer Performance',
+    'Performance & Operating System',
+    'Medium',
+    'Computer is slow, freezes, starts slowly, opens applications slowly, or responds slowly during normal work.',
+)
+
+SLOW_COMPUTER_PERFORMANCE_KB = {
+    'title': 'Slow Computer Performance',
+    'summary': 'Use this guide when the computer starts slowly, freezes, opens apps slowly, has loud fan noise, shows high resource usage, or becomes slow when using VPN, shared drives, browsers, or business applications.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-20 minutes',
+    'escalation_required': 0,
+    'escalation_notes': 'Escalate if the device is unusable, multiple users are affected, malware or hardware failure is suspected, or slowness appears tied to network/VPN/internal-resource access.',
+    'tags': ['slow computer', 'performance', 'CPU', 'memory', 'disk', 'startup apps', 'Windows updates', 'malware', 'storage', 'VPN performance'],
+    'symptoms': [
+        'Computer takes a long time to start or sign in.',
+        'Applications take a long time to open or respond.',
+        'Computer freezes or becomes unresponsive.',
+        'Fan is loud, laptop is hot, or performance drops during normal use.',
+        'Browser, shared drives, cloud files, or video calls are slow.',
+        'Device became slow after an update, new software, or recent change.',
+        'Computer is slow only when connected to VPN or accessing internal resources.',
+    ],
+    'causes': [
+        'Common: long uptime, too many startup apps, many browser tabs, low disk space, pending updates, high CPU, high memory usage, cloud sync/backup/antivirus scans, browser cache/extensions, older hardware, malware, or slow network/VPN resource access.',
+        'Advanced: failing HDD/SSD, disk health warnings, thermal throttling, driver issue after update, corrupted user profile or system files, endpoint security agent conflict, insufficient RAM, background indexing, domain/GPO/login delay, network latency, DNS issues, or VPN routing problems.',
+    ],
+    'user_steps': [
+        'Save your work and restart the computer.',
+        'Close unused applications and browser tabs.',
+        'Check whether the issue happens in one application or the whole computer.',
+        'Check whether the computer is low on storage.',
+        'Pause large downloads, cloud sync, or backup if allowed by company policy.',
+        'Try using the computer while disconnected from VPN if the task does not require VPN.',
+        'Make sure the laptop is plugged in and not in battery saver mode.',
+        'If the fan is very loud, place the laptop on a hard surface and avoid blocking vents.',
+        'Take a screenshot of any error, update, storage, or security warning.',
+        'Submit a ticket if the computer is still slow after restart or freezes repeatedly.',
+    ],
+    'it_steps': [
+        'Confirm the user, device name, operating system, location, and when the slowness started.',
+        'Determine whether the issue affects the whole computer, one application, browser only, network/shared resources only, or VPN only.',
+        'Ask about recent changes such as Windows update, new software, password change, device change, or VPN/client update.',
+        'Check uptime and whether a restart is pending.',
+        'Check CPU, memory, disk, and network usage in Task Manager.',
+        'Identify top resource-consuming processes.',
+        'Check available disk space.',
+        'Review startup apps and disable only approved non-essential items according to policy.',
+        'Check whether Windows updates are pending or recently failed.',
+        'Check for malware/security alerts or suspicious processes.',
+        'Ask the user to test with fewer browser tabs or extensions.',
+        'Review whether the bottleneck is local device performance or network/application access.',
+        'For local device issues, check disk health indicators, event logs, driver/update history, endpoint/security agent status, and thermal symptoms if tools are available.',
+        'For network-related slowness, compare local apps versus network apps, test DNS for affected internal resources, check VPN adapter IP/DNS/routes if remote, and compare wired/Wi-Fi/hotspot if possible.',
+        'Check whether multiple users or devices are affected.',
+        'Confirm whether the issue follows the user profile, device, network, or application.',
+        'Escalate with evidence if storage failure, malware, endpoint policy conflict, network latency, or server-side performance is suspected.',
+    ],
+}
+
+SLOW_COMPUTER_PERFORMANCE_SOLUTIONS = [
+    ('FIX_SLOW_PC_RESTART_CHECK','Restart Computer and Check Performance','A restart can clear stuck processes, apply pending updates, and reset temporary performance issues.','Restart the computer, allow startup to finish, and retest the same task.',0,'Escalate if slowness remains after restart and resource usage, errors, malware, or hardware symptoms appear.','low'),
+    ('FIX_SLOW_PC_STARTUP_BACKGROUND_LOAD','Reduce Startup and Background Load','Too many startup apps or background processes can slow the device.','Close unused apps, review startup items, and reduce approved non-essential background load.',0,'Escalate if managed startup policy, endpoint agent behavior, or business-critical apps require deeper review.','medium'),
+    ('FIX_SLOW_PC_STORAGE_UPDATES_SECURITY_WARNING','Address Storage, Updates, or Security Warning','Low disk space, pending updates, or security warnings can degrade performance.','Check storage, updates, and security warnings, then address each issue according to policy.',0,'Escalate to Security for malware/suspicious activity, or Endpoint/Desktop Support for failed updates or recurring low storage.','medium'),
+    ('FIX_SLOW_PC_HIGH_CPU_PROCESS','Identify High CPU Process','One process may be consuming excessive CPU and slowing the system.','Identify the top CPU process, determine whether it is known/safe, restart the app if appropriate, and escalate suspicious or recurring causes.',0,'Do not terminate security or system processes without approval; escalate unknown or suspicious processes.','medium'),
+    ('FIX_SLOW_PC_MEMORY_PRESSURE','Reduce Memory Pressure','Low available memory can cause freezing, paging, and slow application response.','Close memory-heavy apps and browser tabs, restart, and evaluate whether the device is under-resourced.',0,'Escalate if workload exceeds installed RAM or repeated memory pressure affects productivity.','medium'),
+    ('FIX_SLOW_PC_HIGH_DISK_LOW_STORAGE','Investigate High Disk Usage or Low Storage','Disk bottlenecks or low storage can make the computer appear frozen or slow.','Check disk usage, available storage, cleanup options, sync cache, update cleanup, and disk health indicators.',0,'Escalate if disk health warnings, recurring storage shortages, or storage hardware issues appear.','medium'),
+    ('FIX_SLOW_PC_BANDWIDTH_SYNC_ACTIVITY','Identify Bandwidth or Sync Activity','Cloud sync, backup, downloads, or video calls may consume network or system resources.','Identify network-heavy apps or sync activity and compare performance after pausing or completing approved tasks.',0,'Escalate if bandwidth symptoms affect multiple users, VPN, Wi-Fi, or network resources.','medium'),
+    ('FIX_SLOW_PC_APPLICATION_SPECIFIC','Troubleshoot Application-Specific Slowness','Slowness isolated to one application may be caused by app cache, update, profile, server, or database issue.','Check app version, cache/profile, recent changes, and whether other users/devices are affected.',0,'Escalate to Application/System team if multiple users are affected or server-side performance is suspected.','medium'),
+    ('FIX_SLOW_PC_NETWORK_VPN_PERFORMANCE','Isolate Network or VPN Performance Issue','The computer may seem slow because network, VPN, shared drive, DNS, or internal app access is slow.','Compare local apps to internal resources, check VPN adapter IP/DNS/routes, test DNS and latency with approved tools, and document affected scope.',1,'Escalate to Network/System team with VPN status, DNS results, latency/packet loss, affected resources, timestamps, and scope.','high'),
+    ('FIX_SLOW_PC_ENDPOINT_SECURITY_HEALTH_ESCALATE','Escalate Endpoint Health or Security Review','Performance symptoms may indicate malware, failing hardware, thermal issues, driver problems, or endpoint policy conflict.','Collect security alerts, suspicious process details, event/health signals, disk/thermal symptoms, and recent changes before escalation.',1,'Escalate to Security or Endpoint/Desktop Support when malware, failing hardware, thermal throttling, driver conflict, or endpoint policy issue is suspected.','high'),
+]
+
+SLOW_COMPUTER_PERFORMANCE_SOLUTION_STEPS = {
+    'FIX_SLOW_PC_RESTART_CHECK': {
+        'user': ['Save all work.','Restart the computer.','Sign back in and wait a few minutes for startup apps to finish loading.','Test the same task again.','Submit a ticket if the computer remains slow.'],
+        'technician': ['Check uptime and pending restart state.','Ask the user to restart if uptime is high or updates are pending.','Check CPU, memory, disk, and network usage in Task Manager.','Document whether restart resolved the issue.'],
+        'admin': ['Escalate if performance remains poor after restart and evidence points to hardware, malware, update, or wider infrastructure issues.'],
+    },
+    'FIX_SLOW_PC_STARTUP_BACKGROUND_LOAD': {
+        'user': ['Close applications you are not using.','Close unnecessary browser tabs.','Wait for cloud sync or backup to finish if it is running.','Restart the computer and test again.'],
+        'technician': ['Review startup apps and background processes.','Identify non-essential startup items according to company policy.','Disable or remove only approved non-essential startup items.','Check whether cloud sync, backup, or antivirus scan is consuming resources.','Retest performance after changes.'],
+        'admin': ['Escalate if managed startup policies, endpoint agents, or required business apps appear to be causing recurring performance issues.'],
+    },
+    'FIX_SLOW_PC_STORAGE_UPDATES_SECURITY_WARNING': {
+        'user': ['Take a screenshot of the warning.','Empty Recycle Bin/Trash if allowed.','Move large personal files to approved storage if appropriate.','Restart after updates complete.','Contact IT if a security warning appears.'],
+        'technician': ['Check available disk space.','Use approved cleanup tools.','Check pending or failed updates.','Review security alerts.','Escalate to Security if malware or suspicious activity is suspected.'],
+        'admin': ['Escalate to Endpoint/Desktop Support for failed update loops or recurring storage issues; escalate to Security for malware indicators.'],
+    },
+    'FIX_SLOW_PC_HIGH_CPU_PROCESS': {
+        'user': ['Close unused applications.','Restart the affected app if safe.','Report if the fan is loud or the computer freezes.'],
+        'technician': ['Use Task Manager or approved endpoint tools to identify the top CPU process.','Determine whether the process is a known app, system process, security tool, or unknown process.','Restart the application if safe.','Do not terminate security/system processes without approval.','Escalate if the process is suspicious or repeatedly causes high CPU.'],
+        'admin': ['Escalate to Security for suspicious processes or to Application/Endpoint teams for recurring high CPU from known business or system processes.'],
+    },
+    'FIX_SLOW_PC_MEMORY_PRESSURE': {
+        'user': ['Close unused applications and browser tabs.','Restart the computer.','Avoid opening many heavy applications at the same time.'],
+        'technician': ['Check memory usage and top memory-consuming apps.','Compare installed RAM with workload needs.','Check whether browser tabs/extensions are consuming memory.','Retest after closing unnecessary apps.','Escalate if the device is under-resourced for the role.'],
+        'admin': ['Escalate for hardware upgrade, replacement, or application review if the workload consistently exceeds available memory.'],
+    },
+    'FIX_SLOW_PC_HIGH_DISK_LOW_STORAGE': {
+        'user': ['Close unnecessary apps.','Delete only files you know are safe to remove.','Move approved files to company cloud or network storage.','Contact IT if storage remains low.'],
+        'technician': ['Check disk usage percentage and available free space.','Identify large folders or approved cleanup opportunities.','Check for Windows update cleanup, temp files, or sync cache.','Check disk health if tools are available.','Escalate if disk health warnings or recurring storage shortages appear.'],
+        'admin': ['Escalate to Endpoint/Desktop Support for disk health warnings, storage expansion, replacement, or recurring capacity issues.'],
+    },
+    'FIX_SLOW_PC_BANDWIDTH_SYNC_ACTIVITY': {
+        'user': ['Pause large downloads if allowed.','Let cloud sync finish if possible.','Close streaming or non-work network-heavy apps.','Test again on a stable network.'],
+        'technician': ['Check network usage in Task Manager or approved tools.','Identify cloud sync, backup, video call, or update activity.','Compare performance on wired, Wi-Fi, and VPN if relevant.','Document whether slowness is network-related or local-device-related.'],
+        'admin': ['Escalate if multiple users, VPN path, Wi-Fi segment, or business network resources show similar bandwidth symptoms.'],
+    },
+    'FIX_SLOW_PC_APPLICATION_SPECIFIC': {
+        'user': ['Close and reopen the application.','Try the same task again.','Restart the computer.','Report the exact task that is slow.'],
+        'technician': ['Confirm only one application is slow.','Check app version and recent updates.','Clear app cache or reset profile if supported.','Compare with another user/device if possible.','Escalate to Application/System team if multiple users are affected.'],
+        'admin': ['Escalate to Application/System team with app name/version, task affected, screenshots, timestamps, and whether other users are affected.'],
+    },
+    'FIX_SLOW_PC_NETWORK_VPN_PERFORMANCE': {
+        'user': ['Note whether slowness happens only on VPN or shared resources.','Try a public website and an internal resource.','Record which resources are slow.','Submit a ticket with screenshots and timing details.'],
+        'technician': ['Compare local apps versus internal/network resources.','Check VPN status, adapter IP, DNS, and routes if remote.','Test DNS resolution for affected internal resources.','Check latency or packet loss using approved tools.','Compare Wi-Fi, wired, and hotspot if possible.','Escalate to Network/System team with results and affected scope.'],
+        'admin': ['Escalate to Network/System team with VPN status, adapter IP/DNS/routes, DNS results, latency/packet loss, affected resources, timestamps, and scope.'],
+    },
+    'FIX_SLOW_PC_ENDPOINT_SECURITY_HEALTH_ESCALATE': {
+        'user': ['Stop using the device for sensitive work if instructed.','Do not install cleanup tools from the internet.','Report pop-ups, security alerts, unusual fan noise, overheating, or repeated freezes.','Wait for IT instructions.'],
+        'technician': ['Check for security alerts, suspicious processes, or unknown startup items.','Review event logs or endpoint health signals if available.','Check disk health, thermal symptoms, and recent driver/update changes.','Do not disable security tools without approval.','Escalate to Security or Endpoint/Desktop Support with evidence.'],
+        'admin': ['Escalate to Security or Endpoint/Desktop Support with process names, screenshots, event/health signals, disk/thermal symptoms, recent changes, and business impact.'],
+    },
+}
+
+SLOW_COMPUTER_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_SLOW_PC_USER',None,'category','Slow Computer Performance','Computer is slow, freezes, starts slowly, opens apps slowly, or responds slowly during work.',None,None,None,None,1),
+    ('Q_SLOW_PC_RESTARTED_USER','ROOT_SLOW_PC_USER','question','Check Recent Restart',None,'Have you restarted the computer recently?',None,None,None,1),
+    ('S_SLOW_PC_RESTART_USER','Q_SLOW_PC_RESTARTED_USER','solution','Restart Computer and Check Performance',None,None,'Have you restarted the computer recently?','No','FIX_SLOW_PC_RESTART_CHECK',1),
+    ('Q_SLOW_PC_SCOPE_USER','Q_SLOW_PC_RESTARTED_USER','question','Identify What Is Slow',None,'Is everything slow, or only one application/browser/site?', 'Have you restarted the computer recently?','Yes',None,2),
+    ('Q_SLOW_PC_WARNING_USER','Q_SLOW_PC_SCOPE_USER','question','Check Warnings',None,'Do you see low storage, update, security, or error warnings?', 'Is everything slow, or only one application/browser/site?','Everything is slow',None,1),
+    ('S_SLOW_PC_WARNINGS_USER','Q_SLOW_PC_WARNING_USER','solution','Address Storage, Updates, or Security Warning',None,None,'Do you see low storage, update, security, or error warnings?','Yes','FIX_SLOW_PC_STORAGE_UPDATES_SECURITY_WARNING',1),
+    ('S_SLOW_PC_BACKGROUND_USER','Q_SLOW_PC_WARNING_USER','solution','Reduce Startup and Background Load',None,None,'Do you see low storage, update, security, or error warnings?','No','FIX_SLOW_PC_STARTUP_BACKGROUND_LOAD',2),
+    ('S_SLOW_PC_APP_USER','Q_SLOW_PC_SCOPE_USER','solution','Troubleshoot Slow Application',None,None,'Is everything slow, or only one application/browser/site?','One application is slow','FIX_SLOW_PC_APPLICATION_SPECIFIC',2),
+    ('S_SLOW_PC_BROWSER_USER','Q_SLOW_PC_SCOPE_USER','solution','Troubleshoot Browser or Website Slowness',None,None,'Is everything slow, or only one application/browser/site?','Browser/websites are slow','FIX_SLOW_PC_APPLICATION_SPECIFIC',3),
+    ('S_SLOW_PC_NETWORK_USER','Q_SLOW_PC_SCOPE_USER','solution','Report Network or VPN Resource Slowness',None,None,'Is everything slow, or only one application/browser/site?','Shared drive/internal resources are slow','FIX_SLOW_PC_NETWORK_VPN_PERFORMANCE',4),
+]
+
+SLOW_COMPUTER_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_SLOW_PC_TECH',None,'category','Slow Computer Performance - IT Support Specialist Diagnostic','IT Support Specialist diagnostic tree for isolating endpoint, application, resource usage, security, and network/VPN causes.',None,None,None,None,1),
+    ('Q_SLOW_PC_SCOPE_TECH','ROOT_SLOW_PC_TECH','question','Determine Scope of Slowness',None,'Is the issue local to the whole device or only one app/network resource?',None,None,None,1),
+    ('S_SLOW_PC_APP_TECH','Q_SLOW_PC_SCOPE_TECH','solution','Troubleshoot Application-Specific Slowness',None,None,'Is the issue local to the whole device or only one app/network resource?','One application','FIX_SLOW_PC_APPLICATION_SPECIFIC',1),
+    ('S_SLOW_PC_NETWORK_TECH','Q_SLOW_PC_SCOPE_TECH','solution','Isolate Network or VPN Performance Issue',None,None,'Is the issue local to the whole device or only one app/network resource?','Network/internal resource','FIX_SLOW_PC_NETWORK_VPN_PERFORMANCE',2),
+    ('Q_SLOW_PC_RESOURCE_TECH','Q_SLOW_PC_SCOPE_TECH','question','Identify Resource Bottleneck',None,'Which resource is unusually high?', 'Is the issue local to the whole device or only one app/network resource?','Local device',None,3),
+    ('S_SLOW_PC_CPU_TECH','Q_SLOW_PC_RESOURCE_TECH','solution','Identify High CPU Process',None,None,'Which resource is unusually high?','CPU','FIX_SLOW_PC_HIGH_CPU_PROCESS',1),
+    ('S_SLOW_PC_MEMORY_TECH','Q_SLOW_PC_RESOURCE_TECH','solution','Reduce Memory Pressure',None,None,'Which resource is unusually high?','Memory','FIX_SLOW_PC_MEMORY_PRESSURE',2),
+    ('S_SLOW_PC_DISK_TECH','Q_SLOW_PC_RESOURCE_TECH','solution','Investigate High Disk Usage or Low Storage',None,None,'Which resource is unusually high?','Disk','FIX_SLOW_PC_HIGH_DISK_LOW_STORAGE',3),
+    ('S_SLOW_PC_BANDWIDTH_TECH','Q_SLOW_PC_RESOURCE_TECH','solution','Identify Bandwidth or Sync Activity',None,None,'Which resource is unusually high?','Network','FIX_SLOW_PC_BANDWIDTH_SYNC_ACTIVITY',4),
+    ('Q_SLOW_PC_HEALTH_TECH','Q_SLOW_PC_RESOURCE_TECH','question','Check Endpoint Health Indicators',None,'Are malware, thermal, driver, or hardware symptoms present?', 'Which resource is unusually high?','No obvious spike',None,5),
+    ('S_SLOW_PC_ENDPOINT_HEALTH_TECH','Q_SLOW_PC_HEALTH_TECH','solution','Escalate Endpoint Health or Security Review',None,None,'Are malware, thermal, driver, or hardware symptoms present?','Yes','FIX_SLOW_PC_ENDPOINT_SECURITY_HEALTH_ESCALATE',1),
+    ('S_SLOW_PC_OPTIMIZE_TECH','Q_SLOW_PC_HEALTH_TECH','solution','Optimize Startup, Updates, and General Performance',None,None,'Are malware, thermal, driver, or hardware symptoms present?','No','FIX_SLOW_PC_STARTUP_BACKGROUND_LOAD',2),
+]
+
+def seed_slow_computer_performance_content(cursor):
+    """Seed Slow Computer Performance KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = SLOW_COMPUTER_PERFORMANCE_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, SLOW_COMPUTER_PERFORMANCE_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, SLOW_COMPUTER_PERFORMANCE_KB['title'], SLOW_COMPUTER_PERFORMANCE_KB['summary'], SLOW_COMPUTER_PERFORMANCE_KB['difficulty'], SLOW_COMPUTER_PERFORMANCE_KB['estimated_time'], SLOW_COMPUTER_PERFORMANCE_KB['escalation_required'], SLOW_COMPUTER_PERFORMANCE_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, SLOW_COMPUTER_PERFORMANCE_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, SLOW_COMPUTER_PERFORMANCE_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, SLOW_COMPUTER_PERFORMANCE_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, SLOW_COMPUTER_PERFORMANCE_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, SLOW_COMPUTER_PERFORMANCE_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, SLOW_COMPUTER_PERFORMANCE_SOLUTIONS)
+    for solution_code, audience_steps in SLOW_COMPUTER_PERFORMANCE_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_slow_computer_performance_tree(cursor, 'user', 'SLOW_COMPUTER_PERFORMANCE_USER', 'Slow Computer Performance - User Diagnostic', 'User-friendly diagnostic tree for restart, warning, application, browser, and network-resource slowness.', SLOW_COMPUTER_USER_DIAGNOSTIC_NODES)
+    seed_slow_computer_performance_tree(cursor, 'technician', 'SLOW_COMPUTER_PERFORMANCE_TECHNICIAN', 'Slow Computer Performance - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for local endpoint, application, network/VPN, resource bottleneck, and security/health isolation.', SLOW_COMPUTER_TECH_DIAGNOSTIC_NODES)
+
+def seed_slow_computer_performance_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'SLOW_COMPUTER_PERFORMANCE')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'SLOW_COMPUTER_PERFORMANCE', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
 def initialize_database():
     """Create SQLite tables if they do not already exist."""
     connection = get_db_connection()
@@ -3806,6 +4056,7 @@ def initialize_database():
     seed_vpn_connection_failure_content(cursor)
     seed_shared_drive_access_content(cursor)
     seed_remote_desktop_connection_content(cursor)
+    seed_slow_computer_performance_content(cursor)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
