@@ -4038,6 +4038,349 @@ def seed_slow_computer_performance_tree(cursor, audience, tree_code, title, desc
                 updated_at=CURRENT_TIMESTAMP
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
+
+# -----------------------------
+# EXISTING ISSUE ROLE ALIGNMENT PATCH
+# -----------------------------
+# This patch keeps the current two working audiences clear:
+# - regular users see safe self-service steps
+# - support-side users see IT Support Specialist steps suitable for Tier 1 / junior Tier 2 work
+# The stored audience value "admin" is retained only for escalation notes / Tier 2-3 handoff.
+EXISTING_ISSUE_ALIGNMENT_KB_IT_STEPS = {
+    'PRINTER_FAILURE': [
+        'Tier 1: Confirm printer name, model, location, connection type, affected user/device, and exact error message.',
+        'Tier 1: Determine whether the issue affects one user, one workstation, one printer, or multiple users.',
+        'Tier 1: Check printer power, display panel, paper/toner/tray/door warnings, and visible hardware errors.',
+        'Tier 1: Confirm the user selected the correct printer and test printing from a simple application.',
+        'Tier 1: Check the local print queue and clear stuck jobs when appropriate.',
+        'Tier 1: Restart the printer and, when appropriate, restart the Print Spooler service.',
+        'Tier 1: For USB printers, test cable, USB port, detection in Windows, and a known-good cable if available.',
+        'Tier 2 / Network Support: For network printers, verify printer IP address, subnet mask, gateway, and network status page.',
+        'Tier 2 / Network Support: Ping or otherwise test approved reachability from the user device and/or print server.',
+        'Tier 2 / Network Support: Compare configured printer port/IP with the printer current IP address.',
+        'Tier 2 / Network Support: Check whether printer hostname/DNS resolves to the expected IP if hostname-based printing is used.',
+        'Tier 2 / Network Support: Check for DHCP reservation, static IP conflict, VLAN/subnet mismatch, or wireless signal issues when evidence points there.',
+        'Tier 2 / Network Support: Check print server queue, printer port, driver, spooler, and Group Policy deployment for shared printers.',
+        'Document root cause, test page result, affected scope, printer IP/name/location, and escalation evidence.',
+    ],
+    'PASSWORD_RESET_REQUEST': [
+        'Tier 1: Verify the user identity according to support policy before discussing or changing account credentials.',
+        'Tier 1: Confirm the exact username/email address and the system the user is trying to access.',
+        'Tier 1: Confirm whether the user forgot the password, the password expired, or self-service reset failed.',
+        'Tier 1: Check basic causes such as wrong username, Caps Lock, keyboard layout, saved browser password, or stale session.',
+        'Tier 1: Guide the user to the approved password reset portal when self-service reset is allowed.',
+        'Tier 1: Check whether recovery email, recovery phone, or MFA prompt is available to complete reset.',
+        'Tier 1: Confirm account state when available: active/disabled, locked/unlocked, password expired, and must-change-password flag.',
+        'Tier 1: After reset, ask the user to update saved passwords on mobile email, VPN, browser password manager, mapped drives, and remote desktop.',
+        'Tier 2 / Identity Support: Review sign-in or identity logs when reset succeeds but sign-in still fails.',
+        'Tier 2 / Identity Support: Identify whether failure affects one application, SSO, VPN, email, or all services.',
+        'Escalate to Identity/Access Management if sync, writeback, conditional access, disabled account, group/license, or MFA recovery issues are suspected.',
+        'Escalate to Security if reset request, failed attempts, or MFA prompts suggest possible compromise.',
+    ],
+    'ACCOUNT_LOCKED': [
+        'Tier 1: Verify the user identity before unlocking or changing account settings.',
+        'Tier 1: Confirm the exact lockout/error message and affected system: Windows, email, VPN, SSO, app, or remote desktop.',
+        'Tier 1: Check whether the account is actually locked or whether the issue is password, MFA, disabled account, or access denied.',
+        'Tier 1: Ask whether the user recently changed or reset the password.',
+        'Tier 1: Ask about old saved credentials on mobile email, VPN client, browser password manager, mapped drives, remote desktop, Wi-Fi, and old devices.',
+        'Tier 1: Stop repeated retries and unlock only after verification and basic review.',
+        'Tier 2 / Support: Review failed sign-in source when available: timestamp, device, app/client, IP/location, and failure reason.',
+        'Tier 2 / Support: Correlate recurring lockout timestamps with user devices, VPN, email apps, RDP, mapped drives, scheduled tasks, or cached Windows credentials.',
+        'Tier 2 / Support: Clear or update cached credentials when the source is a known user device/app.',
+        'Tier 2 / Support: Determine whether lockout is caused by stale credentials, unknown source, password spray, brute force, or policy behavior.',
+        'Escalate to Security for suspicious locations, impossible travel, unexpected MFA prompts, many affected accounts, or password-spray indicators.',
+        'Escalate to Identity/Access Management when recurring lockout source cannot be identified or policy/log review is required.',
+    ],
+    'MULTI_FACTOR_AUTHENTICATION_ISSUE': [
+        'Tier 1: Verify user identity before changing MFA methods or recovery information.',
+        'Tier 1: Confirm the affected sign-in target: email, VPN, SSO portal, password reset portal, or business application.',
+        'Tier 1: Confirm whether the user receives a push prompt, SMS, phone call, code, or no prompt at all.',
+        'Tier 1: Check phone signal, internet connectivity, app notification permissions, and whether the authenticator app is opened manually.',
+        'Tier 1: Ask whether the user changed phones, changed phone numbers, lost the device, or reinstalled the authenticator app.',
+        'Tier 1: For code failures, confirm correct account selection and automatic date/time on the phone.',
+        'Tier 2 / Identity Support: Review MFA logs for sent prompts, timeouts, denials, method used, location, IP, and device when available.',
+        'Tier 2 / Identity Support: Guide re-registration only after identity verification and according to policy.',
+        'Tier 2 / Identity Support: Check conditional access or device compliance result if sign-in is blocked despite valid MFA.',
+        'Escalate to Security for unexpected MFA prompts, repeated denied prompts, unfamiliar location/device, MFA fatigue indicators, or suspected compromise.',
+        'Escalate to Identity/Access Management or Endpoint when MFA policy, conditional access, device compliance, or enrollment blocks sign-in.',
+    ],
+}
+
+EXISTING_ISSUE_ALIGNMENT_SOLUTION_STEPS = {
+    # Printer Failure
+    'FIX_PRINTER_NETWORK_CONNECTION': {
+        'technician': [
+            'Tier 1: Confirm printer name, location, model, connection type, and whether one or multiple users are affected.',
+            'Tier 1: Print or view the printer network configuration page if available.',
+            'Tier 2 / Network Support: Verify printer IP address, subnet mask, default gateway, and network status.',
+            'Tier 2 / Network Support: Ping or otherwise test approved reachability from the affected client and, if relevant, the print server.',
+            'Tier 2 / Network Support: Compare the printer current IP with the configured printer port/IP on the workstation or print server.',
+            'Tier 2 / Network Support: Check for DHCP reservation/static IP conflict, VLAN/subnet mismatch, or Wi-Fi/Ethernet link issue if reachability fails.',
+        ],
+        'admin': [
+            'Escalation notes: send printer name, location, current IP, configured port/IP, ping/reachability result, affected scope, and screenshots to Network or Endpoint/Server team.',
+        ],
+    },
+    'FIX_PRINTER_OFFLINE_REACHABLE': {
+        'technician': [
+            'Tier 1: Confirm the printer is reachable but marked Offline locally or on the print server.',
+            'Tier 1: Disable Use Printer Offline if enabled and clear stuck local jobs.',
+            'Tier 1: Restart the Print Spooler service when appropriate.',
+            'Tier 2 / Support: Validate printer port/IP and confirm the port still matches the printer current network address.',
+            'Tier 2 / Support: Remove and re-add the printer or refresh the print server connection if offline state persists.',
+        ],
+        'admin': [
+            'Escalation notes: investigate print server, stale printer port, DNS/IP change, driver, or recurring offline state if the issue repeats or affects multiple users.',
+        ],
+    },
+    'FIX_PRINTER_UNREACHABLE': {
+        'technician': [
+            'Tier 1: Confirm printer power, panel network status, cable/Wi-Fi status, and whether nearby users can print.',
+            'Tier 2 / Network Support: Ping or otherwise test approved reachability to the printer IP from the client and print server.',
+            'Tier 2 / Network Support: Compare the configured printer port/IP with the current printer IP.',
+            'Tier 2 / Network Support: Check signs of IP conflict, missing DHCP lease/reservation, wrong VLAN/subnet, switch port issue, or weak Wi-Fi signal.',
+            'Document printer name, IP, MAC if available, location, affected users, and test results.',
+        ],
+        'admin': [
+            'Escalation notes: escalate to Network Team when multiple devices cannot reach the printer, an IP conflict/VLAN/DHCP/ACL issue is suspected, or switch/Wi-Fi troubleshooting is required.',
+        ],
+    },
+    'FIX_PRINT_SERVER_OR_PERMISSION': {
+        'technician': [
+            'Tier 1: Check whether other users can print to the same shared printer.',
+            'Tier 1: Confirm whether the user sees access denied, printer missing, or jobs stuck on the shared queue.',
+            'Tier 2 / Support: Verify printer permissions, AD/security group membership, and print server queue status if accessible.',
+            'Tier 2 / Support: Check print server printer port, driver, spooler status, and Group Policy printer deployment evidence.',
+            'Document affected users, queue state, printer name, server/share path, group membership, and deployment method.',
+        ],
+        'admin': [
+            'Escalation notes: escalate to Server/Endpoint for print server, driver, spooler, or GPO deployment issues; escalate to Access Management for permission/security group issues.',
+        ],
+    },
+    # Password Reset Request
+    'FIX_USE_PASSWORD_RESET_PORTAL': {
+        'technician': [
+            'Tier 1: Verify the user is using the approved password reset portal and correct username/email.',
+            'Tier 1: Confirm the user can access the registered recovery email, phone, or MFA method.',
+            'Tier 1: Have the user retry in private/incognito mode to avoid stale browser sessions.',
+            'Tier 2 / Identity Support: Check sign-in or reset logs when the portal fails or reset completes but sign-in still fails.',
+            'Document portal used, error message, recovery method status, and timestamp.',
+        ],
+        'admin': [
+            'Escalation notes: escalate to Identity/Access Management if self-service reset is unavailable, recovery methods are outdated, or reset/writeback/policy errors are suspected.',
+        ],
+    },
+    'FIX_RESET_EXPIRED_PASSWORD': {
+        'technician': [
+            'Tier 1: Confirm password expiration or must-change-password state.',
+            'Tier 1: Guide the user through the normal expired-password change flow when available.',
+            'Tier 1: Confirm successful sign-in after password change.',
+            'Tier 1: Ask the user to update saved passwords on mobile email, VPN, browser password manager, mapped drives, and remote desktop.',
+            'Tier 2 / Support: If lockouts continue, look for stale credentials repeatedly trying the old password.',
+        ],
+        'admin': [
+            'Escalation notes: escalate if password policy, sync, or application-specific authentication prevents completion after normal reset.',
+        ],
+    },
+    'FIX_ADMIN_PASSWORD_RESET': {
+        'technician': [
+            'Tier 1: Verify identity according to support policy before resetting the password.',
+            'Tier 1: Reset the password only through the approved admin console or process.',
+            'Tier 1: Require password change at next sign-in when policy allows.',
+            'Tier 1: Avoid sending temporary passwords through insecure channels.',
+            'Tier 1: Confirm the user can sign in and update saved credentials after reset.',
+            'Document identity verification, reset time, affected system, and successful sign-in test.',
+        ],
+        'admin': [
+            'Escalation notes: escalate exceptions, high-risk resets, disabled accounts, or suspected compromise to Identity/Access Management or Security.',
+        ],
+    },
+    'FIX_ESCALATE_IDENTITY_SYNC_POLICY': {
+        'technician': [
+            'Tier 2 / Identity Support: Confirm password reset succeeded in the identity provider.',
+            'Tier 2 / Identity Support: Determine whether sign-in fails for one app, SSO, VPN, email, or all services.',
+            'Tier 2 / Identity Support: Collect timestamps, error messages, sign-in result, user account state, and affected application.',
+            'Tier 2 / Identity Support: Check visible evidence for group/license, conditional access, password writeback, or sync-related failure when available.',
+            'Prepare escalation notes with all evidence gathered.',
+        ],
+        'admin': [
+            'Escalation notes: route to Identity/Access Management for sync, writeback, conditional access, licensing/group membership, or app identity integration issues.',
+        ],
+    },
+    # Account Locked
+    'FIX_UPDATE_SAVED_PASSWORDS_AFTER_CHANGE': {
+        'technician': [
+            'Tier 1: Ask which devices and apps store company credentials: phone, tablet, email, VPN, browser, mapped drives, RDP, and old laptops.',
+            'Tier 1: Help the user update or remove old saved passwords from common locations such as browser password manager, VPN client, email profile, or Credential Manager.',
+            'Tier 2 / Support: Review failed sign-in source hints if available to identify the app/client/device causing lockout.',
+            'Unlock the account only after the likely stale credential source is corrected.',
+            'Document the source found, credentials cleaned, and whether lockout recurred.',
+        ],
+        'admin': [
+            'Escalation notes: escalate recurring lockouts if stale credential source is not obvious or logs require Identity team review.',
+        ],
+    },
+    'FIX_FIND_OLD_CREDENTIAL_SOURCE': {
+        'technician': [
+            'Tier 1: Ask the user to identify all devices and apps that may still use the old password.',
+            'Tier 2 / Support: Compare lockout timestamps with device activity and failed sign-in logs where available.',
+            'Tier 2 / Support: Check mobile email, VPN, mapped drives, RDP, scheduled tasks, cached Windows credentials, and old devices.',
+            'Tier 2 / Support: Clear or update saved credentials from the suspected source and monitor for recurrence.',
+            'Document source workstation/app/IP/client if identified.',
+        ],
+        'admin': [
+            'Escalation notes: escalate to Identity/Access Management if the lockout source cannot be identified with frontline tools.',
+        ],
+    },
+    'FIX_UNLOCK_ACCOUNT_MONITOR': {
+        'technician': [
+            'Tier 1: Verify user identity before unlock.',
+            'Tier 1: Confirm failed attempts appear legitimate and not obviously suspicious.',
+            'Tier 1: Unlock the account and ask the user to sign in once using the correct current password.',
+            'Tier 1: Ask the user to stop repeated retries and report if the account locks again.',
+            'Tier 2 / Support: If lockout recurs, move to stale credential source investigation.',
+        ],
+        'admin': [
+            'Escalation notes: escalate if lockout recurs quickly, source is unknown, or sign-in logs suggest attack/compromise.',
+        ],
+    },
+    'FIX_ESCALATE_POSSIBLE_ACCOUNT_ATTACK': {
+        'technician': [
+            'Tier 1: Instruct the user not to approve unexpected MFA prompts and to stop repeated sign-in attempts.',
+            'Tier 2 / Security Support: Capture failed sign-in timestamps, source IPs/locations, user agent/client, MFA events, and whether other accounts are affected.',
+            'Tier 2 / Security Support: Do not repeatedly unlock until suspicious activity is reviewed.',
+            'Escalate to Security with evidence and follow incident response guidance.',
+        ],
+        'admin': [
+            'Escalation notes: treat as High priority for unfamiliar location, password spray indicators, repeated prompts, or suspected compromise.',
+        ],
+    },
+    'FIX_INVESTIGATE_RECURRING_LOCKOUT_SOURCE': {
+        'technician': [
+            'Tier 1: Ask when the account locks again and what device/app the user was using.',
+            'Tier 2 / Support: Compare lockout timestamps to user device, VPN, email, RDP, mapped drive, and application activity.',
+            'Tier 2 / Support: Review domain controller, identity provider, VPN, email, and application logs if available to frontline support.',
+            'Tier 2 / Support: Remove or update stored credentials from the suspected source.',
+            'Escalate if the source remains unknown after common credential locations are checked.',
+        ],
+        'admin': [
+            'Escalation notes: route unresolved recurring lockouts to Identity/Access Management; route suspicious patterns to Security.',
+        ],
+    },
+    # MFA
+    'FIX_REGISTER_MFA_METHOD': {
+        'technician': [
+            'Tier 1: Verify the user identity before guiding MFA enrollment.',
+            'Tier 1: Confirm the user is eligible and required to use MFA.',
+            'Tier 1: Guide the user through the official company MFA registration page.',
+            'Tier 1: Confirm at least one primary and one backup method if policy allows.',
+            'Tier 1: Complete a test sign-in and document completion in the ticket.',
+        ],
+        'admin': [
+            'Escalation notes: escalate if enrollment policy, conditional access, missing license/group, or registration page access blocks enrollment.',
+        ],
+    },
+    'FIX_MFA_RESET_REREGISTRATION': {
+        'technician': [
+            'Tier 1: Verify identity according to support policy before resetting MFA methods.',
+            'Tier 1: Confirm whether the user changed phones, changed numbers, lost the device, or reinstalled the authenticator app.',
+            'Tier 1: Review existing registered MFA methods and whether any valid method remains available.',
+            'Tier 2 / Identity Support: Reset MFA or require re-registration according to approved policy.',
+            'Tier 1: Confirm successful re-registration and test sign-in.',
+        ],
+        'admin': [
+            'Escalation notes: require stronger verification for high-risk MFA resets; escalate suspicious reset requests to Security or Identity/Access Management.',
+        ],
+    },
+    'FIX_MFA_DELIVERY_BASIC_CHECKS': {
+        'technician': [
+            'Tier 1: Confirm whether the MFA challenge is being sent.',
+            'Tier 1: Ask the user to open the authenticator app manually and check notification permissions.',
+            'Tier 1: Confirm phone internet/cellular signal and that the prompt has not expired.',
+            'Tier 2 / Identity Support: Check MFA logs for sent prompts, timeouts, denied prompts, method used, IP/location, and device if available.',
+            'Escalate if prompts are sent but not delivered after basic checks.',
+        ],
+        'admin': [
+            'Escalation notes: escalate if MFA service degradation, policy issue, or multi-user MFA delivery failure is suspected.',
+        ],
+    },
+    'FIX_MFA_CODE_TIME_SYNC': {
+        'technician': [
+            'Tier 1: Confirm the user selected the correct authenticator account.',
+            'Tier 1: Have the user wait for the next code and enter it before expiration.',
+            'Tier 1: Confirm the phone date/time is set automatically.',
+            'Tier 2 / Identity Support: Check failed MFA reason in logs if codes continue failing.',
+            'Re-register the authenticator app if policy allows and code failures persist.',
+        ],
+        'admin': [
+            'Escalation notes: escalate repeated code failures when logs suggest identity-provider, policy, or device compliance issues.',
+        ],
+    },
+    'FIX_REPORT_SUSPICIOUS_MFA_PROMPT': {
+        'technician': [
+            'Tier 1: Tell the user to deny unexpected prompts and not approve sign-ins they did not initiate.',
+            'Tier 2 / Security Support: Capture prompt time, source IP/location, device/user agent, MFA result, and whether prompts repeated.',
+            'Tier 2 / Security Support: Check whether other accounts show similar suspicious MFA activity if visible.',
+            'Do not simply reset MFA without reviewing account risk.',
+            'Escalate to Security and follow incident response guidance.',
+        ],
+        'admin': [
+            'Escalation notes: treat unexpected MFA prompts, MFA fatigue indicators, or unfamiliar sign-ins as security-sensitive.',
+        ],
+    },
+}
+
+
+def _replace_kb_it_steps_for_problem(cursor, problem_code, steps):
+    cursor.execute(
+        """
+        SELECT ka.kb_article_id
+        FROM kb_article ka
+        JOIN problem p ON p.problem_id = ka.problem_id
+        WHERE p.problem_code = ?
+        """,
+        (problem_code,),
+    )
+    row = cursor.fetchone()
+    if not row:
+        return
+    kb_id = row['kb_article_id']
+    cursor.execute('DELETE FROM kb_article_it_step WHERE kb_article_id = ?', (kb_id,))
+    cursor.executemany(
+        'INSERT INTO kb_article_it_step (kb_article_id, step_text, sort_order) VALUES (?, ?, ?)',
+        [(kb_id, step, index) for index, step in enumerate(steps, start=1)],
+    )
+
+
+def _replace_solution_audience_steps(cursor, solution_code, audience, steps):
+    solution_id = get_solution_id_by_code(cursor, solution_code)
+    if not solution_id:
+        return
+    cursor.execute(
+        'DELETE FROM solution_step WHERE solution_id = ? AND audience = ?',
+        (solution_id, audience),
+    )
+    cursor.executemany(
+        'INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)',
+        [(solution_id, audience, step, index) for index, step in enumerate(steps, start=1)],
+    )
+
+
+def seed_existing_issue_role_alignment(cursor):
+    """Align early polished issues with the final portfolio role model.
+
+    Regular users keep safe self-service steps. Support-side users see
+    IT Support Specialist steps suitable for Tier 1 / junior Tier 2 work.
+    The stored 'admin' audience is used as escalation notes / Tier 2-3 handoff,
+    not as a separate company-admin troubleshooting role.
+    """
+    for problem_code, steps in EXISTING_ISSUE_ALIGNMENT_KB_IT_STEPS.items():
+        _replace_kb_it_steps_for_problem(cursor, problem_code, steps)
+
+    for solution_code, audience_map in EXISTING_ISSUE_ALIGNMENT_SOLUTION_STEPS.items():
+        for audience, steps in audience_map.items():
+            _replace_solution_audience_steps(cursor, solution_code, audience, steps)
+
 def initialize_database():
     """Create SQLite tables if they do not already exist."""
     connection = get_db_connection()
@@ -4057,6 +4400,7 @@ def initialize_database():
     seed_shared_drive_access_content(cursor)
     seed_remote_desktop_connection_content(cursor)
     seed_slow_computer_performance_content(cursor)
+    seed_existing_issue_role_alignment(cursor)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
