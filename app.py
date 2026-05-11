@@ -571,6 +571,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Operating System Update Issue": "OPERATING_SYSTEM_UPDATE_ISSUE",
     "Device Running Out of Storage": "DEVICE_RUNNING_OUT_OF_STORAGE",
     "Phishing Email Reported": "PHISHING_EMAIL_REPORTED",
+    "Malware or Virus Suspected": "MALWARE_OR_VIRUS_SUSPECTED",
 }
 
 
@@ -584,10 +585,10 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
-    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, and Device Running Out of Storage. Other sample issues are hidden until they "
+    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, Device Running Out of Storage, Phishing Email Reported, and Malware or Virus Suspected. Other sample issues are hidden until they "
     "are expanded with detailed symptoms, causes, user steps, and technician steps."
 )
 
@@ -5357,6 +5358,253 @@ def seed_phishing_email_tree(cursor, audience, tree_code, title, description, no
                 updated_at=CURRENT_TIMESTAMP
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
+
+# -----------------------------
+# MALWARE OR VIRUS SUSPECTED CONTENT
+# -----------------------------
+MALWARE_PROBLEM = (
+    'MALWARE_OR_VIRUS_SUSPECTED',
+    'Malware or Virus Suspected',
+    'Security',
+    'High',
+    'User suspects the device may be infected because of endpoint alerts, pop-ups, unusual behavior, suspicious downloads, ransomware messages, or activity after a link, attachment, or file download.',
+)
+
+MALWARE_KB = {
+    'title': 'Malware or Virus Suspected',
+    'summary': 'Use this guide when a computer shows antivirus alerts, suspicious pop-ups, browser redirects, unknown software, strange behavior, ransomware messages, or unusual activity after clicking a link, opening an attachment, or downloading a file.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-30 minutes',
+    'escalation_required': 1,
+    'escalation_notes': 'Escalate immediately if ransomware is suspected, endpoint protection reports active malware, credentials were entered, MFA was approved unexpectedly, multiple devices are affected, or sensitive data may be exposed.',
+    'tags': ['malware', 'virus', 'ransomware', 'endpoint security', 'antivirus alert', 'suspicious pop-up', 'browser hijack', 'unwanted software', 'phishing', 'security incident'],
+    'symptoms': [
+        'Endpoint protection or antivirus shows a malware, virus, or suspicious activity alert.',
+        'User sees repeated pop-ups, fake security warnings, browser redirects, or changed homepage/search engine.',
+        'Computer becomes unusually slow, apps open or close unexpectedly, or unexpected reboots occur.',
+        'User recently clicked a suspicious link, opened an attachment, downloaded software, installed an extension, or used a USB device.',
+        'Files are missing, renamed, encrypted, or a ransom message appears.',
+        'Unknown applications, browser extensions, startup items, or remote access tools appear on the device.',
+        'User entered credentials or approved MFA after suspicious activity, creating account compromise risk.',
+    ],
+    'causes': [
+        'Common: phishing link, malicious attachment, untrusted download, browser hijacker, fake security warning, unwanted software, outdated browser/app/OS, suspicious USB device, endpoint protection detection, or user approval of a suspicious download or macro.',
+        'Advanced: compromised account delivering malware, drive-by download, malicious script or PowerShell execution, unauthorized remote access tool, credential-stealing malware, ransomware, command-and-control traffic, persistence through startup/service/scheduled task, disabled security tool, false positive, or lateral movement attempt.',
+    ],
+    'user_steps': [
+        'Stop interacting with suspicious pop-ups, files, links, or warning messages.',
+        'Do not call phone numbers shown in pop-up security warnings.',
+        'Do not install cleanup tools from the internet.',
+        'Do not restore quarantined files or click Allow on security alerts.',
+        'Disconnect from VPN and stop accessing sensitive company systems if instructed by IT.',
+        'Leave the computer powered on unless IT or Security tells you otherwise.',
+        'Take a screenshot or photo of the warning if safe.',
+        'Tell IT what happened before the issue started, such as a clicked link, opened attachment, downloaded software, USB device, or MFA prompt.',
+        'If you entered a password or approved MFA, report that immediately.',
+        'Do not delete files or clear browser history before IT reviews if malware is suspected.',
+    ],
+    'it_steps': [
+        'Tier 1: Instruct the user not to click, download, call, pay, approve MFA, restore quarantined files, or interact further with suspicious prompts.',
+        'Tier 1: Confirm user, device name, location, network state, VPN status, and exact symptom.',
+        'Tier 1: Ask what action occurred before the alert: clicked link, opened attachment, downloaded file, installed software, plugged in USB, entered credentials, or approved MFA.',
+        'Tier 1: Ask whether endpoint protection displayed an alert and collect the detection name, file path, and action taken if visible.',
+        'Tier 1: Capture screenshots/photos, timestamps, file names, sender/URL if related to email, and user actions.',
+        'Tier 1: Determine whether the device is currently connected to VPN or sensitive systems and follow company isolation policy.',
+        'Tier 1: Check whether the issue is one device, multiple devices, or related to a known phishing report.',
+        'Tier 1: If credentials were entered or MFA was approved, route to Identity/Security response immediately.',
+        'Tier 1: Escalate promptly if ransomware, credential theft, endpoint alert, unknown remote access, or suspicious network activity is suspected.',
+        'Tier 2 / Security-aware support: Check endpoint protection status, alert details, detection name, remediation action, and security-agent health if tools are available.',
+        'Tier 2 / Security-aware support: Confirm whether the detection was blocked, quarantined, allowed, remediated, or still active.',
+        'Tier 2 / Security-aware support: Run an approved full scan or offline scan only according to company policy.',
+        'Tier 2 / Security-aware support: Check for suspicious installed applications, browser extensions, startup items, scheduled tasks, or unauthorized remote access tools.',
+        'Tier 2 / Security-aware support: Review recent downloads and user-reported file names without opening suspicious files.',
+        'Tier 2 / Security-aware support: Check event/security logs and suspicious sign-in or MFA activity when applicable.',
+        'Tier 2 / Security-aware support: Determine whether this appears to be a false positive, unwanted software/adware, browser hijack, malicious download, credential theft, ransomware, or active compromise.',
+        'Tier 2 / Security-aware support: Escalate with detection name, file path/hash if available, device name, user actions, timeline, screenshots, network status, and containment status.',
+    ],
+}
+
+MALWARE_SOLUTIONS = [
+    ('FIX_MALWARE_REPORT_RANSOMWARE', 'Report Possible Ransomware Immediately', 'Missing, renamed, encrypted files or ransom messages require urgent Security response.', 'Stop work on the affected device, preserve evidence, follow isolation policy, and escalate immediately to Security/Endpoint/Incident Response.', 1, 'Critical escalation if ransomware indicators, encrypted files, ransom note, or multiple affected devices appear.', 'critical'),
+    ('FIX_MALWARE_CREDENTIAL_EXPOSURE', 'Report Possible Credential Exposure', 'User entered credentials or approved MFA after suspicious activity.', 'Treat as possible account compromise and route to Security/Identity for account protection and sign-in review.', 1, 'Escalate immediately for password reset, session/token revocation, MFA review, and suspicious sign-in investigation.', 'high'),
+    ('FIX_MALWARE_REPORT_ENDPOINT_ALERT', 'Report Endpoint Security Alert', 'Endpoint protection reported malware or suspicious activity.', 'Record detection details, verify remediation status, and follow approved endpoint security workflow.', 1, 'Escalate if active, repeated, high-severity, unclear, or not fully remediated.', 'high'),
+    ('FIX_MALWARE_POPUPS_UNKNOWN_SOFTWARE', 'Report Suspicious Pop-Ups or Unknown Software', 'Pop-ups, browser redirects, and unknown software may indicate adware, browser hijack, scam page, or unwanted software.', 'Avoid interaction with scam prompts, check browser/software state, and use approved cleanup or escalation workflow.', 0, 'Escalate if behavior persists, involves payment/credentials, or endpoint alerts appear.', 'medium'),
+    ('FIX_MALWARE_SUBMIT_DETAILS', 'Submit Malware Suspicion Details', 'The user suspects malware but there is no obvious alert or confirmed compromise.', 'Collect symptoms, timeline, recent user actions, and endpoint status to determine malware, unwanted software, performance issue, or false alarm.', 0, 'Escalate if evidence is unclear, symptoms worsen, or suspicious activity is identified.', 'medium'),
+    ('FIX_MALWARE_ESCALATE_RANSOMWARE', 'Escalate Possible Ransomware Incident', 'Ransomware indicators require immediate escalation and containment.', 'Follow incident escalation policy, preserve evidence, and coordinate containment with Security/Endpoint teams.', 1, 'Critical escalation to Security/Incident Response and Endpoint teams.', 'critical'),
+    ('FIX_MALWARE_VERIFY_REMEDIATION_MONITOR', 'Verify Endpoint Remediation and Monitor', 'Endpoint protection blocked or quarantined the threat, but IT should verify remediation.', 'Confirm endpoint remediation, run approved follow-up checks, and monitor for repeated detections.', 0, 'Escalate if detections repeat, endpoint protection is unhealthy, or source is unknown.', 'medium'),
+    ('FIX_MALWARE_ESCALATE_ACTIVE_DETECTION', 'Escalate Active Malware Detection', 'Malware appears active, unremediated, repeated, or unclear.', 'Capture detection and endpoint details, follow containment policy, and escalate to Security/Endpoint.', 1, 'High escalation for active or unresolved malware detection.', 'high'),
+    ('FIX_MALWARE_ESCALATE_SUSPICIOUS_INTERACTION', 'Escalate Suspicious Interaction for Security Review', 'User interacted with a suspicious link, file, USB device, or download and device risk is uncertain.', 'Capture suspicious source details, check endpoint status, and escalate if risk cannot be ruled out.', 1, 'Escalate if file/link/source is suspicious, credentials/MFA were involved, or endpoint evidence is unclear.', 'high'),
+    ('FIX_MALWARE_UNWANTED_SOFTWARE_FALSE_ALARM', 'Investigate Possible Unwanted Software or False Alarm', 'Symptoms may be unwanted software, browser scam, performance issue, or false positive rather than confirmed malware.', 'Check installed apps, browser extensions, startup items, endpoint status, and remove unwanted software only through approved process.', 0, 'Escalate if behavior persists, false positive cannot be confirmed, or evidence suggests active compromise.', 'medium'),
+]
+
+MALWARE_SOLUTION_STEPS = {
+    'FIX_MALWARE_REPORT_RANSOMWARE': {
+        'user': ['Stop using the device for work immediately.', 'Do not pay, reply, or click anything in the ransom message.', 'Leave the device powered on unless IT or Security says otherwise.', 'Disconnect from VPN if instructed by IT.', 'Contact IT or Security immediately and report the exact message.'],
+        'technician': ['Treat as a potential critical incident.', 'Record user, device name, time observed, screenshots, ransom message, and affected files.', 'Follow company isolation/escalation policy.', 'Do not attempt ad-hoc cleanup or deletion.', 'Escalate immediately to Security, Endpoint, or Incident Response.'],
+        'admin': ['Escalation notes: Treat ransomware indicators as critical and preserve evidence.', 'Escalation notes: Provide screenshots, affected paths, device name, network status, and containment status.'],
+    },
+    'FIX_MALWARE_CREDENTIAL_EXPOSURE': {
+        'user': ['Stop using the suspicious page or app.', 'Do not approve additional MFA prompts.', 'Contact IT or Security immediately.', 'Be ready to reset your password using the official process.', 'Tell IT exactly what information was entered.'],
+        'technician': ['Treat as possible account compromise.', 'Capture timeline, account, URL/file/source, and user actions.', 'Escalate to Security/Identity for password reset, session revocation, MFA review, and sign-in review.', 'Check whether malware or phishing caused the exposure.', 'Document containment actions.'],
+        'admin': ['Escalation notes: Identity/Security should review sign-ins, tokens/sessions, MFA methods, and mailbox/account activity.', 'Escalation notes: Prioritize if MFA was approved or privileged/sensitive access is involved.'],
+    },
+    'FIX_MALWARE_REPORT_ENDPOINT_ALERT': {
+        'user': ['Do not ignore the alert.', 'Do not click Allow or restore a quarantined item.', 'Take a screenshot or note the threat name.', 'Contact IT with the alert details.'],
+        'technician': ['Record detection name, file path, action taken, and timestamp.', 'Check whether the threat was blocked, quarantined, remediated, or active.', 'Verify endpoint protection is healthy and up to date.', 'Run approved scan/remediation workflow if allowed.', 'Escalate if active, repeated, high-severity, or unclear.'],
+        'admin': ['Escalation notes: Provide detection name, severity, file path/hash if available, device name, and remediation status.', 'Escalation notes: Escalate repeated or active detections to Security/Endpoint.'],
+    },
+    'FIX_MALWARE_POPUPS_UNKNOWN_SOFTWARE': {
+        'user': ['Do not call phone numbers in pop-ups.', 'Do not install suggested cleanup tools.', 'Close the browser if safe.', 'Take a screenshot if possible.', 'Contact IT if pop-ups return.'],
+        'technician': ['Identify whether the pop-up is a browser-based scam, adware, or endpoint alert.', 'Check browser extensions and recently installed applications.', 'Use approved browser reset/cleanup steps if allowed.', 'Check endpoint protection status.', 'Escalate if behavior persists or includes credential/payment prompts.'],
+        'admin': ['Escalation notes: Security/Endpoint should review persistent browser hijack, payment prompts, credential prompts, or repeated unwanted software.', 'Escalation notes: Do not use unapproved third-party cleanup utilities.'],
+    },
+    'FIX_MALWARE_SUBMIT_DETAILS': {
+        'user': ['Describe what changed on the device.', 'Note when the issue started.', 'Mention recent downloads, links, attachments, or USB devices.', 'Submit screenshots if available.'],
+        'technician': ['Collect symptoms, timeline, user actions, and device name.', 'Check for endpoint alerts, suspicious installs, browser changes, or performance symptoms.', 'Run approved checks based on company policy.', 'Determine whether this is malware, unwanted software, performance issue, or false alarm.', 'Document findings and next action.'],
+        'admin': ['Escalation notes: Escalate if risk cannot be ruled out or evidence suggests suspicious software/activity.', 'Escalation notes: Include user timeline, device name, screenshots, and suspected source.'],
+    },
+    'FIX_MALWARE_ESCALATE_RANSOMWARE': {
+        'user': ['Stop working on the affected device.', 'Do not connect external drives.', 'Do not move or rename affected files.', 'Wait for Security instructions.'],
+        'technician': ['Follow incident escalation policy immediately.', 'Capture screenshots, device name, username, network status, and affected file paths.', 'Coordinate isolation according to policy.', 'Notify Security/Incident Response with urgency.', 'Do not perform unapproved remediation.'],
+        'admin': ['Escalation notes: Critical handoff to Security/Incident Response for containment and recovery coordination.', 'Escalation notes: Include scope, affected data, device/network status, and whether other devices are affected.'],
+    },
+    'FIX_MALWARE_VERIFY_REMEDIATION_MONITOR': {
+        'user': ['Do not restore quarantined files.', 'Continue normal work only after IT confirms.', 'Report if alerts return.'],
+        'technician': ['Confirm the detection status and remediation action.', 'Run approved follow-up scan if policy allows.', 'Verify endpoint protection health.', 'Check whether related phishing/email/download source needs review.', 'Monitor for repeated detections.'],
+        'admin': ['Escalation notes: Escalate repeated detections, unhealthy security agent, or unknown infection source.', 'Escalation notes: Attach remediation status and follow-up scan result.'],
+    },
+    'FIX_MALWARE_ESCALATE_ACTIVE_DETECTION': {
+        'user': ['Stop using the device for sensitive work.', 'Keep the device available for IT or Security.', 'Do not attempt cleanup tools yourself.'],
+        'technician': ['Capture detection details and endpoint status.', 'Follow containment policy.', 'Escalate to Security/Endpoint team.', 'Provide detection name, file path, user actions, device name, network status, and timestamps.', 'Document whether the device was isolated or still online.'],
+        'admin': ['Escalation notes: Security/Endpoint should determine containment and remediation plan.', 'Escalation notes: Include detection details, endpoint health, network status, and user actions.'],
+    },
+    'FIX_MALWARE_ESCALATE_SUSPICIOUS_INTERACTION': {
+        'user': ['Stop interacting with the suspicious item.', 'Do not delete evidence unless IT says so.', 'Tell IT exactly what you clicked, opened, or downloaded.', 'Report any pop-ups, MFA prompts, or security alerts.'],
+        'technician': ['Capture the suspicious source, file name, URL, sender, device, and timeline.', 'Check endpoint protection and recent downloads.', 'Check whether credentials or MFA were involved.', 'Escalate to Security/Endpoint if risk cannot be ruled out.', 'Document containment and user guidance.'],
+        'admin': ['Escalation notes: Escalate when file/link risk is unknown or user interaction could have exposed the endpoint/account.', 'Escalation notes: Include source indicators, timestamps, and whether credentials/MFA were involved.'],
+    },
+    'FIX_MALWARE_UNWANTED_SOFTWARE_FALSE_ALARM': {
+        'user': ['Report the exact symptom.', 'Do not install cleanup tools.', 'Send screenshots if available.', 'Wait for IT instructions.'],
+        'technician': ['Check installed applications, browser extensions, startup items, and endpoint status.', 'Determine whether this is adware/unwanted software, browser scam, legitimate alert, or false positive.', 'Remove unwanted software only through approved tools/process.', 'Escalate if behavior persists or evidence is unclear.', 'Document findings and prevention advice.'],
+        'admin': ['Escalation notes: Escalate persistent or unclear symptoms to Endpoint/Security.', 'Escalation notes: If false positive is likely, document detection source and reason.'],
+    },
+}
+
+MALWARE_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_MALWARE_USER', None, 'category', 'Malware or Virus Suspected', 'User-friendly diagnostic path for possible malware, endpoint alerts, suspicious pop-ups, credential exposure, and ransomware indicators.', None, None, None, None, 1),
+    ('Q_MALWARE_RANSOMWARE_USER', 'ROOT_MALWARE_USER', 'question', 'Check Ransomware Indicators', None, 'Are files missing, renamed, encrypted, or showing a ransom message?', None, None, None, 1),
+    ('S_MALWARE_RANSOMWARE_USER', 'Q_MALWARE_RANSOMWARE_USER', 'solution', 'Report Possible Ransomware Immediately', None, None, 'Are files missing, renamed, encrypted, or showing a ransom message?', 'Yes', 'FIX_MALWARE_REPORT_RANSOMWARE', 1),
+    ('Q_MALWARE_CREDENTIALS_USER', 'Q_MALWARE_RANSOMWARE_USER', 'question', 'Check Credential or MFA Exposure', None, 'Did you enter credentials, approve MFA, or provide sensitive information?', 'Are files missing, renamed, encrypted, or showing a ransom message?', 'No', None, 2),
+    ('S_MALWARE_CREDENTIALS_USER', 'Q_MALWARE_CREDENTIALS_USER', 'solution', 'Report Possible Credential Exposure', None, None, 'Did you enter credentials, approve MFA, or provide sensitive information?', 'Yes', 'FIX_MALWARE_CREDENTIAL_EXPOSURE', 1),
+    ('Q_MALWARE_ENDPOINT_ALERT_USER', 'Q_MALWARE_CREDENTIALS_USER', 'question', 'Check Endpoint Security Alert', None, 'Did antivirus or endpoint protection show an alert?', 'Did you enter credentials, approve MFA, or provide sensitive information?', 'No', None, 2),
+    ('S_MALWARE_ENDPOINT_ALERT_USER', 'Q_MALWARE_ENDPOINT_ALERT_USER', 'solution', 'Report Endpoint Security Alert', None, None, 'Did antivirus or endpoint protection show an alert?', 'Yes', 'FIX_MALWARE_REPORT_ENDPOINT_ALERT', 1),
+    ('Q_MALWARE_POPUPS_USER', 'Q_MALWARE_ENDPOINT_ALERT_USER', 'question', 'Check Pop-Ups or Unknown Software', None, 'Are you seeing pop-ups, redirects, or unknown programs?', 'Did antivirus or endpoint protection show an alert?', 'No', None, 2),
+    ('S_MALWARE_POPUPS_USER', 'Q_MALWARE_POPUPS_USER', 'solution', 'Report Suspicious Pop-Ups or Unknown Software', None, None, 'Are you seeing pop-ups, redirects, or unknown programs?', 'Yes', 'FIX_MALWARE_POPUPS_UNKNOWN_SOFTWARE', 1),
+    ('S_MALWARE_DETAILS_USER', 'Q_MALWARE_POPUPS_USER', 'solution', 'Submit Malware Suspicion Details', None, None, 'Are you seeing pop-ups, redirects, or unknown programs?', 'No', 'FIX_MALWARE_SUBMIT_DETAILS', 2),
+]
+
+MALWARE_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_MALWARE_TECH', None, 'category', 'Malware or Virus Suspected - IT Support Specialist', 'IT Support Specialist diagnostic path for malware suspicion, endpoint detections, ransomware indicators, and escalation.', None, None, None, None, 1),
+    ('Q_MALWARE_RANSOMWARE_TECH', 'ROOT_MALWARE_TECH', 'question', 'Check Ransomware Indicators', None, 'Are ransomware indicators present?', None, None, None, 1),
+    ('S_MALWARE_ESCALATE_RANSOMWARE_TECH', 'Q_MALWARE_RANSOMWARE_TECH', 'solution', 'Escalate Possible Ransomware Incident', None, None, 'Are ransomware indicators present?', 'Yes', 'FIX_MALWARE_ESCALATE_RANSOMWARE', 1),
+    ('Q_MALWARE_ENDPOINT_ALERT_TECH', 'Q_MALWARE_RANSOMWARE_TECH', 'question', 'Check Endpoint Detection', None, 'Is there an endpoint protection alert or detection name?', 'Are ransomware indicators present?', 'No', None, 2),
+    ('Q_MALWARE_BLOCKED_TECH', 'Q_MALWARE_ENDPOINT_ALERT_TECH', 'question', 'Check Remediation Status', None, 'Was the threat blocked or quarantined?', 'Is there an endpoint protection alert or detection name?', 'Yes', None, 1),
+    ('S_MALWARE_REMEDIATION_TECH', 'Q_MALWARE_BLOCKED_TECH', 'solution', 'Verify Endpoint Remediation and Monitor', None, None, 'Was the threat blocked or quarantined?', 'Yes', 'FIX_MALWARE_VERIFY_REMEDIATION_MONITOR', 1),
+    ('S_MALWARE_ACTIVE_DETECTION_TECH', 'Q_MALWARE_BLOCKED_TECH', 'solution', 'Escalate Active Malware Detection', None, None, 'Was the threat blocked or quarantined?', 'No / Unknown', 'FIX_MALWARE_ESCALATE_ACTIVE_DETECTION', 2),
+    ('Q_MALWARE_INTERACTION_TECH', 'Q_MALWARE_ENDPOINT_ALERT_TECH', 'question', 'Check Suspicious Interaction', None, 'Did the user interact with a suspicious link, file, USB device, or download?', 'Is there an endpoint protection alert or detection name?', 'No', None, 2),
+    ('S_MALWARE_SUSPICIOUS_INTERACTION_TECH', 'Q_MALWARE_INTERACTION_TECH', 'solution', 'Escalate Suspicious Interaction for Security Review', None, None, 'Did the user interact with a suspicious link, file, USB device, or download?', 'Yes', 'FIX_MALWARE_ESCALATE_SUSPICIOUS_INTERACTION', 1),
+    ('S_MALWARE_FALSE_ALARM_TECH', 'Q_MALWARE_INTERACTION_TECH', 'solution', 'Investigate Possible Unwanted Software or False Alarm', None, None, 'Did the user interact with a suspicious link, file, USB device, or download?', 'No', 'FIX_MALWARE_UNWANTED_SOFTWARE_FALSE_ALARM', 2),
+]
+
+def seed_malware_or_virus_suspected_content(cursor):
+    """Seed Malware or Virus Suspected KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = MALWARE_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, MALWARE_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, MALWARE_KB['title'], MALWARE_KB['summary'], MALWARE_KB['difficulty'], MALWARE_KB['estimated_time'], MALWARE_KB['escalation_required'], MALWARE_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, MALWARE_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, MALWARE_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, MALWARE_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, MALWARE_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, MALWARE_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, MALWARE_SOLUTIONS)
+    for solution_code, audience_steps in MALWARE_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_malware_tree(cursor, 'user', 'MALWARE_OR_VIRUS_SUSPECTED_USER', 'Malware or Virus Suspected - User Diagnostic', 'User-friendly diagnostic tree for possible malware, endpoint alerts, suspicious pop-ups, credential exposure, and ransomware indicators.', MALWARE_USER_DIAGNOSTIC_NODES)
+    seed_malware_tree(cursor, 'technician', 'MALWARE_OR_VIRUS_SUSPECTED_TECHNICIAN', 'Malware or Virus Suspected - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for malware suspicion, endpoint detections, ransomware indicators, and escalation.', MALWARE_TECH_DIAGNOSTIC_NODES)
+
+def seed_malware_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'MALWARE_OR_VIRUS_SUSPECTED')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'MALWARE_OR_VIRUS_SUSPECTED', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
 # -----------------------------
 # EXISTING ISSUE ROLE ALIGNMENT PATCH
 # -----------------------------
@@ -5723,6 +5971,7 @@ def initialize_database():
     seed_operating_system_update_issue_content(cursor)
     seed_device_storage_content(cursor)
     seed_phishing_email_reported_content(cursor)
+    seed_malware_or_virus_suspected_content(cursor)
     seed_existing_issue_role_alignment(cursor)
 
     cursor.execute("""
