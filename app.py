@@ -572,6 +572,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Device Running Out of Storage": "DEVICE_RUNNING_OUT_OF_STORAGE",
     "Phishing Email Reported": "PHISHING_EMAIL_REPORTED",
     "Malware or Virus Suspected": "MALWARE_OR_VIRUS_SUSPECTED",
+    "Email Attachment Not Opening": "EMAIL_ATTACHMENT_NOT_OPENING",
 }
 
 
@@ -585,7 +586,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED", "EMAIL_ATTACHMENT_NOT_OPENING"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
     "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, Device Running Out of Storage, Phishing Email Reported, and Malware or Virus Suspected. Other sample issues are hidden until they "
@@ -5605,6 +5606,249 @@ def seed_malware_tree(cursor, audience, tree_code, title, description, nodes):
                 updated_at=CURRENT_TIMESTAMP
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
+
+# -----------------------------
+# EMAIL ATTACHMENT NOT OPENING CONTENT
+# -----------------------------
+EMAIL_ATTACHMENT_PROBLEM = (
+    'EMAIL_ATTACHMENT_NOT_OPENING',
+    'Email Attachment Not Opening',
+    'Email, Calendar & Collaboration',
+    'Medium',
+    'User cannot open, preview, download, or save an email attachment.',
+)
+
+EMAIL_ATTACHMENT_KB = {
+    'title': 'Email Attachment Not Opening',
+    'summary': 'Use this guide when an email attachment is blocked, will not preview, will not download, opens in the wrong app, appears corrupted, or looks suspicious.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '5-20 minutes',
+    'escalation_required': 0,
+    'escalation_notes': 'Escalate if the attachment is suspicious, blocked by security, asks to enable macros, requires an unavailable app, is business-critical, or affects multiple users.',
+    'tags': ['email attachment', 'Outlook attachment', 'blocked attachment', 'file association', 'preview handler', 'phishing', 'malware', 'secure sharing', 'OneDrive', 'SharePoint'],
+    'symptoms': [
+        'Attachment is blocked by the email client or security policy.',
+        'Attachment preview does not work.',
+        'Attachment downloads but does not open.',
+        'File opens in the wrong application or no application is available.',
+        'File appears corrupted or incomplete.',
+        'Desktop email client fails but webmail works.',
+        'Attachment asks the user to enable macros, bypass warnings, or looks suspicious.',
+    ],
+    'causes': [
+        'Common: blocked file type, unsafe attachment, missing required application, broken file association, corrupted file, incomplete download, Outlook/email client cache issue, endpoint security block, permission-protected file, or phishing/malware risk.',
+        'Advanced: mail gateway/DLP stripping, attachment size or policy limits, encrypted or sensitivity-labeled content, OneDrive/SharePoint link permissions, corrupt Outlook profile/OST cache, preview-handler/add-in issue, Protected View or Trust Center restriction, endpoint quarantine, or phishing campaign using malicious attachments.',
+    ],
+    'user_steps': [
+        'Do not open the attachment if the email is unexpected or suspicious.',
+        'Do not enable macros or bypass security warnings unless IT confirms it is safe.',
+        'Confirm you recognize the sender and expected the attachment.',
+        'Try opening the attachment from webmail if you are using the desktop email app.',
+        'Restart the email application and try again.',
+        'Save the attachment to a known location and open it from there only if it is trusted.',
+        'Confirm you have the right application to open the file type.',
+        'Ask the sender to resend the file or share it through an approved company storage link if the file may be blocked.',
+        'Take a screenshot of the exact error message.',
+        'Report the email to IT/Security if the attachment looks suspicious.',
+    ],
+    'it_steps': [
+        'Tier 1: Confirm the user, device name, email client, operating system, attachment file name/type, sender, and exact error message.',
+        'Tier 1: Ask whether the user expected the attachment and recognizes the sender.',
+        'Tier 1: Determine whether the issue affects one attachment, one sender, one file type, one user/device, or multiple users.',
+        'Tier 1: Confirm whether the attachment is blocked, corrupted, missing, not downloading, or not previewing.',
+        'Tier 1: Check whether the attachment opens in webmail versus the desktop email client.',
+        'Tier 1: Confirm the required application is installed and the file association is correct.',
+        'Tier 1: Restart the email client and retest.',
+        'Tier 1: Ask the sender to resend the file or provide it through approved OneDrive, SharePoint, or company storage if safe.',
+        'Tier 1: If the file type is blocked by policy, do not bypass controls.',
+        'Tier 1: If suspicious, route to phishing/malware process and preserve the message.',
+        'Tier 2 / Email, Endpoint, and Security-aware checks: Check whether the file extension is blocked by Outlook, mail gateway, DLP, or endpoint security policy.',
+        'Tier 2 / Email, Endpoint, and Security-aware checks: Review whether endpoint protection quarantined or blocked the file.',
+        'Tier 2 / Email, Endpoint, and Security-aware checks: Check if the attachment contains risky content such as macros, scripts, executable files, password-protected archives, or unusual compressed files.',
+        'Tier 2 / Email, Endpoint, and Security-aware checks: Compare webmail, desktop client, another device, or test mailbox behavior where policy allows.',
+        'Tier 2 / Email, Endpoint, and Security-aware checks: Check email client cache/profile if desktop client fails but webmail works.',
+        'Tier 2 / Email, Endpoint, and Security-aware checks: Check Outlook add-ins or preview handlers if preview fails but download works.',
+        'Tier 2 / Email, Endpoint, and Security-aware checks: Check whether the file is encrypted, sensitivity-labeled, permission-protected, or actually a cloud link with permission restrictions.',
+        'Determine whether root cause is security policy block, missing app/file association, corrupted file, email client/profile issue, permission-protected file, or phishing/malware risk.',
+        'Escalate with sender, subject, file name/type, error message, screenshots, affected users, and security indicators.',
+    ],
+}
+
+EMAIL_ATTACHMENT_SOLUTIONS = [
+    ('FIX_EMAIL_ATTACHMENT_REPORT_SUSPICIOUS', 'Report Suspicious Attachment Safely', 'The attachment may be phishing or malware-related and should not be opened.', 'Do not open or download the attachment. Report it through the approved phishing/security process and preserve the message.', 1, 'Escalate to Security if the attachment was opened, downloaded, or delivered to multiple users.', 'high'),
+    ('FIX_EMAIL_ATTACHMENT_MACRO_WARNING', 'Do Not Enable Macros or Bypass Security Warning', 'Macro/content warnings or bypass prompts can indicate security risk.', 'Do not enable macros, active content, or bypass warnings. Capture the warning and route the file through approved review.', 1, 'Escalate to Security if macro/script content is unexpected or suspicious.', 'high'),
+    ('FIX_EMAIL_ATTACHMENT_SECURE_SHARING', 'Use Approved Secure File Sharing Method', 'Blocked attachment types should be shared through approved company storage instead of bypassing email security.', 'Ask the sender to use approved storage such as OneDrive, SharePoint, or company file sharing with proper permissions.', 0, 'Escalate to Email/Security only if a legitimate business exception is required.', 'medium'),
+    ('FIX_EMAIL_ATTACHMENT_REQUIRED_APP', 'Install or Select the Correct Application', 'The user may not have the correct app installed or the file association may be wrong.', 'Confirm file type, install the approved required application if needed, or correct the file association.', 0, 'Escalate if software installation requires admin rights or endpoint deployment.', 'medium'),
+    ('FIX_EMAIL_ATTACHMENT_RESEND_CLEAN_COPY', 'Ask Sender to Resend or Share Clean Copy', 'The attachment may be corrupted, incomplete, or damaged during sending/download.', 'Ask the sender to resend the file or share it through approved company storage, then retest with the clean copy.', 0, 'Escalate if mail gateway modification, stripping, or size-policy issue is suspected.', 'medium'),
+    ('FIX_EMAIL_ATTACHMENT_WEBMAIL_CLIENT_TEST', 'Try Webmail and Report Email Client Issue', 'If webmail works but desktop client fails, the issue may be local email client cache/profile/preview handler.', 'Compare webmail and desktop client behavior, restart the email client, and troubleshoot local cache/profile/preview handler if needed.', 0, 'Escalate if local email profile/client repair is required or multiple users are affected.', 'medium'),
+    ('FIX_EMAIL_ATTACHMENT_SECURITY_REVIEW', 'Escalate Suspicious Attachment for Security Review', 'Suspicious or high-risk attachment requires Security review.', 'Collect message details and escalate without opening the file manually.', 1, 'Security should review indicators, attachment risk, user interaction, and message scope.', 'high'),
+    ('FIX_EMAIL_ATTACHMENT_OUTLOOK_CLIENT_CACHE', 'Troubleshoot Outlook Client, Cache, or Preview Handler', 'Desktop email client may have local cache, profile, preview, or add-in issue.', 'Compare webmail versus desktop behavior and repair the email client/profile or preview handler if needed.', 0, 'Escalate to Endpoint/Email support if mailbox profile or client repair is required.', 'medium'),
+    ('FIX_EMAIL_ATTACHMENT_FILE_INTEGRITY_PERMISSION', 'Verify File Integrity, Permissions, or Sender Copy', 'The file may be corrupted, permission-protected, encrypted, or incomplete.', 'Confirm sender copy, permissions, encryption/sensitivity labels, and whether other users can open the same file.', 0, 'Escalate to Email/Collaboration or sender IT if permissions or mail handling are involved.', 'medium'),
+]
+
+EMAIL_ATTACHMENT_SOLUTION_STEPS = {
+    'FIX_EMAIL_ATTACHMENT_REPORT_SUSPICIOUS': {
+        'user': ['Do not open or download the attachment.', 'Do not reply to the sender.', 'Use the company phishing-report button if available.', 'Tell IT whether you clicked, opened, or downloaded anything.', 'Keep the message available until IT/Security confirms next steps.'],
+        'technician': ['Confirm whether the user interacted with the attachment.', 'Collect sender, subject, received time, file name/type, and screenshot.', 'Preserve the email according to company process.', 'Route to phishing/malware workflow if suspicious.', 'Escalate to Security if the attachment was opened or delivered to multiple users.'],
+        'admin': ['Security should analyze the message and attachment using approved tools, not by opening the file manually.', 'Escalate priority if the user opened the attachment or similar messages reached multiple users.'],
+    },
+    'FIX_EMAIL_ATTACHMENT_MACRO_WARNING': {
+        'user': ['Do not enable macros or active content.', 'Do not bypass security warnings.', 'Contact IT with a screenshot of the warning.', 'Ask the sender to provide the file through an approved safe method if needed.'],
+        'technician': ['Confirm file type and warning message.', 'Check whether the attachment is expected and business-related.', 'Do not bypass security controls for the user.', 'Escalate to Security if macro/script content is unexpected or suspicious.', 'Route legitimate business needs through approved secure file sharing.'],
+        'admin': ['Security should review macro/script content and decide whether it is malicious, blocked by policy, or requires an approved exception.'],
+    },
+    'FIX_EMAIL_ATTACHMENT_SECURE_SHARING': {
+        'user': ['Ask the sender to upload the file to approved company storage.', 'Ask the sender to share a link with correct permissions.', 'Do not ask the sender to rename risky file extensions to bypass security.', 'Contact IT if the file is business-critical.'],
+        'technician': ['Confirm the attachment is blocked by policy.', 'Explain that blocked files are restricted for security reasons.', 'Recommend approved OneDrive, SharePoint, or company file-sharing method.', 'Confirm the user has permission to the shared link.', 'Escalate to Email/Security only if a legitimate business exception is required.'],
+        'admin': ['Email/Security should review any requested exception and avoid weakening attachment controls without business approval.'],
+    },
+    'FIX_EMAIL_ATTACHMENT_REQUIRED_APP': {
+        'user': ['Note the file extension, such as PDF, DOCX, XLSX, CSV, or ZIP.', 'Do not install software from unknown websites.', 'Contact IT if the file opens in the wrong app or no app is available.'],
+        'technician': ['Confirm the file type and required application.', 'Check whether the correct approved application is installed.', 'Fix file association if appropriate.', 'Install from approved software source if needed.', 'Retest opening the attachment.'],
+        'admin': ['Endpoint/Desktop Support should handle application deployment if install requires admin rights, licensing, or managed software distribution.'],
+    },
+    'FIX_EMAIL_ATTACHMENT_RESEND_CLEAN_COPY': {
+        'user': ['Ask the sender to resend the file.', 'Ask the sender to share it through approved company storage if possible.', 'Try opening the new copy.', 'Report if multiple people cannot open the same file.'],
+        'technician': ['Confirm whether the same file fails for other users.', 'Check whether file size or attachment limit may have affected delivery.', 'Ask sender to resend or share clean copy through approved storage.', 'Escalate if mail gateway is modifying or stripping attachments.'],
+        'admin': ['Email/Collaboration should review mail gateway, DLP, attachment size, or transport rules if clean copies fail for multiple users.'],
+    },
+    'FIX_EMAIL_ATTACHMENT_WEBMAIL_CLIENT_TEST': {
+        'user': ['Try opening the attachment from webmail/browser.', 'Restart the desktop email app.', 'Report whether the attachment works in webmail but not desktop app.', 'Send IT a screenshot of the desktop app error.'],
+        'technician': ['Compare webmail versus desktop client behavior.', 'Restart email client and retest.', 'Check attachment preview handler and file association.', 'Check Outlook cache/profile if needed.', 'Escalate to Endpoint/Email support if local client repair is required.'],
+        'admin': ['Endpoint/Email support should repair profile/client issues or investigate mailbox sync if desktop behavior differs from webmail.'],
+    },
+    'FIX_EMAIL_ATTACHMENT_SECURITY_REVIEW': {
+        'user': ['Do not open or forward the attachment.', 'Report whether you interacted with it.', 'Wait for IT/Security instructions.'],
+        'technician': ['Collect sender, subject, file name/type, received time, and user actions.', 'Do not open the file manually.', 'Check email/endpoint security alerts if available.', 'Escalate to Security with message details and indicators.', 'If user opened it, route to malware/endpoint review.'],
+        'admin': ['Security should review the attachment safely, check campaign scope, and coordinate containment if the file is malicious.'],
+    },
+    'FIX_EMAIL_ATTACHMENT_OUTLOOK_CLIENT_CACHE': {
+        'user': ['Restart Outlook or the email client.', 'Try opening the attachment in webmail.', 'Restart the computer if instructed.', 'Report if the issue affects all attachments or only one.'],
+        'technician': ['Confirm attachment works in webmail.', 'Check whether preview or download fails.', 'Disable problematic add-ins only if allowed.', 'Repair email client/profile if needed.', 'Escalate if mailbox profile or endpoint repair is required.'],
+        'admin': ['Endpoint/Email support should investigate persistent cache, OST/profile, add-in, or preview-handler issues.'],
+    },
+    'FIX_EMAIL_ATTACHMENT_FILE_INTEGRITY_PERMISSION': {
+        'user': ['Ask sender to confirm the file opens on their side.', 'Ask whether the file is password-protected or restricted.', 'Request a clean copy or approved sharing link.', 'Submit the error screenshot to IT.'],
+        'technician': ['Confirm whether file is encrypted, sensitivity-labeled, password-protected, or permission-restricted.', 'Check whether other users can open the same attachment.', 'Confirm whether sender sent a complete valid file.', 'Escalate to Email/Collaboration or sender IT if file permissions or mail handling are involved.'],
+        'admin': ['Email/Collaboration should verify labeling, encryption, sharing permissions, and mail transport handling when local troubleshooting does not explain the failure.'],
+    },
+}
+
+EMAIL_ATTACHMENT_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_EMAIL_ATTACHMENT_USER', None, 'category', 'Email Attachment Not Opening', 'User-friendly diagnostic path for blocked, suspicious, corrupted, or client-specific email attachment issues.', None, None, None, None, 1),
+    ('Q_EMAIL_ATTACHMENT_EXPECTED_USER', 'ROOT_EMAIL_ATTACHMENT_USER', 'question', 'Check Sender and Expected Attachment', None, 'Were you expecting this attachment and do you recognize the sender?', None, None, None, 1),
+    ('S_EMAIL_ATTACHMENT_SUSPICIOUS_USER', 'Q_EMAIL_ATTACHMENT_EXPECTED_USER', 'solution', 'Report Suspicious Attachment Safely', None, None, 'Were you expecting this attachment and do you recognize the sender?', 'No / Not sure', 'FIX_EMAIL_ATTACHMENT_REPORT_SUSPICIOUS', 1),
+    ('Q_EMAIL_ATTACHMENT_MACRO_USER', 'Q_EMAIL_ATTACHMENT_EXPECTED_USER', 'question', 'Check Macro or Warning Prompt', None, 'Does it ask you to enable macros/content or bypass a warning?', 'Were you expecting this attachment and do you recognize the sender?', 'Yes', None, 2),
+    ('S_EMAIL_ATTACHMENT_MACRO_USER', 'Q_EMAIL_ATTACHMENT_MACRO_USER', 'solution', 'Do Not Enable Macros or Bypass Security Warning', None, None, 'Does it ask you to enable macros/content or bypass a warning?', 'Yes', 'FIX_EMAIL_ATTACHMENT_MACRO_WARNING', 1),
+    ('Q_EMAIL_ATTACHMENT_BEHAVIOR_USER', 'Q_EMAIL_ATTACHMENT_MACRO_USER', 'question', 'Check Attachment Behavior', None, 'What happens when you open it?', 'Does it ask you to enable macros/content or bypass a warning?', 'No', None, 2),
+    ('S_EMAIL_ATTACHMENT_BLOCKED_USER', 'Q_EMAIL_ATTACHMENT_BEHAVIOR_USER', 'solution', 'Use Approved Secure File Sharing Method', None, None, 'What happens when you open it?', 'Blocked by email/security', 'FIX_EMAIL_ATTACHMENT_SECURE_SHARING', 1),
+    ('S_EMAIL_ATTACHMENT_APP_USER', 'Q_EMAIL_ATTACHMENT_BEHAVIOR_USER', 'solution', 'Install or Select the Correct Application', None, None, 'What happens when you open it?', 'Missing app / wrong app', 'FIX_EMAIL_ATTACHMENT_REQUIRED_APP', 2),
+    ('S_EMAIL_ATTACHMENT_CORRUPT_USER', 'Q_EMAIL_ATTACHMENT_BEHAVIOR_USER', 'solution', 'Ask Sender to Resend or Share Clean Copy', None, None, 'What happens when you open it?', 'Error/corrupted file', 'FIX_EMAIL_ATTACHMENT_RESEND_CLEAN_COPY', 3),
+    ('S_EMAIL_ATTACHMENT_CLIENT_USER', 'Q_EMAIL_ATTACHMENT_BEHAVIOR_USER', 'solution', 'Try Webmail and Report Email Client Issue', None, None, 'What happens when you open it?', 'Desktop client only', 'FIX_EMAIL_ATTACHMENT_WEBMAIL_CLIENT_TEST', 4),
+]
+
+EMAIL_ATTACHMENT_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_EMAIL_ATTACHMENT_TECH', None, 'category', 'Email Attachment Not Opening - IT Support Specialist', 'IT Support Specialist diagnostic path for attachment security, blocked file types, required apps, and email-client issues.', None, None, None, None, 1),
+    ('Q_EMAIL_ATTACHMENT_RISK_TECH', 'ROOT_EMAIL_ATTACHMENT_TECH', 'question', 'Check Attachment Risk', None, 'Is the attachment suspicious, unexpected, or high-risk?', None, None, None, 1),
+    ('S_EMAIL_ATTACHMENT_SECURITY_TECH', 'Q_EMAIL_ATTACHMENT_RISK_TECH', 'solution', 'Escalate Suspicious Attachment for Security Review', None, None, 'Is the attachment suspicious, unexpected, or high-risk?', 'Yes', 'FIX_EMAIL_ATTACHMENT_SECURITY_REVIEW', 1),
+    ('Q_EMAIL_ATTACHMENT_BLOCKED_TECH', 'Q_EMAIL_ATTACHMENT_RISK_TECH', 'question', 'Check Policy Block', None, 'Is the file type blocked by policy?', 'Is the attachment suspicious, unexpected, or high-risk?', 'No', None, 2),
+    ('S_EMAIL_ATTACHMENT_SECURE_SHARE_TECH', 'Q_EMAIL_ATTACHMENT_BLOCKED_TECH', 'solution', 'Use Approved Secure File Sharing Method', None, None, 'Is the file type blocked by policy?', 'Yes', 'FIX_EMAIL_ATTACHMENT_SECURE_SHARING', 1),
+    ('Q_EMAIL_ATTACHMENT_WEBMAIL_TECH', 'Q_EMAIL_ATTACHMENT_BLOCKED_TECH', 'question', 'Compare Webmail and Desktop Client', None, 'Does it work in webmail but fail in the desktop client?', 'Is the file type blocked by policy?', 'No', None, 2),
+    ('S_EMAIL_ATTACHMENT_OUTLOOK_TECH', 'Q_EMAIL_ATTACHMENT_WEBMAIL_TECH', 'solution', 'Troubleshoot Outlook Client, Cache, or Preview Handler', None, None, 'Does it work in webmail but fail in the desktop client?', 'Yes', 'FIX_EMAIL_ATTACHMENT_OUTLOOK_CLIENT_CACHE', 1),
+    ('Q_EMAIL_ATTACHMENT_APP_TECH', 'Q_EMAIL_ATTACHMENT_WEBMAIL_TECH', 'question', 'Check Required Application', None, 'Is the required application installed and file association correct?', 'Does it work in webmail but fail in the desktop client?', 'No', None, 2),
+    ('S_EMAIL_ATTACHMENT_REQUIRED_APP_TECH', 'Q_EMAIL_ATTACHMENT_APP_TECH', 'solution', 'Install Required App or Fix File Association', None, None, 'Is the required application installed and file association correct?', 'No', 'FIX_EMAIL_ATTACHMENT_REQUIRED_APP', 1),
+    ('S_EMAIL_ATTACHMENT_INTEGRITY_TECH', 'Q_EMAIL_ATTACHMENT_APP_TECH', 'solution', 'Verify File Integrity, Permissions, or Sender Copy', None, None, 'Is the required application installed and file association correct?', 'Yes', 'FIX_EMAIL_ATTACHMENT_FILE_INTEGRITY_PERMISSION', 2),
+]
+
+def seed_email_attachment_not_opening_content(cursor):
+    """Seed Email Attachment Not Opening KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = EMAIL_ATTACHMENT_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, EMAIL_ATTACHMENT_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, EMAIL_ATTACHMENT_KB['title'], EMAIL_ATTACHMENT_KB['summary'], EMAIL_ATTACHMENT_KB['difficulty'], EMAIL_ATTACHMENT_KB['estimated_time'], EMAIL_ATTACHMENT_KB['escalation_required'], EMAIL_ATTACHMENT_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, EMAIL_ATTACHMENT_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, EMAIL_ATTACHMENT_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, EMAIL_ATTACHMENT_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, EMAIL_ATTACHMENT_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, EMAIL_ATTACHMENT_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, EMAIL_ATTACHMENT_SOLUTIONS)
+    for solution_code, audience_steps in EMAIL_ATTACHMENT_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_email_attachment_tree(cursor, 'user', 'EMAIL_ATTACHMENT_NOT_OPENING_USER', 'Email Attachment Not Opening - User Diagnostic', 'User-friendly diagnostic tree for attachment opening, security, and app/client issues.', EMAIL_ATTACHMENT_USER_DIAGNOSTIC_NODES)
+    seed_email_attachment_tree(cursor, 'technician', 'EMAIL_ATTACHMENT_NOT_OPENING_TECHNICIAN', 'Email Attachment Not Opening - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for attachment security, policy, file integrity, and email-client issues.', EMAIL_ATTACHMENT_TECH_DIAGNOSTIC_NODES)
+
+def seed_email_attachment_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'EMAIL_ATTACHMENT_NOT_OPENING')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'EMAIL_ATTACHMENT_NOT_OPENING', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
 # -----------------------------
 # EXISTING ISSUE ROLE ALIGNMENT PATCH
 # -----------------------------
@@ -5972,6 +6216,7 @@ def initialize_database():
     seed_device_storage_content(cursor)
     seed_phishing_email_reported_content(cursor)
     seed_malware_or_virus_suspected_content(cursor)
+    seed_email_attachment_not_opening_content(cursor)
     seed_existing_issue_role_alignment(cursor)
 
     cursor.execute("""
