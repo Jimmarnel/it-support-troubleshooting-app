@@ -568,6 +568,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Slow Computer Performance": "SLOW_COMPUTER_PERFORMANCE",
     "Application Not Opening": "APPLICATION_NOT_OPENING",
     "Application Crashing / Freezing": "APPLICATION_CRASHING_FREEZING",
+    "Operating System Update Issue": "OPERATING_SYSTEM_UPDATE_ISSUE",
 }
 
 
@@ -581,10 +582,10 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
-    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, and Application Crashing / Freezing. Other sample issues are hidden until they "
+    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, and Operating System Update Issue. Other sample issues are hidden until they "
     "are expanded with detailed symptoms, causes, user steps, and technician steps."
 )
 
@@ -4514,6 +4515,252 @@ def seed_application_crashing_freezing_tree(cursor, audience, tree_code, title, 
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
 
+
+# -----------------------------
+# OPERATING SYSTEM UPDATE ISSUE CONTENT
+# -----------------------------
+OPERATING_SYSTEM_UPDATE_PROBLEM = (
+    'OPERATING_SYSTEM_UPDATE_ISSUE',
+    'Operating System Update Issue',
+    'Performance & Operating System',
+    'Medium',
+    'Computer cannot install operating system updates, gets stuck during updates, shows an update error, or repeatedly asks to restart.',
+)
+
+OPERATING_SYSTEM_UPDATE_KB = {
+    'title': 'Operating System Update Issue',
+    'summary': 'Use this guide when operating system updates fail, get stuck, repeatedly ask for restart, show error codes, or cannot install because of storage, network, service, or policy problems.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-30 minutes',
+    'escalation_required': 0,
+    'escalation_notes': 'Escalate if updates repeatedly fail, security patches cannot install, the device is stuck in a boot/update loop, multiple devices are affected, or endpoint management policy/deployment issues are suspected.',
+    'tags': ['Windows Update', 'operating system update', 'update error', 'restart loop', 'disk space', 'update services', 'endpoint management', 'patching', 'WSUS', 'Intune'],
+    'symptoms': [
+        'Operating system update fails to install or repeatedly downloads without installing.',
+        'Computer repeatedly asks to restart or shows a pending restart state.',
+        'Update is stuck at a percentage or appears to be in a restart loop.',
+        'Windows Update shows an error code or something went wrong message.',
+        'Update reports that there is not enough disk space.',
+        'Update downloads but times out or fails during installation.',
+        'Multiple devices fail the same update, suggesting endpoint management, policy, or deployment issue.',
+    ],
+    'causes': [
+        'Common: not enough free disk space, pending restart, interrupted download, unstable internet, VPN/proxy/firewall block, Windows Update service stopped, another process blocking update, low battery, driver conflict, device outside maintenance window, or endpoint management policy controlling updates.',
+        'Advanced: corrupted Windows Update cache, corrupted system files, component store corruption, third-party security software conflict, incompatible driver, BitLocker/Secure Boot/firmware prerequisite, WSUS/Intune/SCCM deployment issue, update applicability/supersedence problem, broken update agent, DNS/proxy/TLS inspection issue, storage hardware problem, or bad update deployment affecting multiple devices.',
+    ],
+    'user_steps': [
+        'Save your work.',
+        'Restart the computer and try the update again.',
+        'Make sure the laptop is plugged into power.',
+        'Confirm the internet connection is stable.',
+        'Free up storage if Windows says there is not enough space.',
+        'Leave the computer powered on while updates install.',
+        'Do not force shut down unless the update has been stuck for a long time and IT instructs you.',
+        'Take a screenshot or write down the update error code.',
+        'Tell IT whether the computer restarted multiple times or is stuck in a loop.',
+        'Submit a ticket if the update keeps failing.',
+    ],
+    'it_steps': [
+        'Tier 1: Confirm the user, device name, operating system version/build, update name or KB number, and exact error code.',
+        'Tier 1: Ask when the issue started and whether the device was interrupted during update.',
+        'Tier 1: Confirm whether the computer is plugged into power and has stable internet access.',
+        'Tier 1: Check available disk space and whether a restart is pending.',
+        'Tier 1: Run Windows Update again and record the result.',
+        'Tier 1: Run the Windows Update troubleshooter / Get Help diagnostic where appropriate.',
+        'Tier 1: Confirm whether the issue affects one device or multiple devices.',
+        'Tier 1: Check whether the device is managed by Intune, SCCM, WSUS, or another endpoint tool.',
+        'Tier 1: Document screenshots, error codes, update history, and restart behavior.',
+        'Tier 2: Review Windows Update history and failed update code.',
+        'Tier 2: Check Windows Update-related services, such as Windows Update, BITS, and Cryptographic Services, according to company policy.',
+        'Tier 2: Determine whether the update error points to insufficient disk space, corrupted/missing update files, stopped update service, another process blocking update, or timeout/interruption.',
+        'Tier 2: Clear or reset Windows Update components only if allowed by support policy.',
+        'Tier 2: Check system file health using approved tools if corruption is suspected.',
+        'Tier 2: Review Event Viewer / Windows Update logs if available.',
+        'Tier 2: Check whether security software or endpoint protection is blocking update files.',
+        'Tier 2: Check the network path if updates fail only on a specific network: DNS resolution, proxy, firewall, VPN, or TLS inspection.',
+        'Tier 2: Compare update behavior on office network, home network, and hotspot if appropriate.',
+        'Tier 2: Check whether multiple devices in the same group, VLAN, site, or deployment ring are affected.',
+        'Tier 2: Escalate with update KB, error code, device build, logs, management policy, network used, and troubleshooting completed.',
+    ],
+}
+
+OPERATING_SYSTEM_UPDATE_SOLUTIONS = [
+    ('FIX_OS_UPDATE_RESTART_RETRY', 'Restart and Retry OS Update', 'A restart can clear pending update state and allow installation to continue.', 'Restart the computer, plug in the laptop, check Windows Update again, and document whether the update succeeds.', 0, 'Escalate if the update repeatedly fails after restart or the device enters a restart/update loop.', 'low'),
+    ('FIX_OS_UPDATE_FREE_DISK_SPACE', 'Free Up Space for Updates', 'OS updates can fail when there is not enough storage available.', 'Free approved space on the system drive, retry the update, and document the available space before and after cleanup.', 0, 'Escalate if storage remains critically low, disk health warnings appear, or cleanup requires elevated action.', 'medium'),
+    ('FIX_OS_UPDATE_BASIC_TROUBLESHOOTING', 'Run Basic Update Troubleshooting', 'Windows update tools can detect and repair common update problems.', 'Confirm internet, run Windows Update/Get Help diagnostics where appropriate, check date/time and update pause status, then retry.', 0, 'Escalate if basic diagnostics do not resolve the issue or the same error returns.', 'medium'),
+    ('FIX_OS_UPDATE_COLLECT_ERROR_CODE', 'Submit Update Error Code to IT', 'The update error code helps identify likely causes and next troubleshooting steps.', 'Capture the update name, KB number, error code, screenshot, and failure time for targeted troubleshooting.', 0, 'Escalate with exact KB/error code if the failure maps to policy, deployment, corruption, or driver issues.', 'medium'),
+    ('FIX_OS_UPDATE_STUCK_RESTART_LOOP', 'Report Stuck Update or Restart Loop', 'A stuck update or repeated restart loop may require technician review before more user action.', 'Record how long the device has been stuck, avoid repeated force shutdowns unless instructed, and escalate if the device cannot boot normally.', 1, 'Escalate to Endpoint/Desktop Support if recovery, rollback, startup repair, repair install, reimage, or hardware review may be needed.', 'high'),
+    ('FIX_OS_UPDATE_CHECK_SERVICES', 'Check Windows Update Services', 'Windows Update can fail when required services are stopped, disabled, or malfunctioning.', 'Check Windows Update-related services according to company policy and confirm endpoint management is not intentionally controlling update behavior.', 0, 'Escalate if services are blocked by policy, disabled by endpoint management, or repeatedly fail.', 'medium'),
+    ('FIX_OS_UPDATE_NETWORK_PROXY_BLOCK', 'Investigate Network or Proxy Update Block', 'Updates may fail if the network, proxy, firewall, VPN, DNS, or TLS inspection path blocks update download or validation.', 'Compare update behavior across trusted networks and collect DNS/proxy/firewall/VPN indicators.', 1, 'Escalate to Network or Endpoint team if update endpoints are blocked or multiple devices on the same network are affected.', 'high'),
+    ('FIX_OS_UPDATE_MANAGED_DEPLOYMENT_ESCALATE', 'Escalate Managed Update Deployment Issue', 'Multiple managed devices failing the same update may indicate deployment, policy, ring, or management-tool issue.', 'Confirm affected scope, update KB/build, endpoint management tool, policy/ring, and site/device group before escalation.', 1, 'Escalate to Endpoint Management/System team with affected devices, policy/ring, update KB/build, error codes, and timing.', 'high'),
+    ('FIX_OS_UPDATE_REPAIR_COMPONENTS_ESCALATE', 'Repair Windows Update Components or Escalate', 'Persistent update failures may require deeper Windows Update component repair, system file repair, or endpoint escalation.', 'Review history/logs, check system file health, reset components only if allowed, and escalate if advanced endpoint repair is required.', 1, 'Escalate if component repair, repair install, reimage, disk health review, or endpoint engineering action is needed.', 'high'),
+]
+
+OPERATING_SYSTEM_UPDATE_SOLUTION_STEPS = {
+    'FIX_OS_UPDATE_RESTART_RETRY': {
+        'user': ['Save your work.', 'Restart the computer.', 'Plug the laptop into power.', 'Open Windows Update and check for updates again.', 'Wait for installation to complete.'],
+        'technician': ['Check whether restart is pending.', 'Confirm device uptime.', 'Ask the user to restart and retry update.', 'Recheck update history after restart.', 'Document whether update succeeded.'],
+        'admin': ['Escalation notes: If update fails again after restart, collect KB number, error code, update history, and device build before escalation.'],
+    },
+    'FIX_OS_UPDATE_FREE_DISK_SPACE': {
+        'user': ['Empty Recycle Bin/Trash if allowed.', 'Remove unnecessary downloads.', 'Move approved files to company cloud or network storage.', 'Restart and try the update again.', 'Ask IT before deleting business files.'],
+        'technician': ['Check free space on the system drive.', 'Use approved cleanup tools or Storage Sense.', 'Remove temporary files and update cleanup files where safe.', 'Confirm enough free space for the update.', 'Retry update and document result.'],
+        'admin': ['Escalation notes: Escalate if storage remains critically low, cleanup requires elevated access, disk health warnings appear, or storage shortage is recurring.'],
+    },
+    'FIX_OS_UPDATE_BASIC_TROUBLESHOOTING': {
+        'user': ['Make sure internet is stable.', 'Open Windows Update and check again.', 'Restart when prompted.', 'Submit a ticket if the update still fails.'],
+        'technician': ['Run Windows Update troubleshooter/Get Help diagnostic where appropriate.', 'Check update history for the failed update.', 'Check that date/time are correct.', 'Confirm Windows Update is not paused.', 'Retry update and record any error code.'],
+        'admin': ['Escalation notes: Escalate if basic troubleshooting repeats the same error, update policy blocks troubleshooting, or the device remains noncompliant.'],
+    },
+    'FIX_OS_UPDATE_COLLECT_ERROR_CODE': {
+        'user': ['Take a screenshot of the update error.', 'Write down the error code.', 'Note when the update failed.', 'Submit a ticket with the screenshot and error code.'],
+        'technician': ['Record the KB/update name and error code.', 'Match the error to likely cause.', 'Check Microsoft guidance or internal support notes for that code.', 'Continue targeted troubleshooting based on error type.'],
+        'admin': ['Escalation notes: Include KB/update name, error code, OS build, update history, screenshots, and troubleshooting already completed.'],
+    },
+    'FIX_OS_UPDATE_STUCK_RESTART_LOOP': {
+        'user': ['Do not repeatedly force power off unless instructed by IT.', 'Note how long the update has been stuck.', 'Record any percentage or message shown.', 'Contact IT if the device cannot reach the login screen.'],
+        'technician': ['Determine whether update is genuinely stuck or still progressing.', 'Ask how long the device has been at the same screen/percentage.', 'Check whether the device can boot normally.', 'Escalate if recovery, rollback, startup repair, or reimage may be needed.'],
+        'admin': ['Escalation notes: Prioritize as High if the device cannot boot, security updates are involved, or business-critical work is blocked.'],
+    },
+    'FIX_OS_UPDATE_CHECK_SERVICES': {
+        'user': ['Restart the computer.', 'Try Windows Update again.', 'Submit the error screenshot if it fails.'],
+        'technician': ['Check Windows Update-related services according to policy.', 'Confirm services are not disabled by policy.', 'Restart services only if allowed.', 'Check whether endpoint management controls update behavior.', 'Escalate if services are blocked by policy or repeatedly fail.'],
+        'admin': ['Escalation notes: Escalate to Endpoint Management/System team if services are disabled by policy, repeatedly stop, or update control is managed centrally.'],
+    },
+    'FIX_OS_UPDATE_NETWORK_PROXY_BLOCK': {
+        'user': ['Confirm internet works.', 'Try again on a stable trusted network if allowed.', 'Tell IT whether you are on home Wi-Fi, office network, VPN, or public Wi-Fi.'],
+        'technician': ['Confirm DNS and internet access.', 'Compare update behavior on office network, home network, and hotspot if appropriate.', 'Check whether proxy, firewall, VPN, or content filtering may block update endpoints.', 'Determine whether multiple devices on the same network are affected.', 'Escalate to Network/Endpoint team with network path, error code, and affected scope.'],
+        'admin': ['Escalation notes: Escalate to Network Team if updates fail only on one site, VLAN, VPN, proxy path, or managed network segment.'],
+    },
+    'FIX_OS_UPDATE_MANAGED_DEPLOYMENT_ESCALATE': {
+        'user': ['Keep the device powered on.', 'Do not manually install random update files unless IT instructs you.', 'Provide the update error screenshot and device name.'],
+        'technician': ['Confirm whether multiple devices are affected.', 'Identify update KB/build and endpoint management policy/ring.', 'Check whether issue is limited to site, device group, or deployment ring.', 'Escalate to Endpoint Management/System team with affected scope and evidence.'],
+        'admin': ['Escalation notes: Include update KB, error code, device build, device group, deployment ring, affected site/VLAN if relevant, and timing of failures.'],
+    },
+    'FIX_OS_UPDATE_REPAIR_COMPONENTS_ESCALATE': {
+        'user': ['Keep the device available for IT troubleshooting.', 'Back up important files if instructed.', 'Do not interrupt repair steps once started.'],
+        'technician': ['Review update history, error code, and logs.', 'Check system file health using approved tools if corruption is suspected.', 'Reset update components only if company policy allows.', 'Check disk health if failures repeat.', 'Escalate if repair install, reimage, or advanced endpoint action is needed.'],
+        'admin': ['Escalation notes: Escalate to Endpoint/Desktop Support if component store repair, repair install, reimage, or hardware/storage review is needed.'],
+    },
+}
+
+OPERATING_SYSTEM_UPDATE_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_OS_UPDATE_USER', None, 'category', 'Operating System Update Issue', 'User-friendly diagnostic tree for failed OS updates, low storage, stuck updates, error codes, and restart loops.', None, None, None, None, 1),
+    ('Q_OS_UPDATE_RESTARTED_USER', 'ROOT_OS_UPDATE_USER', 'question', 'Restart and Retry', None, 'Have you restarted the computer and tried the update again?', None, None, None, 1),
+    ('S_OS_UPDATE_RESTART_USER', 'Q_OS_UPDATE_RESTARTED_USER', 'solution', 'Restart and Retry OS Update', None, None, 'Have you restarted the computer and tried the update again?', 'No', 'FIX_OS_UPDATE_RESTART_RETRY', 1),
+    ('Q_OS_UPDATE_LOW_SPACE_USER', 'Q_OS_UPDATE_RESTARTED_USER', 'question', 'Check Disk Space Message', None, 'Does the update show not enough disk space?', 'Have you restarted the computer and tried the update again?', 'Yes', None, 2),
+    ('S_OS_UPDATE_FREE_SPACE_USER', 'Q_OS_UPDATE_LOW_SPACE_USER', 'solution', 'Free Up Space for Updates', None, None, 'Does the update show not enough disk space?', 'Yes', 'FIX_OS_UPDATE_FREE_DISK_SPACE', 1),
+    ('Q_OS_UPDATE_STUCK_USER', 'Q_OS_UPDATE_LOW_SPACE_USER', 'question', 'Check Stuck Update or Restart Loop', None, 'Is the update stuck, looping, or repeatedly asking to restart?', 'Does the update show not enough disk space?', 'No', None, 2),
+    ('S_OS_UPDATE_STUCK_USER', 'Q_OS_UPDATE_STUCK_USER', 'solution', 'Report Stuck Update or Restart Loop', None, None, 'Is the update stuck, looping, or repeatedly asking to restart?', 'Yes', 'FIX_OS_UPDATE_STUCK_RESTART_LOOP', 1),
+    ('Q_OS_UPDATE_ERROR_CODE_USER', 'Q_OS_UPDATE_STUCK_USER', 'question', 'Check Error Code', None, 'Do you see an error code?', 'Is the update stuck, looping, or repeatedly asking to restart?', 'No', None, 2),
+    ('S_OS_UPDATE_ERROR_CODE_USER', 'Q_OS_UPDATE_ERROR_CODE_USER', 'solution', 'Submit Update Error Code to IT', None, None, 'Do you see an error code?', 'Yes', 'FIX_OS_UPDATE_COLLECT_ERROR_CODE', 1),
+    ('S_OS_UPDATE_BASIC_USER', 'Q_OS_UPDATE_ERROR_CODE_USER', 'solution', 'Run Basic Update Troubleshooting', None, None, 'Do you see an error code?', 'No', 'FIX_OS_UPDATE_BASIC_TROUBLESHOOTING', 2),
+]
+
+OPERATING_SYSTEM_UPDATE_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_OS_UPDATE_TECH', None, 'category', 'Operating System Update Issue - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for OS update errors, disk space, services, managed deployment, network/proxy blocks, and repair/escalation.', None, None, None, None, 1),
+    ('Q_OS_UPDATE_ERROR_CODE_TECH', 'ROOT_OS_UPDATE_TECH', 'question', 'Check Failed KB or Error Code', None, 'Is there a failed KB number or update error code?', None, None, None, 1),
+    ('S_OS_UPDATE_COLLECT_HISTORY_TECH', 'Q_OS_UPDATE_ERROR_CODE_TECH', 'solution', 'Collect Update History and Reproduce Failure', None, None, 'Is there a failed KB number or update error code?', 'No', 'FIX_OS_UPDATE_COLLECT_ERROR_CODE', 1),
+    ('Q_OS_UPDATE_LOW_SPACE_TECH', 'Q_OS_UPDATE_ERROR_CODE_TECH', 'question', 'Check Disk Space', None, 'Is available disk space low?', 'Is there a failed KB number or update error code?', 'Yes', None, 2),
+    ('S_OS_UPDATE_FREE_SPACE_TECH', 'Q_OS_UPDATE_LOW_SPACE_TECH', 'solution', 'Resolve Low Disk Space Blocking Update', None, None, 'Is available disk space low?', 'Yes', 'FIX_OS_UPDATE_FREE_DISK_SPACE', 1),
+    ('Q_OS_UPDATE_SERVICES_TECH', 'Q_OS_UPDATE_LOW_SPACE_TECH', 'question', 'Check Update Services', None, 'Are Windows Update services running?', 'Is available disk space low?', 'No', None, 2),
+    ('S_OS_UPDATE_SERVICES_TECH', 'Q_OS_UPDATE_SERVICES_TECH', 'solution', 'Check Windows Update Services', None, None, 'Are Windows Update services running?', 'No / Not checked', 'FIX_OS_UPDATE_CHECK_SERVICES', 1),
+    ('Q_OS_UPDATE_MANAGED_SCOPE_TECH', 'Q_OS_UPDATE_SERVICES_TECH', 'question', 'Check Managed Device Scope', None, 'Are multiple managed devices affected?', 'Are Windows Update services running?', 'Yes', None, 2),
+    ('S_OS_UPDATE_MANAGED_TECH', 'Q_OS_UPDATE_MANAGED_SCOPE_TECH', 'solution', 'Escalate Managed Update Deployment Issue', None, None, 'Are multiple managed devices affected?', 'Yes', 'FIX_OS_UPDATE_MANAGED_DEPLOYMENT_ESCALATE', 1),
+    ('Q_OS_UPDATE_NETWORK_TECH', 'Q_OS_UPDATE_MANAGED_SCOPE_TECH', 'question', 'Check Network or Proxy Path', None, 'Does update fail only on one network or VPN?', 'Are multiple managed devices affected?', 'No', None, 2),
+    ('S_OS_UPDATE_NETWORK_TECH', 'Q_OS_UPDATE_NETWORK_TECH', 'solution', 'Investigate Network or Proxy Update Block', None, None, 'Does update fail only on one network or VPN?', 'Yes', 'FIX_OS_UPDATE_NETWORK_PROXY_BLOCK', 1),
+    ('S_OS_UPDATE_REPAIR_TECH', 'Q_OS_UPDATE_NETWORK_TECH', 'solution', 'Repair Windows Update Components or Escalate', None, None, 'Does update fail only on one network or VPN?', 'No', 'FIX_OS_UPDATE_REPAIR_COMPONENTS_ESCALATE', 2),
+]
+
+def seed_operating_system_update_issue_content(cursor):
+    """Seed Operating System Update Issue KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = OPERATING_SYSTEM_UPDATE_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, OPERATING_SYSTEM_UPDATE_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, OPERATING_SYSTEM_UPDATE_KB['title'], OPERATING_SYSTEM_UPDATE_KB['summary'], OPERATING_SYSTEM_UPDATE_KB['difficulty'], OPERATING_SYSTEM_UPDATE_KB['estimated_time'], OPERATING_SYSTEM_UPDATE_KB['escalation_required'], OPERATING_SYSTEM_UPDATE_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, OPERATING_SYSTEM_UPDATE_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, OPERATING_SYSTEM_UPDATE_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, OPERATING_SYSTEM_UPDATE_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, OPERATING_SYSTEM_UPDATE_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, OPERATING_SYSTEM_UPDATE_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, OPERATING_SYSTEM_UPDATE_SOLUTIONS)
+    for solution_code, audience_steps in OPERATING_SYSTEM_UPDATE_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_operating_system_update_issue_tree(cursor, 'user', 'OPERATING_SYSTEM_UPDATE_ISSUE_USER', 'Operating System Update Issue - User Diagnostic', 'User-friendly diagnostic tree for failed OS updates, low storage, stuck updates, error codes, and restart loops.', OPERATING_SYSTEM_UPDATE_USER_DIAGNOSTIC_NODES)
+    seed_operating_system_update_issue_tree(cursor, 'technician', 'OPERATING_SYSTEM_UPDATE_ISSUE_TECHNICIAN', 'Operating System Update Issue - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for OS update errors, disk space, services, managed deployment, network/proxy blocks, and repair/escalation.', OPERATING_SYSTEM_UPDATE_TECH_DIAGNOSTIC_NODES)
+
+def seed_operating_system_update_issue_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'OPERATING_SYSTEM_UPDATE_ISSUE')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'OPERATING_SYSTEM_UPDATE_ISSUE', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
 # -----------------------------
 # EXISTING ISSUE ROLE ALIGNMENT PATCH
 # -----------------------------
@@ -4877,6 +5124,7 @@ def initialize_database():
     seed_slow_computer_performance_content(cursor)
     seed_application_not_opening_content(cursor)
     seed_application_crashing_freezing_content(cursor)
+    seed_operating_system_update_issue_content(cursor)
     seed_existing_issue_role_alignment(cursor)
 
     cursor.execute("""
