@@ -569,6 +569,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Application Not Opening": "APPLICATION_NOT_OPENING",
     "Application Crashing / Freezing": "APPLICATION_CRASHING_FREEZING",
     "Operating System Update Issue": "OPERATING_SYSTEM_UPDATE_ISSUE",
+    "Device Running Out of Storage": "DEVICE_RUNNING_OUT_OF_STORAGE",
 }
 
 
@@ -582,10 +583,10 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
-    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, and Operating System Update Issue. Other sample issues are hidden until they "
+    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, and Device Running Out of Storage. Other sample issues are hidden until they "
     "are expanded with detailed symptoms, causes, user steps, and technician steps."
 )
 
@@ -4761,6 +4762,237 @@ def seed_operating_system_update_issue_tree(cursor, audience, tree_code, title, 
                 updated_at=CURRENT_TIMESTAMP
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
+
+# -----------------------------
+# DEVICE RUNNING OUT OF STORAGE CONTENT
+# -----------------------------
+DEVICE_STORAGE_PROBLEM = (
+    'DEVICE_RUNNING_OUT_OF_STORAGE',
+    'Device Running Out of Storage',
+    'Performance & Operating System',
+    'Medium',
+    'Computer is low on storage space, cannot save files, cannot install updates, or shows disk-full warnings.',
+)
+
+DEVICE_STORAGE_KB = {
+    'title': 'Device Running Out of Storage',
+    'summary': 'Troubleshooting article for low disk space, failed saves, failed updates, app install issues, cloud sync storage, temporary files, and recurring storage growth.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-25 minutes',
+    'escalation_required': 0,
+    'escalation_notes': 'Escalate if storage remains critically low, security updates cannot install, the device cannot save business files, storage fills again quickly, disk health is suspect, or suspicious files/processes are present.',
+    'tags': ['storage', 'disk space', 'C drive full', 'low disk space', 'Storage Sense', 'temporary files', 'Windows Update cleanup', 'cloud sync', 'Recycle Bin', 'endpoint support'],
+    'symptoms': [
+        'Low disk space or storage full warning appears.',
+        'User cannot save files or downloads fail.',
+        'Operating system updates fail because there is not enough space.',
+        'Applications cannot install or update.',
+        'Computer is slow and the system drive is nearly full.',
+        'Cloud sync appears stuck or stores too many files locally.',
+        'Storage becomes low again shortly after cleanup.',
+    ],
+    'causes': [
+        'Common: large files in Downloads/Desktop/Documents/Videos, full Recycle Bin, temporary files, Windows update cleanup files, cloud/offline sync cache, local mailbox cache, duplicate files, leftover installers, application logs, crash dumps, too many installed apps, or insufficient drive capacity.',
+        'Advanced: runaway application logs, corrupted update cache, user profile bloat, shadow copies/restore points, hibernation/page file growth, endpoint backup or management cache, virtual machines/development environments, malware or unwanted software, file-system reporting issue, disk quota, or storage device health issue.',
+    ],
+    'user_steps': [
+        'Save your work before deleting anything.',
+        'Empty the Recycle Bin or Trash.',
+        'Review Downloads and remove files you no longer need.',
+        'Move approved business files to company cloud or network storage.',
+        'Remove duplicate personal files if company policy allows.',
+        'Do not delete system folders such as Windows, Program Files, or hidden folders.',
+        'Restart the computer after cleanup.',
+        'Try saving files or running updates again.',
+        'Take a screenshot of the low-storage warning.',
+        'Contact IT if storage is still low or you are unsure what can be deleted.',
+    ],
+    'it_steps': [
+        'Tier 1: Confirm the user, device name, operating system, disk size, and available free space.',
+        'Tier 1: Confirm which drive is full, usually C:.',
+        'Tier 1: Ask what symptom triggered the issue: cannot save files, update failure, app install failure, slow performance, or cloud sync warning.',
+        'Tier 1: Check common user folders such as Downloads, Desktop, Documents, Pictures, and Videos.',
+        'Tier 1: Check Recycle Bin size.',
+        'Tier 1: Use approved Windows storage settings or cleanup tools.',
+        'Tier 1: Confirm whether cloud files are stored locally instead of online-only.',
+        'Tier 1: Confirm whether large files can be moved to approved company storage.',
+        'Tier 1: Avoid deleting business files without user confirmation.',
+        'Tier 1: Document before and after free space.',
+        'Tier 2 / Endpoint Support: Review storage usage categories in Windows Storage settings.',
+        'Tier 2 / Endpoint Support: Check temporary files and Windows Update cleanup files.',
+        'Tier 2 / Endpoint Support: Check whether Storage Sense can be enabled or configured according to company policy.',
+        'Tier 2 / Endpoint Support: Check for large application logs, crash dumps, installer folders, and cache directories.',
+        'Tier 2 / Endpoint Support: Check cloud sync and offline file cache behavior.',
+        'Tier 2 / Endpoint Support: Check whether the storage issue returns quickly after cleanup.',
+        'Tier 2 / Endpoint Support: Check endpoint backup or management tool cache if present.',
+        'Tier 2 / Endpoint Support: Check disk health if low-space warnings come with disk errors or performance problems.',
+        'Tier 2 / Endpoint Support: Determine whether the issue is user file accumulation, temporary/update files, sync/cache issue, application log growth, insufficient capacity, or possible malware/unwanted software.',
+        'Escalate with disk size, free space, largest categories, cleanup performed, recurrence pattern, and business impact.',
+    ],
+}
+
+DEVICE_STORAGE_SOLUTIONS = [
+    ('FIX_STORAGE_CHECK_USAGE_DETAILS', 'Check Storage Usage and Capture Details', 'Confirm which drive is low and what symptom the user is seeing.', 'Check affected drive, available space, warning message, and storage categories before deciding whether cleanup or escalation is needed.', 0, 'Escalate if the warning is tied to update failure, inability to save work, or unknown recurring storage growth.', 'medium'),
+    ('FIX_STORAGE_REMOVE_OBVIOUS_FILES', 'Remove Obvious Unneeded Files Safely', 'Downloads, Recycle Bin contents, and duplicate personal files often consume space.', 'Remove obvious unneeded files only with user approval and avoid system folders or business data without confirmation.', 0, 'Escalate if user files cannot be removed or storage remains critically low after safe cleanup.', 'medium'),
+    ('FIX_STORAGE_CLEAN_TEMP_UPDATE_FILES', 'Clean Temporary and Update Files', 'Temporary files and update cleanup files may consume significant space.', 'Use approved cleanup tools, review temporary/update cleanup files, restart, and verify recovered space.', 0, 'Escalate if update cache is corrupted, cleanup requires elevated action, or updates still fail.', 'medium'),
+    ('FIX_STORAGE_CLOUD_SYNC_LOCAL_FILES', 'Review Cloud Sync Local Storage', 'Cloud files or offline files may be stored locally and consume disk space.', 'Review sync status, online-only settings, local cache, and required file availability according to company policy.', 0, 'Escalate if sync client cache is corrupted or policy-managed sync settings require endpoint/admin action.', 'medium'),
+    ('FIX_STORAGE_BLOCKING_WORK', 'Contact IT for Low Storage Blocking Work', 'Low storage is affecting updates, installs, or the ability to save work.', 'Prioritize cleanup and evidence collection when storage blocks work, security updates, or app installs.', 1, 'Escalate if capacity upgrade, reimage, replacement, or urgent update compliance work is needed.', 'high'),
+    ('FIX_STORAGE_APP_LOGS_CRASH_DUMPS', 'Investigate Application Logs or Crash Dumps', 'Logs, crash dumps, or application caches may grow abnormally.', 'Identify large logs/dumps/caches, connect them to app crashes if applicable, and clean only approved locations.', 1, 'Escalate if logs grow again, indicate application failure, or require vendor/application support.', 'high'),
+    ('FIX_STORAGE_RECURRING_UNKNOWN_GROWTH', 'Escalate Recurring or Unknown Storage Growth', 'Storage fills again after cleanup or the source is unclear.', 'Document growth timeline and investigate sync cache, logs, update cache, backup cache, suspicious files, and disk health.', 1, 'Escalate to Endpoint, Systems, or Security based on evidence of recurring growth, disk health issues, or suspicious activity.', 'high'),
+]
+
+DEVICE_STORAGE_SOLUTION_STEPS = {
+    'FIX_STORAGE_CHECK_USAGE_DETAILS': {
+        'user': ['Take a screenshot of the storage warning.', 'Note whether you cannot save files, install apps, or run updates.', 'Submit the screenshot and device name if you need help.'],
+        'technician': ['Check the affected drive and available free space.', 'Record disk size, free space, and warning message.', 'Check Windows Storage categories.', 'Determine whether the issue is urgent or preventive.'],
+        'admin': ['Escalation notes: Escalate if free space is critically low, storage blocks work/security updates, or the source is unknown.'],
+    },
+    'FIX_STORAGE_REMOVE_OBVIOUS_FILES': {
+        'user': ['Empty the Recycle Bin.', 'Review Downloads for files you no longer need.', 'Move approved files to company cloud or network storage.', 'Do not delete system folders.'],
+        'technician': ['Review common user folders with user approval.', 'Empty Recycle Bin if approved.', 'Remove unnecessary installers or duplicate files if safe.', 'Confirm free space after cleanup.'],
+        'admin': ['Escalation notes: Escalate if user files cannot be removed safely or the device remains below safe free-space thresholds.'],
+    },
+    'FIX_STORAGE_CLEAN_TEMP_UPDATE_FILES': {
+        'user': ['Restart the computer.', 'Contact IT before deleting unfamiliar files.', 'Try updates again after IT confirms cleanup.'],
+        'technician': ['Use approved Windows cleanup tools.', 'Review temporary files and Windows Update cleanup files.', 'Use Storage Sense if allowed by company policy.', 'Restart after cleanup and verify free space.'],
+        'admin': ['Escalation notes: Escalate if cleanup requires elevated action, update cache appears corrupted, or OS updates still fail.'],
+    },
+    'FIX_STORAGE_CLOUD_SYNC_LOCAL_FILES': {
+        'user': ['Identify large synced folders if possible.', 'Do not delete shared cloud files unless you understand the impact.', 'Ask IT before changing sync settings.'],
+        'technician': ['Check cloud sync status and local file availability settings.', 'Identify folders stored locally.', 'Use online-only or free-up-space features if company policy allows.', 'Confirm the user can still access required files.'],
+        'admin': ['Escalation notes: Escalate if sync client cache is corrupted, policy-managed settings are required, or shared data could be affected.'],
+    },
+    'FIX_STORAGE_BLOCKING_WORK': {
+        'user': ['Stop deleting files if you are unsure what is safe.', 'Submit a ticket with the warning screenshot.', 'Include whether updates, installs, or saving files are blocked.'],
+        'technician': ['Prioritize cleanup if work or security updates are blocked.', 'Check free space and update/install failure messages.', 'Perform approved cleanup.', 'Escalate if capacity upgrade, reimage, or replacement is needed.'],
+        'admin': ['Escalation notes: Treat as High if security updates cannot install, business files cannot be saved, or less than 5 percent free space remains.'],
+    },
+    'FIX_STORAGE_APP_LOGS_CRASH_DUMPS': {
+        'user': ['Report whether an application has been crashing.', 'Do not delete unfamiliar log or system files.', 'Provide screenshots of storage warnings.'],
+        'technician': ['Identify unusually large logs, dumps, or application cache folders.', 'Check whether a specific app is repeatedly crashing.', 'Clean only approved locations.', 'Escalate if logs grow again or indicate application failure.'],
+        'admin': ['Escalation notes: Escalate to Application/Endpoint Support if logs or dumps point to recurring app crashes or vendor-specific failure.'],
+    },
+    'FIX_STORAGE_RECURRING_UNKNOWN_GROWTH': {
+        'user': ['Report when the storage warning returns.', 'Note any app, sync, or update activity around that time.', 'Avoid installing cleanup utilities from the internet.'],
+        'technician': ['Document before and after free space and growth timeline.', 'Check for sync cache, logs, update cache, backup cache, or suspicious files.', 'Check disk health if performance or errors are present.', 'Escalate to Endpoint, Systems, or Security based on evidence.'],
+        'admin': ['Escalation notes: Escalate recurring/unknown growth with screenshots, free-space trend, largest folders/categories, cleanup actions, disk health indicators, and suspicious-process evidence if present.'],
+    },
+}
+
+DEVICE_STORAGE_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_STORAGE_USER', None, 'category', 'Device Running Out of Storage', 'User-friendly diagnostic tree for low disk space, failed saves, update/install blockers, cloud sync storage, and recurring storage growth.', None, None, None, None, 1),
+    ('Q_STORAGE_WARNING_USER', 'ROOT_STORAGE_USER', 'question', 'Check Storage Warning', None, 'Are you seeing a low disk space or storage full warning?', None, None, None, 1),
+    ('S_STORAGE_CHECK_DETAILS_USER', 'Q_STORAGE_WARNING_USER', 'solution', 'Check Storage Usage and Capture Details', None, None, 'Are you seeing a low disk space or storage full warning?', 'No', 'FIX_STORAGE_CHECK_USAGE_DETAILS', 1),
+    ('Q_STORAGE_RECYCLE_DOWNLOADS_USER', 'Q_STORAGE_WARNING_USER', 'question', 'Check Recycle Bin and Downloads', None, 'Have you emptied Recycle Bin and checked Downloads?', 'Are you seeing a low disk space or storage full warning?', 'Yes', None, 2),
+    ('S_STORAGE_REMOVE_FILES_USER', 'Q_STORAGE_RECYCLE_DOWNLOADS_USER', 'solution', 'Remove Obvious Unneeded Files Safely', None, None, 'Have you emptied Recycle Bin and checked Downloads?', 'No', 'FIX_STORAGE_REMOVE_OBVIOUS_FILES', 1),
+    ('Q_STORAGE_BLOCKING_WORK_USER', 'Q_STORAGE_RECYCLE_DOWNLOADS_USER', 'question', 'Check Work Blocker', None, 'Is the issue blocking updates, installs, or saving files?', 'Have you emptied Recycle Bin and checked Downloads?', 'Yes', None, 2),
+    ('S_STORAGE_BLOCKING_USER', 'Q_STORAGE_BLOCKING_WORK_USER', 'solution', 'Contact IT for Low Storage Blocking Work', None, None, 'Is the issue blocking updates, installs, or saving files?', 'Yes', 'FIX_STORAGE_BLOCKING_WORK', 1),
+    ('Q_STORAGE_CLOUD_SYNC_USER', 'Q_STORAGE_BLOCKING_WORK_USER', 'question', 'Check Cloud or Offline Files', None, 'Do you use cloud or offline files stored locally?', 'Is the issue blocking updates, installs, or saving files?', 'No', None, 2),
+    ('S_STORAGE_CLOUD_SYNC_USER', 'Q_STORAGE_CLOUD_SYNC_USER', 'solution', 'Review Cloud Sync Local Storage', None, None, 'Do you use cloud or offline files stored locally?', 'Yes / Not sure', 'FIX_STORAGE_CLOUD_SYNC_LOCAL_FILES', 1),
+    ('S_STORAGE_REVIEW_TICKET_USER', 'Q_STORAGE_CLOUD_SYNC_USER', 'solution', 'Submit Storage Review Ticket', None, None, 'Do you use cloud or offline files stored locally?', 'No', 'FIX_STORAGE_CHECK_USAGE_DETAILS', 2),
+]
+
+DEVICE_STORAGE_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_STORAGE_TECH', None, 'category', 'Device Running Out of Storage - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for low storage, cleanup categories, sync/cache, logs, update blockers, and recurring storage growth.', None, None, None, None, 1),
+    ('Q_STORAGE_SAFE_THRESHOLD_TECH', 'ROOT_STORAGE_TECH', 'question', 'Check Free-Space Threshold', None, 'Is the system drive below a safe free-space threshold?', None, None, None, 1),
+    ('S_STORAGE_USAGE_SYMPTOM_TECH', 'Q_STORAGE_SAFE_THRESHOLD_TECH', 'solution', 'Check Storage Usage and User-Reported Symptom', None, None, 'Is the system drive below a safe free-space threshold?', 'No', 'FIX_STORAGE_CHECK_USAGE_DETAILS', 1),
+    ('Q_STORAGE_CATEGORY_TECH', 'Q_STORAGE_SAFE_THRESHOLD_TECH', 'question', 'Identify Largest Storage Category', None, 'What category is using most space?', 'Is the system drive below a safe free-space threshold?', 'Yes', None, 2),
+    ('S_STORAGE_USER_FILES_TECH', 'Q_STORAGE_CATEGORY_TECH', 'solution', 'Clean User Files with Approval', None, None, 'What category is using most space?', 'User files', 'FIX_STORAGE_REMOVE_OBVIOUS_FILES', 1),
+    ('S_STORAGE_TEMP_TECH', 'Q_STORAGE_CATEGORY_TECH', 'solution', 'Clean Temporary and Update Files', None, None, 'What category is using most space?', 'Temporary/update files', 'FIX_STORAGE_CLEAN_TEMP_UPDATE_FILES', 2),
+    ('S_STORAGE_SYNC_TECH', 'Q_STORAGE_CATEGORY_TECH', 'solution', 'Review Cloud Sync and Offline Files', None, None, 'What category is using most space?', 'Cloud/offline cache', 'FIX_STORAGE_CLOUD_SYNC_LOCAL_FILES', 3),
+    ('S_STORAGE_LOGS_TECH', 'Q_STORAGE_CATEGORY_TECH', 'solution', 'Investigate Application Logs or Crash Dumps', None, None, 'What category is using most space?', 'Logs/crash dumps', 'FIX_STORAGE_APP_LOGS_CRASH_DUMPS', 4),
+    ('S_STORAGE_UNKNOWN_TECH', 'Q_STORAGE_CATEGORY_TECH', 'solution', 'Escalate Recurring or Unknown Storage Growth', None, None, 'What category is using most space?', 'Unknown / recurring', 'FIX_STORAGE_RECURRING_UNKNOWN_GROWTH', 5),
+]
+
+def seed_device_storage_content(cursor):
+    """Seed Device Running Out of Storage KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = DEVICE_STORAGE_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, DEVICE_STORAGE_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, DEVICE_STORAGE_KB['title'], DEVICE_STORAGE_KB['summary'], DEVICE_STORAGE_KB['difficulty'], DEVICE_STORAGE_KB['estimated_time'], DEVICE_STORAGE_KB['escalation_required'], DEVICE_STORAGE_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, DEVICE_STORAGE_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, DEVICE_STORAGE_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, DEVICE_STORAGE_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, DEVICE_STORAGE_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, DEVICE_STORAGE_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, DEVICE_STORAGE_SOLUTIONS)
+    for solution_code, audience_steps in DEVICE_STORAGE_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_device_storage_tree(cursor, 'user', 'DEVICE_RUNNING_OUT_OF_STORAGE_USER', 'Device Running Out of Storage - User Diagnostic', 'User-friendly diagnostic tree for low disk space, cleanup, cloud sync, update/install blockers, and storage review.', DEVICE_STORAGE_USER_DIAGNOSTIC_NODES)
+    seed_device_storage_tree(cursor, 'technician', 'DEVICE_RUNNING_OUT_OF_STORAGE_TECHNICIAN', 'Device Running Out of Storage - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for low storage categories, cleanup paths, recurring growth, and escalation.', DEVICE_STORAGE_TECH_DIAGNOSTIC_NODES)
+
+def seed_device_storage_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'DEVICE_RUNNING_OUT_OF_STORAGE')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'DEVICE_RUNNING_OUT_OF_STORAGE', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
 # -----------------------------
 # EXISTING ISSUE ROLE ALIGNMENT PATCH
 # -----------------------------
@@ -5125,6 +5357,7 @@ def initialize_database():
     seed_application_not_opening_content(cursor)
     seed_application_crashing_freezing_content(cursor)
     seed_operating_system_update_issue_content(cursor)
+    seed_device_storage_content(cursor)
     seed_existing_issue_role_alignment(cursor)
 
     cursor.execute("""
