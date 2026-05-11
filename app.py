@@ -570,6 +570,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Application Crashing / Freezing": "APPLICATION_CRASHING_FREEZING",
     "Operating System Update Issue": "OPERATING_SYSTEM_UPDATE_ISSUE",
     "Device Running Out of Storage": "DEVICE_RUNNING_OUT_OF_STORAGE",
+    "Phishing Email Reported": "PHISHING_EMAIL_REPORTED",
 }
 
 
@@ -583,7 +584,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
     "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, and Device Running Out of Storage. Other sample issues are hidden until they "
@@ -4993,6 +4994,369 @@ def seed_device_storage_tree(cursor, audience, tree_code, title, description, no
                 updated_at=CURRENT_TIMESTAMP
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
+
+# -----------------------------
+# PHISHING EMAIL REPORTED CONTENT
+# -----------------------------
+PHISHING_EMAIL_PROBLEM = (
+    'PHISHING_EMAIL_REPORTED',
+    'Phishing Email Reported',
+    'Security',
+    'Medium',
+    'User received a suspicious email, link, attachment, QR code, or message that may be attempting credential theft, malware delivery, impersonation, or fraud.',
+)
+
+PHISHING_EMAIL_KB = {
+    'title': 'Phishing Email Reported',
+    'summary': 'Use this guide when you receive a suspicious email, link, attachment, QR code, password reset request, payment request, or message asking for urgent action.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '5-15 minutes',
+    'escalation_required': 1,
+    'escalation_notes': 'Escalate immediately if the user clicked a link, opened an attachment, entered credentials, approved MFA, shared sensitive data, sent payment, or if multiple users received the same message.',
+    'tags': ['phishing', 'suspicious email', 'security', 'malicious link', 'attachment', 'MFA prompt', 'credential theft', 'spoofing', 'QR phishing', 'email security'],
+    'symptoms': [
+        'Suspicious email asks the user to click a link, reset a password, open an attachment, scan a QR code, or take urgent action.',
+        'Sender address, reply-to address, display name, or domain looks unusual or impersonates a trusted person or company.',
+        'Message requests gift cards, payment, payroll changes, bank changes, personal information, or credentials.',
+        'User clicked a suspicious link or scanned a QR code but may not have entered information.',
+        'User entered credentials, MFA code, payment information, personal information, or approved an unexpected MFA prompt.',
+        'User opened or downloaded a suspicious attachment and endpoint review may be needed.',
+        'Multiple users received similar messages, suggesting an active phishing campaign.',
+    ],
+    'causes': [
+        'Common: mass phishing campaign, spoofed sender display name, compromised external sender account, fake password reset or sign-in page, malicious attachment, fake invoice, QR phishing, urgent pressure tactic, business email compromise attempt, user clicking a suspicious link, user entering credentials, or user approving unexpected MFA.',
+        'Advanced: internal account compromise sending phishing to coworkers, adversary-in-the-middle phishing stealing session tokens, OAuth consent phishing, attacker-created mailbox rule, lookalike domain or typosquatting, macro/script/dropper attachment, redirect chains or CAPTCHA evasion, security-filter bypass through trusted sending platforms, or credential reuse from a prior breach.',
+    ],
+    'user_steps': [
+        'Do not click links or open attachments in the suspicious email.',
+        'Do not reply to the sender.',
+        'Do not forward the email to coworkers.',
+        'Use the company phishing-report button if available.',
+        'If there is no report button, contact IT and keep the message available.',
+        'If you clicked a link, tell IT immediately.',
+        'If you entered your password, MFA code, payment information, or personal information, tell IT immediately.',
+        'If you approved an MFA prompt you did not expect, report it immediately.',
+        'If you downloaded or opened an attachment, stop using the device for sensitive work until IT reviews it.',
+        'Note the sender, subject, time received, and any action you took.',
+    ],
+    'it_steps': [
+        'Tier 1: Thank the user and instruct them not to click, reply, forward, or delete the message until reporting/preservation steps are complete.',
+        'Tier 1: Ask what action the user took: only received, clicked link, scanned QR code, opened/downloaded attachment, entered credentials, approved MFA, replied, shared data, or sent payment.',
+        'Tier 1: Collect sender, subject, received time, screenshot, original message, and message headers if available.',
+        'Tier 1: Ask whether coworkers received the same or similar email.',
+        'Tier 1: Confirm whether the email is still in the mailbox and route it through the approved phishing-report process.',
+        'Tier 1: If the user clicked or entered credentials, route to password reset, account security, and Security escalation according to policy.',
+        'Tier 1: If an attachment was opened or downloaded, route to endpoint/security review.',
+        'Tier 1: Escalate urgently if payment, payroll, gift card, invoice, executive impersonation, or banking change is involved.',
+        'Tier 1: Document user action, affected account, device name, timestamps, and business impact.',
+        'Tier 2 / Security-aware support: Review the message safely using approved tools; do not click links directly.',
+        'Tier 2 / Security-aware support: Check sender address, reply-to address, display name, and domain similarity.',
+        'Tier 2 / Security-aware support: Inspect URLs, attachments, and QR targets only through approved security tools or sandbox processes.',
+        'Tier 2 / Security-aware support: Check email authentication results such as SPF, DKIM, or DMARC if available.',
+        'Tier 2 / Security-aware support: Search for similar messages by sender, subject, URL, attachment name/hash, or campaign indicators if tools are available.',
+        'Tier 2 / Security-aware support: Check whether the user submitted credentials or approved MFA and review sign-in logs if access is available.',
+        'Tier 2 / Security-aware support: Check for suspicious mailbox forwarding rules, inbox rules, or unusual activity when compromise is suspected.',
+        'Tier 2 / Security-aware support: Escalate to Security with indicators, user actions, message sample/header, affected users, timestamps, and containment status.',
+    ],
+}
+
+PHISHING_EMAIL_SOLUTIONS = [
+    ('FIX_PHISHING_REPORT_EMAIL_SAFELY', 'Report Suspicious Email Safely', 'The user received a suspicious message but did not interact with it.', 'Do not interact with the message. Report it using the approved phishing-report process and preserve evidence until IT or Security confirms next steps.', 0, 'Escalate if message indicators appear malicious, many users received it, or it impersonates high-risk business functions.', 'medium'),
+    ('FIX_PHISHING_LINK_CLICKED_NO_DATA', 'Report Link Clicked Without Data Entry', 'User clicked a suspicious link or scanned a QR code but did not submit credentials or information.', 'Record click time, close the page, avoid further interaction, and report the message for Security review.', 1, 'Escalate if URL is confirmed malicious, multiple users clicked, or suspicious prompts/sign-ins follow.', 'high'),
+    ('FIX_PHISHING_CREDENTIAL_DATA_EXPOSURE', 'Report Possible Credential or Data Exposure', 'User entered credentials, MFA code, payment information, or sensitive data into a suspicious site.', 'Treat as possible account compromise and initiate password reset/account protection and Security escalation according to policy.', 1, 'Escalate immediately to Security and Identity for password reset, session revocation, MFA review, and sign-in investigation.', 'high'),
+    ('FIX_PHISHING_ATTACHMENT_OPENED', 'Report Suspicious Attachment Opened', 'User opened or downloaded a suspicious attachment and the endpoint may need review.', 'Record attachment details and escalate for endpoint/security review without opening or executing the file.', 1, 'Escalate to Security/Endpoint for malware review, scan, isolation decision, and containment guidance.', 'high'),
+    ('FIX_PHISHING_TRIAGE_REPORT', 'Triage and Report Suspicious Email', 'IT Support Specialist reviews the report safely and routes it through the approved security process.', 'Review message indicators using approved tools, preserve headers/original message when possible, and route to Security/email protection workflow.', 1, 'Escalate if indicators are suspicious, campaign scope is unclear, or containment actions such as purge/blocking may be needed.', 'medium'),
+    ('FIX_PHISHING_ESCALATE_ACCOUNT_COMPROMISE', 'Escalate Possible Account Compromise', 'Credentials or MFA interaction may indicate account compromise risk.', 'Escalate immediately and collect user, timestamp, URL, message subject, submitted data type, sign-in activity, and containment actions.', 1, 'Security/Identity should review sign-ins, reset password, revoke sessions, review MFA, and check mailbox rules according to policy.', 'high'),
+    ('FIX_PHISHING_ESCALATE_ENDPOINT_REVIEW', 'Escalate Endpoint Malware Review', 'Suspicious attachment or download may require endpoint scan, isolation, or Security review.', 'Collect device name, file name, sender, and time opened/downloaded, then escalate through endpoint/security process.', 1, 'Security/Endpoint should assess detection, scan/isolate if needed, and determine malware containment actions.', 'high'),
+    ('FIX_PHISHING_ESCALATE_CAMPAIGN', 'Escalate Possible Phishing Campaign', 'Multiple users or high-risk themes may indicate an active phishing campaign.', 'Identify affected users and message indicators, then escalate for blocking, purge, and wider communication if needed.', 1, 'Security/email administration should search, purge, block sender/URL/attachment, and monitor additional reports.', 'high'),
+    ('FIX_PHISHING_DOCUMENT_MONITOR', 'Document and Monitor Reported Phish', 'Low-impact phishing report is documented and monitored after safe reporting.', 'Document the report, confirm no interaction occurred, and advise the user to report future similar messages.', 0, 'Escalate if new evidence appears, more users report it, or the user later remembers interaction.', 'low'),
+]
+
+PHISHING_EMAIL_SOLUTION_STEPS = {
+    'FIX_PHISHING_REPORT_EMAIL_SAFELY': {
+        'user': [
+            'Do not click links or open attachments.',
+            'Do not reply to the sender.',
+            'Use the company phishing-report button if available.',
+            'Keep the message available until IT confirms next steps.',
+            'Delete the email only after reporting if instructed.',
+        ],
+        'technician': [
+            'Confirm the user did not click, open, reply, forward, or enter information.',
+            'Collect sender, subject, timestamp, and screenshot/header if available.',
+            'Submit or route the message through the approved phishing-report workflow.',
+            'Search for similar reports if tools are available.',
+            'Document the ticket and advise the user not to interact.',
+        ],
+        'admin': [
+            'Escalate to Security if the message appears malicious, high-risk, or part of a wider campaign.',
+            'Provide sender, subject, timestamps, URLs, attachment details, and affected user information if available.',
+        ],
+    },
+    'FIX_PHISHING_LINK_CLICKED_NO_DATA': {
+        'user': [
+            'Close the browser tab.',
+            'Do not enter any information.',
+            'Report the message to IT.',
+            'Tell IT the approximate time you clicked.',
+            'Watch for unexpected MFA prompts or login alerts.',
+        ],
+        'technician': [
+            'Record the click time, URL if safely available, browser used, and device name.',
+            'Do not manually browse to the link outside approved security tools.',
+            'Check whether credentials were entered or MFA was approved.',
+            'Escalate to Security if the URL is confirmed malicious or multiple users clicked.',
+            'Advise user to report any follow-up prompts or alerts.',
+        ],
+        'admin': [
+            'Escalate if the URL is malicious, the user sees unexpected MFA prompts, or similar reports are received.',
+            'Security may need to block the URL/domain and review sign-in activity.',
+        ],
+    },
+    'FIX_PHISHING_CREDENTIAL_DATA_EXPOSURE': {
+        'user': [
+            'Stop using the suspicious website immediately.',
+            'Do not approve additional MFA prompts.',
+            'Contact IT or Security immediately.',
+            'Be ready to reset your password using the official company process.',
+            'Tell IT exactly what information was entered.',
+        ],
+        'technician': [
+            'Treat as possible account compromise.',
+            'Verify what information was submitted and when.',
+            'Initiate password reset/account protection process according to policy.',
+            'Check for unexpected MFA prompts or successful suspicious sign-ins if access is available.',
+            'Escalate to Security/Identity with user, timestamp, URL, and actions taken.',
+        ],
+        'admin': [
+            'Escalate immediately for password reset, token/session revocation, MFA review, sign-in log review, and mailbox rule review according to policy.',
+            'Prioritize as High because credentials, MFA, payment, or sensitive data may be exposed.',
+        ],
+    },
+    'FIX_PHISHING_ATTACHMENT_OPENED': {
+        'user': [
+            'Stop opening the attachment.',
+            'Do not forward the file.',
+            'Tell IT what file was opened and when.',
+            'Leave the device powered on unless IT instructs otherwise.',
+            'Report any pop-ups, warnings, or unusual behavior.',
+        ],
+        'technician': [
+            'Record attachment name, file type, sender, and time opened.',
+            'Check whether endpoint protection generated alerts if tools are available.',
+            'Do not execute or open the attachment manually.',
+            'Escalate to Security/Endpoint for scan, isolation, or forensic review if needed.',
+            'Document device name and user actions.',
+        ],
+        'admin': [
+            'Escalate to Security/Endpoint for malware review and containment decisions.',
+            'Follow company policy before isolating the device or deleting files.',
+        ],
+    },
+    'FIX_PHISHING_TRIAGE_REPORT': {
+        'user': [
+            'Wait for IT confirmation.',
+            'Do not interact with the message.',
+            'Report any similar messages received later.',
+        ],
+        'technician': [
+            'Review sender, reply-to, domain, subject, links, and attachment metadata using approved tools.',
+            'Preserve headers or original message according to policy.',
+            'Check if the email was reported by other users.',
+            'Submit to Security or email protection workflow.',
+            'Update the ticket with triage results.',
+        ],
+        'admin': [
+            'Escalate if sender/domain/URL/attachment indicators are suspicious or if additional users are affected.',
+            'Security/email administration may need to purge messages or block indicators.',
+        ],
+    },
+    'FIX_PHISHING_ESCALATE_ACCOUNT_COMPROMISE': {
+        'user': [
+            'Stop signing in from the suspicious page.',
+            'Do not approve unexpected MFA prompts.',
+            'Follow IT instructions for password reset and account review.',
+            'Report any unusual mailbox or account activity.',
+        ],
+        'technician': [
+            'Escalate immediately to Security/Identity.',
+            'Capture user, timestamp, URL, message subject, and submitted data type.',
+            'Check for suspicious sign-ins if access is available.',
+            'Request password reset, session revocation, MFA review, and mailbox-rule review according to policy.',
+            'Document containment steps.',
+        ],
+        'admin': [
+            'Security/Identity should handle account compromise review, session revocation, mailbox rule review, and risk-based containment.',
+            'Do not close the ticket until containment and user communication are documented.',
+        ],
+    },
+    'FIX_PHISHING_ESCALATE_ENDPOINT_REVIEW': {
+        'user': [
+            'Stop interacting with the file.',
+            'Keep the device connected and available for IT unless instructed otherwise.',
+            'Report any pop-ups, slowness, or unusual behavior.',
+        ],
+        'technician': [
+            'Record device name, file name, sender, and time opened/downloaded.',
+            'Check endpoint protection status if available.',
+            'Escalate to Security/Endpoint team for malware review.',
+            'Follow company policy before isolating device or deleting files.',
+            'Document actions and user impact.',
+        ],
+        'admin': [
+            'Security/Endpoint should decide whether scan, isolation, containment, or forensic review is needed.',
+            'Escalate priority if the device shows suspicious behavior or sensitive work may be exposed.',
+        ],
+    },
+    'FIX_PHISHING_ESCALATE_CAMPAIGN': {
+        'user': [
+            'Do not forward the email to coworkers.',
+            'Tell IT if coworkers received similar messages.',
+            'Report any interaction with the message.',
+        ],
+        'technician': [
+            'Identify affected users and message indicators.',
+            'Search for similar reports if tools are available.',
+            'Escalate to Security/email administration for message purge/blocking.',
+            'Provide sender, subject, URLs, attachment details, timestamps, and affected user list.',
+            'Monitor for follow-up reports.',
+        ],
+        'admin': [
+            'Security/email administration should search for the campaign, purge messages if appropriate, block indicators, and prepare user communication if needed.',
+            'Treat as High priority if multiple users or high-risk business themes are involved.',
+        ],
+    },
+    'FIX_PHISHING_DOCUMENT_MONITOR': {
+        'user': [
+            'Delete the message only after IT confirms it is safe or handled.',
+            'Report any future similar messages.',
+            'Continue not interacting with suspicious links or attachments.',
+        ],
+        'technician': [
+            'Document the report and user action.',
+            'Confirm no credentials or files were submitted/opened.',
+            'Confirm phishing-report workflow was completed.',
+            'Close or monitor the ticket based on policy.',
+        ],
+        'admin': [
+            'Escalate if new evidence appears, more users report similar messages, or the user later remembers interaction.',
+        ],
+    },
+}
+
+PHISHING_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_PHISHING_USER', None, 'category', 'Phishing Email Reported', 'User-friendly diagnostic path for suspicious email reports.', None, None, None, None, 1),
+    ('Q_PHISHING_CLICK_OPEN_USER', 'ROOT_PHISHING_USER', 'question', 'Check Interaction', None, 'Did you click a link, scan a QR code, or open an attachment?', None, None, None, 1),
+    ('S_PHISHING_REPORT_SAFE_USER', 'Q_PHISHING_CLICK_OPEN_USER', 'solution', 'Report Suspicious Email Safely', None, None, 'Did you click a link, scan a QR code, or open an attachment?', 'No', 'FIX_PHISHING_REPORT_EMAIL_SAFELY', 1),
+    ('Q_PHISHING_ENTERED_DATA_USER', 'Q_PHISHING_CLICK_OPEN_USER', 'question', 'Check Data Exposure', None, 'Did you enter credentials, MFA code, payment information, or personal information?', 'Did you click a link, scan a QR code, or open an attachment?', 'Yes', None, 2),
+    ('S_PHISHING_DATA_EXPOSURE_USER', 'Q_PHISHING_ENTERED_DATA_USER', 'solution', 'Report Possible Credential or Data Exposure', None, None, 'Did you enter credentials, MFA code, payment information, or personal information?', 'Yes', 'FIX_PHISHING_CREDENTIAL_DATA_EXPOSURE', 1),
+    ('Q_PHISHING_ATTACHMENT_USER', 'Q_PHISHING_ENTERED_DATA_USER', 'question', 'Check Attachment Opened', None, 'Did you open or download an attachment?', 'Did you enter credentials, MFA code, payment information, or personal information?', 'No', None, 2),
+    ('S_PHISHING_ATTACHMENT_USER', 'Q_PHISHING_ATTACHMENT_USER', 'solution', 'Report Suspicious Attachment Opened', None, None, 'Did you open or download an attachment?', 'Yes', 'FIX_PHISHING_ATTACHMENT_OPENED', 1),
+    ('S_PHISHING_LINK_CLICKED_USER', 'Q_PHISHING_ATTACHMENT_USER', 'solution', 'Report Link Clicked Without Data Entry', None, None, 'Did you open or download an attachment?', 'No', 'FIX_PHISHING_LINK_CLICKED_NO_DATA', 2),
+]
+
+PHISHING_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_PHISHING_TECH', None, 'category', 'Phishing Email Reported - IT Support Specialist', 'IT Support Specialist diagnostic path for suspicious email triage and escalation.', None, None, None, None, 1),
+    ('Q_PHISHING_INTERACTION_TECH', 'ROOT_PHISHING_TECH', 'question', 'Determine User Interaction', None, 'Did the user interact with the message?', None, None, None, 1),
+    ('S_PHISHING_TRIAGE_TECH', 'Q_PHISHING_INTERACTION_TECH', 'solution', 'Triage and Report Suspicious Email', None, None, 'Did the user interact with the message?', 'No interaction', 'FIX_PHISHING_TRIAGE_REPORT', 1),
+    ('Q_PHISHING_CREDENTIALS_TECH', 'Q_PHISHING_INTERACTION_TECH', 'question', 'Check Credential or MFA Exposure', None, 'Did the user enter credentials or approve MFA?', 'Did the user interact with the message?', 'Interaction occurred', None, 2),
+    ('S_PHISHING_COMPROMISE_TECH', 'Q_PHISHING_CREDENTIALS_TECH', 'solution', 'Escalate Possible Account Compromise', None, None, 'Did the user enter credentials or approve MFA?', 'Yes', 'FIX_PHISHING_ESCALATE_ACCOUNT_COMPROMISE', 1),
+    ('Q_PHISHING_ATTACHMENT_TECH', 'Q_PHISHING_CREDENTIALS_TECH', 'question', 'Check Attachment or Download', None, 'Did the user open or download an attachment?', 'Did the user enter credentials or approve MFA?', 'No', None, 2),
+    ('S_PHISHING_ENDPOINT_REVIEW_TECH', 'Q_PHISHING_ATTACHMENT_TECH', 'solution', 'Escalate Endpoint Malware Review', None, None, 'Did the user open or download an attachment?', 'Yes', 'FIX_PHISHING_ESCALATE_ENDPOINT_REVIEW', 1),
+    ('Q_PHISHING_CAMPAIGN_TECH', 'Q_PHISHING_ATTACHMENT_TECH', 'question', 'Check Campaign Scope', None, 'Are multiple users or high-risk themes involved?', 'Did the user open or download an attachment?', 'No', None, 2),
+    ('S_PHISHING_CAMPAIGN_TECH', 'Q_PHISHING_CAMPAIGN_TECH', 'solution', 'Escalate Possible Phishing Campaign', None, None, 'Are multiple users or high-risk themes involved?', 'Yes', 'FIX_PHISHING_ESCALATE_CAMPAIGN', 1),
+    ('S_PHISHING_MONITOR_TECH', 'Q_PHISHING_CAMPAIGN_TECH', 'solution', 'Document and Monitor Reported Phish', None, None, 'Are multiple users or high-risk themes involved?', 'No', 'FIX_PHISHING_DOCUMENT_MONITOR', 2),
+]
+
+def seed_phishing_email_reported_content(cursor):
+    """Seed Phishing Email Reported KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = PHISHING_EMAIL_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, PHISHING_EMAIL_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, PHISHING_EMAIL_KB['title'], PHISHING_EMAIL_KB['summary'], PHISHING_EMAIL_KB['difficulty'], PHISHING_EMAIL_KB['estimated_time'], PHISHING_EMAIL_KB['escalation_required'], PHISHING_EMAIL_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, PHISHING_EMAIL_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, PHISHING_EMAIL_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, PHISHING_EMAIL_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, PHISHING_EMAIL_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, PHISHING_EMAIL_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, PHISHING_EMAIL_SOLUTIONS)
+    for solution_code, audience_steps in PHISHING_EMAIL_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_phishing_email_tree(cursor, 'user', 'PHISHING_EMAIL_REPORTED_USER', 'Phishing Email Reported - User Diagnostic', 'User-friendly diagnostic tree for suspicious emails, clicked links, credential exposure, and attachment handling.', PHISHING_USER_DIAGNOSTIC_NODES)
+    seed_phishing_email_tree(cursor, 'technician', 'PHISHING_EMAIL_REPORTED_TECHNICIAN', 'Phishing Email Reported - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for phishing triage, endpoint review, account compromise, and campaign escalation.', PHISHING_TECH_DIAGNOSTIC_NODES)
+
+def seed_phishing_email_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'PHISHING_EMAIL_REPORTED')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'PHISHING_EMAIL_REPORTED', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
 # -----------------------------
 # EXISTING ISSUE ROLE ALIGNMENT PATCH
 # -----------------------------
@@ -5358,6 +5722,7 @@ def initialize_database():
     seed_application_crashing_freezing_content(cursor)
     seed_operating_system_update_issue_content(cursor)
     seed_device_storage_content(cursor)
+    seed_phishing_email_reported_content(cursor)
     seed_existing_issue_role_alignment(cursor)
 
     cursor.execute("""
