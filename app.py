@@ -573,6 +573,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Phishing Email Reported": "PHISHING_EMAIL_REPORTED",
     "Malware or Virus Suspected": "MALWARE_OR_VIRUS_SUSPECTED",
     "Email Attachment Not Opening": "EMAIL_ATTACHMENT_NOT_OPENING",
+    "Calendar Sync Issue": "CALENDAR_SYNC_ISSUE",
 }
 
 
@@ -586,10 +587,10 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED", "EMAIL_ATTACHMENT_NOT_OPENING"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED", "EMAIL_ATTACHMENT_NOT_OPENING", "CALENDAR_SYNC_ISSUE"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
-    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, Device Running Out of Storage, Phishing Email Reported, and Malware or Virus Suspected. Other sample issues are hidden until they "
+    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, Device Running Out of Storage, Phishing Email Reported, Malware or Virus Suspected, Email Attachment Not Opening, and Calendar Sync Issue. Other sample issues are hidden until they "
     "are expanded with detailed symptoms, causes, user steps, and technician steps."
 )
 
@@ -5849,6 +5850,250 @@ def seed_email_attachment_tree(cursor, audience, tree_code, title, description, 
                 updated_at=CURRENT_TIMESTAMP
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
+
+
+# -----------------------------
+# CALENDAR SYNC ISSUE CONTENT
+# -----------------------------
+CALENDAR_SYNC_PROBLEM = (
+    'CALENDAR_SYNC_ISSUE',
+    'Calendar Sync Issue',
+    'Email, Calendar & Collaboration',
+    'Medium',
+    'Calendar events are missing, delayed, duplicated, or inconsistent between Outlook desktop, Outlook web, and mobile devices.',
+)
+
+CALENDAR_SYNC_KB = {
+    'title': 'Calendar Sync Issue',
+    'summary': 'Use this guide when calendar events are missing, delayed, duplicated, not updating, or appear on one device but not another.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-25 minutes',
+    'escalation_required': 0,
+    'escalation_notes': 'Escalate if Outlook web is also incorrect, shared/delegated calendar permissions are inconsistent, mobile/managed device policy blocks sync, multiple users are affected, or a Microsoft 365/Exchange service issue is suspected.',
+    'tags': ['calendar sync', 'Outlook calendar', 'Microsoft 365', 'mobile calendar', 'shared calendar', 'delegate calendar', 'Outlook web', 'Exchange', 'sync issue', 'collaboration'],
+    'symptoms': [
+        'Calendar events are missing, delayed, duplicated, or not updating.',
+        'Meetings appear on one device but not another.',
+        'Outlook desktop does not match Outlook on the web.',
+        'Mobile calendar stopped syncing or does not show work events.',
+        'Shared or delegated calendar updates are not visible.',
+        'Accepted meetings do not appear or reminders are wrong.',
+        'Events disappear and reappear or updates arrive late.',
+    ],
+    'causes': [
+        'Common: Outlook offline/disconnected state, hidden calendar, stale local cache, mobile app permissions disabled, wrong account type, shared/delegate permission issue, poor connectivity, incorrect date/time/time zone, or app needing restart/update.',
+        'Advanced: corrupted Outlook profile or OST cache, Exchange ActiveSync/mobile sync issue, Microsoft 365/Exchange service degradation, delegate permission corruption, third-party calendar integration conflict, conditional access/device compliance issue, mailbox throttling, add-in conflict, DNS/proxy/VPN issue, calendar item corruption, or recurring meeting corruption.',
+    ],
+    'user_steps': [
+        'Confirm your internet connection is working.',
+        'Check whether the correct calendar is visible or selected in Outlook or the calendar app.',
+        'Restart Outlook or the calendar app.',
+        'Check Outlook on the web to see whether the calendar is correct there.',
+        'If using a phone, confirm the app has permission to access calendar data.',
+        'Confirm you are signed in with the correct work account.',
+        'Check whether the issue affects your main calendar or a shared/delegated calendar.',
+        'Confirm the device date, time, and time zone are correct.',
+        'Update Outlook or the mobile app if updates are available.',
+        'Submit a ticket if events are still missing or sync is inconsistent.',
+    ],
+    'it_steps': [
+        'Tier 1: Confirm the user, device, email/calendar client, account type, and affected calendar.',
+        'Tier 1: Ask where the calendar is correct: Outlook desktop, Outlook on the web, Outlook mobile, native mobile calendar, another device, or nowhere.',
+        'Tier 1: Determine whether the issue affects one user, one device, one calendar, a shared calendar, or multiple users.',
+        'Tier 1: Confirm the user is signed in with the correct work account.',
+        'Tier 1: Check internet connectivity and whether Outlook is offline or disconnected.',
+        'Tier 1: Confirm the calendar is selected/visible.',
+        'Tier 1: Restart Outlook or the mobile app and retest.',
+        'Tier 1: Check whether the issue occurs in Outlook on the web.',
+        'Tier 1: Confirm device date, time, and time zone.',
+        'Tier 1: Check whether the app has calendar/contact permissions on mobile.',
+        'Tier 1: Document screenshots, affected calendar, missing event examples, and last successful sync time.',
+        'Tier 2 / Collaboration and Endpoint checks: Compare Outlook desktop, Outlook web, and mobile behavior to isolate local-client versus mailbox/service issue.',
+        'Tier 2 / Collaboration and Endpoint checks: Confirm the account is configured as Microsoft 365/Exchange rather than IMAP/POP where calendar sync is required.',
+        'Tier 2 / Collaboration and Endpoint checks: Update Outlook/mobile app and retest.',
+        'Tier 2 / Collaboration and Endpoint checks: Check Outlook profile health and recreate the profile only if simpler steps fail and company policy allows.',
+        'Tier 2 / Collaboration and Endpoint checks: Check shared/delegate calendar permissions if a shared calendar is affected.',
+        'Tier 2 / Collaboration and Endpoint checks: Check whether the issue follows the user account or a specific device.',
+        'Tier 2 / Collaboration and Endpoint checks: Check whether add-ins or third-party calendar sync tools are involved.',
+        'Tier 2 / Collaboration and Endpoint checks: Check mailbox/service health if multiple users are affected.',
+        'Tier 2 / Collaboration and Endpoint checks: Check network/proxy/VPN restrictions if sync fails only on a specific network.',
+        'Escalate with affected calendar, client versions, account type, sync comparison results, missing event examples, and timestamps.',
+    ],
+}
+
+CALENDAR_SYNC_SOLUTIONS = [
+    ('FIX_CALENDAR_ACCOUNT_VISIBILITY_SYNC', 'Check Account, Calendar Visibility, and App Sync', 'Calendar may not appear because the wrong account/calendar is selected or sync is paused.', 'Confirm the correct work account, visible calendar, app connection, and sync state before deeper troubleshooting.', 0, 'Escalate if mailbox/web calendar is also incorrect or sync remains inconsistent across devices.', 'medium'),
+    ('FIX_CALENDAR_LOCAL_CLIENT_SYNC', 'Fix Local Outlook or Mobile Calendar Sync', 'Calendar is correct in Outlook web but not syncing to one local client or mobile device.', 'Restart/update the affected client, check permissions, account type, and sync settings, then re-add account/profile only if policy allows.', 0, 'Escalate to Endpoint/Mobile support if managed-device policy or client repair is needed.', 'medium'),
+    ('FIX_CALENDAR_COMPARE_WEB_DESKTOP', 'Compare Outlook Web and Desktop Sync', 'Comparing clients helps determine whether the issue is local, mobile, or mailbox-side.', 'Compare web, desktop, and mobile calendar state and route to the correct local-client, mobile, shared-calendar, or service-side path.', 0, 'Escalate if Outlook web and all clients disagree or mailbox-side data is incorrect.', 'medium'),
+    ('FIX_CALENDAR_SHARED_VISIBILITY_PERMISSIONS', 'Check Shared Calendar Visibility and Permissions', 'Shared or delegated calendars may fail because permissions changed or the calendar is hidden.', 'Verify owner, delegate/shared access, visibility, and whether the calendar should still be available.', 0, 'Escalate if delegate/shared calendar permissions appear inconsistent or cannot be corrected by support.', 'medium'),
+    ('FIX_CALENDAR_CLIENT_MOBILE_TROUBLESHOOT', 'Troubleshoot Local Client or Mobile Sync', 'One device/client has stale calendar data while the mailbox calendar is correct.', 'Check app version, permissions, disconnected state, account configuration, and local profile/mobile policy.', 0, 'Escalate to Endpoint/Mobile support if managed-device policy, app protection, or client repair is involved.', 'medium'),
+    ('FIX_CALENDAR_ACCOUNT_CONFIG_SCOPE', 'Check Account Configuration and Calendar Sync Scope', 'Calendar sync may fail if the account is configured incorrectly or sync scope is limited.', 'Confirm Microsoft 365/Exchange account configuration, calendar/contact sync scope, and mobile/native calendar permissions.', 0, 'Escalate if policy or device management prevents correct account setup or sync.', 'medium'),
+    ('FIX_CALENDAR_VERIFY_SHARED_PERMISSIONS', 'Verify Shared Calendar Permissions', 'Shared/delegated calendar sync may fail because the user lacks permission or delegate access is broken.', 'Verify owner, delegate, permission level, affected users, and whether permissions need to be re-applied.', 1, 'Escalate to Email/Collaboration Admin if shared/delegate calendar permission behavior is inconsistent.', 'high'),
+    ('FIX_CALENDAR_ESCALATE_SERVICE_ISSUE', 'Escalate Possible Calendar Service Issue', 'Multiple users or Outlook web issues may indicate a mailbox or Microsoft 365/Exchange service problem.', 'Confirm affected scope, check service health/status channels, and escalate with user/event/client evidence.', 1, 'Email/Collaboration Admin or Microsoft 365 support path should review service health, mailbox, and tenant-side issues.', 'high'),
+    ('FIX_CALENDAR_ESCALATE_MAILBOX_DATA', 'Escalate Mailbox Calendar Data Issue', 'Calendar data appears wrong at the mailbox/web level for one user.', 'Collect event examples, organizers, timestamps, invite status, recurring-series details, and screenshots for mailbox investigation.', 1, 'Escalate to Email/Collaboration Admin for mailbox/calendar data investigation.', 'high'),
+]
+
+CALENDAR_SYNC_SOLUTION_STEPS = {
+    'FIX_CALENDAR_ACCOUNT_VISIBILITY_SYNC': {
+        'user': ['Confirm you are signed in with your work account.', 'Check that the correct calendar is selected or visible.', 'Restart Outlook or the calendar app.', 'Confirm internet access works.', 'Check Outlook on the web if available.'],
+        'technician': ['Confirm the account and affected calendar.', 'Check calendar visibility/selection.', 'Confirm client connection and sync status.', 'Compare Outlook desktop, web, and mobile.', 'Document where the calendar is correct.'],
+        'admin': ['Escalate if the calendar is missing or incorrect in Outlook web or multiple devices after basic checks.'],
+    },
+    'FIX_CALENDAR_LOCAL_CLIENT_SYNC': {
+        'user': ['Restart the affected app.', 'Check app permissions for calendar access.', 'Confirm the device has internet access.', 'Update the app if available.', 'Submit a ticket if sync still fails.'],
+        'technician': ['Verify Outlook web shows correct data.', 'Restart and update the affected client.', 'Confirm mobile app calendar permissions.', 'Check account type and sync settings.', 'Re-add account or recreate profile only if policy allows and simpler steps fail.'],
+        'admin': ['Escalate to Endpoint/Mobile support if local profile repair or managed-device policy is involved.'],
+    },
+    'FIX_CALENDAR_COMPARE_WEB_DESKTOP': {
+        'user': ['Open Outlook on the web.', 'Check if the missing event appears there.', 'Compare with desktop or mobile calendar.', 'Tell IT where the event appears and where it is missing.'],
+        'technician': ['Compare calendar state across web, desktop, and mobile.', 'Identify whether the problem follows the user account or a specific device.', 'Check sync errors or disconnected status.', 'Continue with local-client, mobile, shared-calendar, or service-side path.'],
+        'admin': ['Escalate based on whether the source of truth appears local-client, mobile, shared-calendar, or mailbox/service-side.'],
+    },
+    'FIX_CALENDAR_SHARED_VISIBILITY_PERMISSIONS': {
+        'user': ['Confirm which shared calendar is affected.', 'Check if the calendar is selected or visible.', 'Ask the calendar owner to confirm you still need access.', 'Submit a ticket if access is missing or updates do not appear.'],
+        'technician': ['Confirm calendar owner and affected user.', 'Check whether the shared calendar is selected/visible.', 'Verify permission level or group membership if accessible.', 'Ask user to remove and re-add shared calendar if appropriate.', 'Escalate if delegate/shared calendar permissions appear inconsistent.'],
+        'admin': ['Email/Collaboration Admin should review delegate/shared calendar permissions when support cannot confirm or correct them.'],
+    },
+    'FIX_CALENDAR_CLIENT_MOBILE_TROUBLESHOOT': {
+        'user': ['Restart the device or app.', 'Update the Outlook/calendar app.', 'Check calendar permissions on mobile.', 'Confirm internet connectivity.', 'Report whether other devices show the correct calendar.'],
+        'technician': ['Confirm the problem is isolated to one client/device.', 'Check app version, permissions, and account configuration.', 'Check for offline or disconnected state.', 'Re-add account or recreate Outlook profile if policy allows.', 'Escalate to Endpoint/Mobile support if managed-device policy is involved.'],
+        'admin': ['Escalate if app protection, conditional access, or mobile device management appears to block calendar sync.'],
+    },
+    'FIX_CALENDAR_ACCOUNT_CONFIG_SCOPE': {
+        'user': ['Confirm the account shown in the app is your work account.', 'Do not remove accounts unless IT instructs you.', 'Report whether email sync works but calendar does not.'],
+        'technician': ['Confirm whether account is configured as Microsoft 365/Exchange where required.', 'Check whether only email syncs or calendar/contact sync is also enabled.', 'Confirm mobile/native calendar permissions.', 'Correct account setup through approved process.', 'Escalate if policy or device management prevents sync.'],
+        'admin': ['Escalate to Collaboration or Mobile/Endpoint teams if correct account type or sync scope cannot be applied due to policy.'],
+    },
+    'FIX_CALENDAR_VERIFY_SHARED_PERMISSIONS': {
+        'user': ['Confirm the shared calendar name and owner.', 'Ask the owner/manager to confirm access should still be granted.', 'Submit a ticket with the calendar name and what is missing.'],
+        'technician': ['Verify owner, delegate, and permission level.', 'Check whether issue affects one delegate or many.', 'Re-add sharing/delegate permission if policy allows.', 'Escalate to Email/Collaboration Admin if permission behavior is inconsistent.'],
+        'admin': ['Email/Collaboration Admin should validate mailbox/delegate permissions, sharing configuration, and calendar-owner settings.'],
+    },
+    'FIX_CALENDAR_ESCALATE_SERVICE_ISSUE': {
+        'user': ['Record examples of missing or delayed events.', 'Note when the issue started.', 'Avoid repeatedly deleting/recreating meetings unless IT instructs you.'],
+        'technician': ['Confirm multiple users or Outlook web are affected.', 'Check service health/status channels if available.', 'Collect affected users, event examples, timestamps, clients, and screenshots.', 'Escalate to Email/Collaboration Admin or Microsoft 365 support path.'],
+        'admin': ['Email/Collaboration Admin should review service health, tenant advisories, mailbox status, and broader incident scope.'],
+    },
+    'FIX_CALENDAR_ESCALATE_MAILBOX_DATA': {
+        'user': ['Provide examples of missing or incorrect events.', 'Do not delete or recreate meetings unless instructed.', 'Submit screenshots from Outlook web and desktop if possible.'],
+        'technician': ['Confirm Outlook web is also incorrect.', 'Collect event titles, organizers, timestamps, invite status, and screenshots.', 'Check whether issue involves recurring meetings or delegate changes.', 'Escalate to Email/Collaboration Admin for mailbox/calendar investigation.'],
+        'admin': ['Email/Collaboration Admin should review mailbox/calendar data, recurring meeting health, delegate changes, and service-side traces where available.'],
+    },
+}
+
+CALENDAR_SYNC_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_CALENDAR_SYNC_USER', None, 'category', 'Calendar Sync Issue', 'User-friendly diagnostic path for missing, delayed, duplicated, or device-specific calendar sync issues.', None, None, None, None, 1),
+    ('Q_CALENDAR_WHERE_CORRECT_USER', 'ROOT_CALENDAR_SYNC_USER', 'question', 'Compare Calendar Locations', None, 'Where is the calendar correct?', None, None, None, 1),
+    ('S_CALENDAR_LOCAL_SYNC_USER', 'Q_CALENDAR_WHERE_CORRECT_USER', 'solution', 'Fix Local Outlook or Mobile Calendar Sync', None, None, 'Where is the calendar correct?', 'Outlook web/browser', 'FIX_CALENDAR_LOCAL_CLIENT_SYNC', 1),
+    ('S_CALENDAR_COMPARE_USER', 'Q_CALENDAR_WHERE_CORRECT_USER', 'solution', 'Compare Outlook Web and Desktop Sync', None, None, 'Where is the calendar correct?', 'Mobile app only', 'FIX_CALENDAR_COMPARE_WEB_DESKTOP', 2),
+    ('S_CALENDAR_SERVICE_USER', 'Q_CALENDAR_WHERE_CORRECT_USER', 'solution', 'Report Mailbox or Calendar Service Issue', None, None, 'Where is the calendar correct?', 'Nowhere', 'FIX_CALENDAR_ESCALATE_SERVICE_ISSUE', 3),
+    ('Q_CALENDAR_SCOPE_USER', 'Q_CALENDAR_WHERE_CORRECT_USER', 'question', 'Check Calendar Type', None, 'Is this your main calendar or a shared/delegated calendar?', 'Where is the calendar correct?', 'Not sure', None, 4),
+    ('S_CALENDAR_SHARED_USER', 'Q_CALENDAR_SCOPE_USER', 'solution', 'Check Shared Calendar Visibility and Permissions', None, None, 'Is this your main calendar or a shared/delegated calendar?', 'Shared/delegated calendar', 'FIX_CALENDAR_SHARED_VISIBILITY_PERMISSIONS', 1),
+    ('S_CALENDAR_ACCOUNT_USER', 'Q_CALENDAR_SCOPE_USER', 'solution', 'Check Account, Calendar Visibility, and App Sync', None, None, 'Is this your main calendar or a shared/delegated calendar?', 'My calendar', 'FIX_CALENDAR_ACCOUNT_VISIBILITY_SYNC', 2),
+]
+
+CALENDAR_SYNC_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_CALENDAR_SYNC_TECH', None, 'category', 'Calendar Sync Issue - IT Support Specialist', 'IT Support Specialist diagnostic path for Outlook, mobile, shared-calendar, and mailbox/service calendar sync issues.', None, None, None, None, 1),
+    ('Q_CALENDAR_WEB_CORRECT_TECH', 'ROOT_CALENDAR_SYNC_TECH', 'question', 'Check Outlook Web Source of Truth', None, 'Does Outlook on the web show the correct calendar data?', None, None, None, 1),
+    ('Q_CALENDAR_ISOLATED_TECH', 'Q_CALENDAR_WEB_CORRECT_TECH', 'question', 'Check Client Scope', None, 'Is the issue isolated to one client/device?', 'Does Outlook on the web show the correct calendar data?', 'Yes', None, 1),
+    ('S_CALENDAR_CLIENT_TECH', 'Q_CALENDAR_ISOLATED_TECH', 'solution', 'Troubleshoot Local Client or Mobile Sync', None, None, 'Is the issue isolated to one client/device?', 'Yes', 'FIX_CALENDAR_CLIENT_MOBILE_TROUBLESHOOT', 1),
+    ('S_CALENDAR_CONFIG_TECH', 'Q_CALENDAR_ISOLATED_TECH', 'solution', 'Check Account Configuration and Calendar Sync Scope', None, None, 'Is the issue isolated to one client/device?', 'No', 'FIX_CALENDAR_ACCOUNT_CONFIG_SCOPE', 2),
+    ('Q_CALENDAR_MULTI_TECH', 'Q_CALENDAR_WEB_CORRECT_TECH', 'question', 'Check Multiple Users', None, 'Are multiple users affected?', 'Does Outlook on the web show the correct calendar data?', 'No', None, 2),
+    ('S_CALENDAR_SERVICE_TECH', 'Q_CALENDAR_MULTI_TECH', 'solution', 'Escalate Possible Calendar Service Issue', None, None, 'Are multiple users affected?', 'Yes', 'FIX_CALENDAR_ESCALATE_SERVICE_ISSUE', 1),
+    ('Q_CALENDAR_SHARED_TECH', 'Q_CALENDAR_MULTI_TECH', 'question', 'Check Shared Calendar', None, 'Is this a shared/delegated calendar?', 'Are multiple users affected?', 'No', None, 2),
+    ('S_CALENDAR_SHARED_TECH', 'Q_CALENDAR_SHARED_TECH', 'solution', 'Verify Shared Calendar Permissions', None, None, 'Is this a shared/delegated calendar?', 'Yes', 'FIX_CALENDAR_VERIFY_SHARED_PERMISSIONS', 1),
+    ('S_CALENDAR_MAILBOX_TECH', 'Q_CALENDAR_SHARED_TECH', 'solution', 'Escalate Mailbox Calendar Data Issue', None, None, 'Is this a shared/delegated calendar?', 'No', 'FIX_CALENDAR_ESCALATE_MAILBOX_DATA', 2),
+]
+
+def seed_calendar_sync_issue_content(cursor):
+    """Seed Calendar Sync Issue KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = CALENDAR_SYNC_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, CALENDAR_SYNC_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, CALENDAR_SYNC_KB['title'], CALENDAR_SYNC_KB['summary'], CALENDAR_SYNC_KB['difficulty'], CALENDAR_SYNC_KB['estimated_time'], CALENDAR_SYNC_KB['escalation_required'], CALENDAR_SYNC_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, CALENDAR_SYNC_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, CALENDAR_SYNC_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, CALENDAR_SYNC_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, CALENDAR_SYNC_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, CALENDAR_SYNC_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, CALENDAR_SYNC_SOLUTIONS)
+    for solution_code, audience_steps in CALENDAR_SYNC_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_calendar_sync_tree(cursor, 'user', 'CALENDAR_SYNC_ISSUE_USER', 'Calendar Sync Issue - User Diagnostic', 'User-friendly diagnostic tree for calendar sync, visibility, and client differences.', CALENDAR_SYNC_USER_DIAGNOSTIC_NODES)
+    seed_calendar_sync_tree(cursor, 'technician', 'CALENDAR_SYNC_ISSUE_TECHNICIAN', 'Calendar Sync Issue - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for Outlook, mobile, shared-calendar, and mailbox/service issues.', CALENDAR_SYNC_TECH_DIAGNOSTIC_NODES)
+
+def seed_calendar_sync_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'CALENDAR_SYNC_ISSUE')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'CALENDAR_SYNC_ISSUE', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
 # -----------------------------
 # EXISTING ISSUE ROLE ALIGNMENT PATCH
 # -----------------------------
@@ -6217,6 +6462,7 @@ def initialize_database():
     seed_phishing_email_reported_content(cursor)
     seed_malware_or_virus_suspected_content(cursor)
     seed_email_attachment_not_opening_content(cursor)
+    seed_calendar_sync_issue_content(cursor)
     seed_existing_issue_role_alignment(cursor)
 
     cursor.execute("""
