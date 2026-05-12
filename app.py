@@ -274,7 +274,7 @@ def initialize_relational_knowledge_schema(cursor):
             problem_code TEXT UNIQUE NOT NULL,
             title TEXT NOT NULL,
             category TEXT NOT NULL,
-            severity TEXT NOT NULL DEFAULT 'Medium',
+            severity TEXT NOT NULL DEFAULT 'medium',
             description TEXT,
             is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -500,7 +500,7 @@ def initialize_relational_knowledge_schema(cursor):
 # -----------------------------
 # RELATIONAL SEED DATA
 # -----------------------------
-PROBLEM_SEED_DATA = [('NO_INTERNET_CONNECTION', 'No Internet Connection', 'Network', 'High', 'User cannot access the internet from their device.'), ('SOME_WEBSITES_NOT_LOADING', 'Some Websites Not Loading', 'Network', 'Medium', 'User can access the internet, but one or more websites fail to load.'), ('WIFI_DROPS_FREQUENTLY', 'Wi-Fi Drops Frequently', 'Network', 'Medium', 'User reports frequent wireless disconnections or weak signal.'), ('SLOW_INTERNET', 'Slow Internet', 'Performance', 'Medium', 'User reports that internet access works but is unusually slow.'), ('APPLICATION_CRASHING', 'Application Crashing', 'Software', 'High', 'User reports that an application closes unexpectedly, freezes, or displays a crash error.'), ('SOFTWARE_INSTALLATION_FAILURE', 'Software Installation Failure', 'Software', 'Medium', 'User cannot install software or the installer fails.'), ('COMPUTER_RUNNING_SLOW', 'Computer Running Slow', 'System', 'Medium', 'User reports general slowness, lag, or poor computer performance.'), ('DISK_SPACE_FULL', 'Disk Space Full', 'System', 'Medium', 'User reports that the device is out of storage or cannot save files or install updates.'), ('HIGH_CPU_USAGE', 'High CPU Usage', 'System', 'High', 'User reports fan noise, lag, high CPU usage, or system slowness.'), ('VPN_CONNECTION_FAILURE', 'VPN Connection Failure', 'VPN', 'High', 'User cannot connect to VPN or remote access.')]
+PROBLEM_SEED_DATA = [('NO_INTERNET_CONNECTION', 'No Internet Connection', 'Network', 'high', 'User cannot access the internet from their device.'), ('SOME_WEBSITES_NOT_LOADING', 'Some Websites Not Loading', 'Network', 'medium', 'User can access the internet, but one or more websites fail to load.'), ('WIFI_DROPS_FREQUENTLY', 'Wi-Fi Drops Frequently', 'Network', 'medium', 'User reports frequent wireless disconnections or weak signal.'), ('SLOW_INTERNET', 'Slow Internet', 'Performance', 'medium', 'User reports that internet access works but is unusually slow.'), ('APPLICATION_CRASHING', 'Application Crashing', 'Software', 'high', 'User reports that an application closes unexpectedly, freezes, or displays a crash error.'), ('SOFTWARE_INSTALLATION_FAILURE', 'Software Installation Failure', 'Software', 'medium', 'User cannot install software or the installer fails.'), ('COMPUTER_RUNNING_SLOW', 'Computer Running Slow', 'System', 'medium', 'User reports general slowness, lag, or poor computer performance.'), ('DISK_SPACE_FULL', 'Disk Space Full', 'System', 'medium', 'User reports that the device is out of storage or cannot save files or install updates.'), ('HIGH_CPU_USAGE', 'High CPU Usage', 'System', 'high', 'User reports fan noise, lag, high CPU usage, or system slowness.'), ('VPN_CONNECTION_FAILURE', 'VPN Connection Failure', 'VPN', 'high', 'User cannot connect to VPN or remote access.')]
 
 SOLUTION_SEED_DATA = [('FIX_RECONNECT_NETWORK', 'Reconnect to the Network', 'The device is not connected to Wi-Fi or Ethernet.', 'Ask the user to reconnect to the correct Wi-Fi network or plug in the Ethernet cable. Confirm the device shows an active network connection before testing internet access again.', 0, None, 'low'), ('FIX_RESTART_NETWORK_EQUIPMENT', 'Restart Device and Network Equipment', 'A temporary device, router, modem, or access point issue may be blocking internet access.', 'Ask the user to restart the computer. If working remotely or at home, ask them to restart the router or modem. After the restart, reconnect to the network and test internet access again.', 0, 'Escalate if multiple users are affected or restarting does not restore service.', 'medium'), ('FIX_ESCALATE_NETWORK_OUTAGE', 'Escalate Possible Network Outage', 'Multiple users or systems may be affected by a network outage.', 'Collect the affected location, number of users affected, device names, time the issue began, and any error messages. Escalate to the Network Team.', 1, 'Escalate immediately if multiple users, departments, or business-critical systems are affected.', 'high'), ('FIX_CHECK_DNS_BROWSER', 'Clear Browser Cache and Check DNS', 'The user may have a DNS, browser cache, or site-specific access issue.', 'Ask the user to try another browser, clear browser cache, restart the browser, and test multiple websites. If only specific websites fail, record the affected URLs.', 0, 'Escalate if DNS errors continue or multiple users cannot access the same websites.', 'medium'), ('FIX_ESCALATE_BLOCKED_WEBSITE', 'Escalate Possible Blocked Website', 'The website may be blocked by policy, firewall, DNS filtering, or content filtering.', 'Collect the full website URL, screenshot of the error, user location, network used, and business justification. Escalate to IT Security or Network Team.', 1, 'Do not bypass security filtering without approval.', 'medium'), ('FIX_MOVE_CLOSER_TO_AP', 'Improve Wi-Fi Signal Strength', 'The Wi-Fi connection may be weak or unstable due to distance, interference, or poor signal.', 'Ask the user to move closer to the access point, remove physical obstructions if possible, disconnect and reconnect to Wi-Fi, and test again.', 0, 'Escalate if the issue happens in a known office area or affects multiple users.', 'medium'), ('FIX_FORGET_REJOIN_WIFI', 'Forget and Rejoin Wi-Fi Network', 'The saved Wi-Fi profile may be corrupted or using outdated credentials.', 'Ask the user to forget the Wi-Fi network, reconnect to the correct network, re-enter credentials, and test stability.', 0, None, 'low'), ('FIX_ESCALATE_WIFI_INFRASTRUCTURE', 'Escalate Wi-Fi Infrastructure Issue', 'Wi-Fi drops may be caused by an access point, roaming, interference, or infrastructure issue.', 'Collect location, device name, time of drops, signal strength if available, whether other users are affected, and frequency of disconnects. Escalate to the Network Team.', 1, 'Escalate if multiple users in the same location report drops.', 'high'), ('FIX_CLOSE_BANDWIDTH_APPS', 'Close Bandwidth-Heavy Applications', 'Streaming, large downloads, cloud sync, or video calls may be consuming bandwidth.', 'Ask the user to pause large downloads, close streaming applications, pause cloud sync temporarily, and retest the connection speed.', 0, None, 'low'), ('FIX_RUN_SPEED_TEST_ESCALATE', 'Document Speed Test and Escalate', 'The connection may be slower than expected after basic troubleshooting.', 'Ask the user to run a speed test, record download and upload results, note whether connected by Wi-Fi or Ethernet, and escalate if the speed is significantly below expected service levels.', 1, 'Escalate if multiple users report slow internet or speed is far below the expected baseline.', 'medium'), ('FIX_RESTART_APPLICATION', 'Restart the Application', 'The application may be stuck or temporarily unstable.', 'Ask the user to save work if possible, close the application completely, reopen it, and test again.', 0, None, 'low'), ('FIX_UPDATE_APPLICATION', 'Update or Repair the Application', 'The application may be crashing because it is outdated, corrupted, or missing required components.', 'Ask the user to check for updates. If supported, run the application repair option or reinstall using the approved software source.', 0, 'Escalate if the application requires admin rights or continues crashing after repair.', 'medium'), ('FIX_ESCALATE_APP_CRASH', 'Escalate Application Crash', 'The application crash may require advanced troubleshooting, logs, vendor support, or administrator access.', 'Collect the app name, version, operating system, crash message, screenshots, when the crash occurs, and whether other users are affected. Escalate to the Application Support Team.', 1, 'Escalate immediately if the affected app is business-critical.', 'high'), ('FIX_USE_APPROVED_INSTALLER', 'Use Approved Software Installer', 'The user may be using an unsupported installer or source.', 'Direct the user to the approved software portal or company-provided installer. Retry installation using the approved source.', 0, 'Do not install software from untrusted websites.', 'low'), ('FIX_FREE_SPACE_FOR_INSTALL', 'Free Disk Space and Retry Installation', 'The installation may be failing because the device does not have enough available disk space.', 'Ask the user to remove unnecessary files, empty the recycle bin or trash, and retry installation after confirming sufficient free space.', 0, None, 'medium'), ('FIX_ESCALATE_INSTALL_ADMIN', 'Escalate Installation Requiring Admin Rights', 'The software installation may require administrator privileges, licensing, or endpoint management approval.', 'Collect the software name, version, business reason, installer source, error message, and user device name. Escalate to IT Support or Endpoint Management.', 1, 'Do not share administrator credentials with the user.', 'medium'), ('FIX_RESTART_COMPUTER', 'Restart the Computer', 'The computer may be slow because of a temporary system issue or pending updates.', 'Ask the user to save work, restart the computer, sign back in, and test performance again.', 0, None, 'low'), ('FIX_DISABLE_STARTUP_APPS', 'Reduce Startup Applications', 'Too many startup applications may be slowing the computer.', 'Ask the user to close unnecessary applications. For supported users, review startup applications and disable non-essential startup items according to company policy.', 0, 'Escalate if startup controls require admin access.', 'medium'), ('FIX_ESCALATE_HARDWARE_PERFORMANCE', 'Escalate Possible Hardware Performance Issue', 'The computer may need hardware review, memory upgrade, storage replacement, or deeper endpoint troubleshooting.', 'Collect device name, operating system, available disk space, CPU and memory usage, recent changes, and examples of slow behavior. Escalate to Desktop Support.', 1, 'Escalate if the device is unusable or repeatedly freezes.', 'medium'), ('FIX_EMPTY_TRASH_DOWNLOADS', 'Remove Unneeded Files', 'The disk is full because of accumulated downloads, recycle bin contents, temporary files, or large personal files.', 'Ask the user to empty recycle bin or trash, delete unnecessary downloads, remove duplicate files, and move approved files to cloud or network storage.', 0, None, 'low'), ('FIX_CLEAN_TEMP_FILES', 'Clean Temporary Files', 'Temporary system files may be consuming disk space.', 'Use approved system cleanup tools to remove temporary files, cache, and old update files. Restart the computer and check available space again.', 0, 'Escalate if cleanup requires admin rights or space fills again quickly.', 'medium'), ('FIX_ESCALATE_STORAGE_EXPANSION', 'Escalate Storage Capacity Issue', 'The device may need storage expansion, profile cleanup, or deeper investigation.', 'Collect available disk space, largest folders if known, device name, user role, and business need. Escalate to Desktop Support.', 1, 'Escalate if less than 5 percent disk space remains or the system cannot complete updates.', 'medium'), ('FIX_CLOSE_HIGH_CPU_PROCESS', 'Close High CPU Application', 'One application or process may be consuming excessive CPU.', 'Ask the user to close unnecessary applications. If a specific application is using high CPU, restart that application and retest.', 0, 'Escalate if the high CPU process is security software, system service, or unknown.', 'medium'), ('FIX_REBOOT_AFTER_HIGH_CPU', 'Restart After High CPU Usage', 'High CPU usage may be caused by a stuck process or pending update.', 'Ask the user to save work, restart the computer, and monitor CPU usage after signing back in.', 0, None, 'low'), ('FIX_ESCALATE_MALWARE_OR_ENDPOINT', 'Escalate Possible Malware or Endpoint Issue', 'Unknown processes, repeated high CPU, or suspicious behavior may indicate malware or endpoint management issues.', 'Collect screenshots, process names, device name, user name, recent downloads, and symptoms. Escalate to Security or Endpoint Support.', 1, 'Escalate immediately if suspicious processes, pop-ups, or security alerts are present.', 'high'), ('FIX_CHECK_VPN_CREDENTIALS_MFA', 'Check VPN Credentials and MFA', 'The VPN failure may be caused by incorrect credentials, expired password, or MFA issue.', 'Ask the user to confirm their username, reset or verify password if needed, approve the MFA prompt, and retry VPN login.', 0, 'Escalate if MFA is not received or the account appears locked.', 'medium'), ('FIX_CHANGE_NETWORK_RETRY_VPN', 'Try Another Network for VPN', 'The current network may be blocking or interfering with VPN traffic.', 'Ask the user to try a different network, such as a mobile hotspot, trusted home network, or wired connection. Retry VPN after switching networks.', 0, None, 'medium'), ('FIX_UPDATE_VPN_CLIENT', 'Update or Reinstall VPN Client', 'The VPN client may be outdated, corrupted, or misconfigured.', 'Ask the user to update the VPN client using the approved software source. If needed, reinstall the client according to company instructions.', 0, 'Escalate if installation requires admin rights.', 'medium'), ('FIX_ESCALATE_VPN_SUPPORT', 'Escalate VPN Connection Failure', 'The VPN issue may require account, network, certificate, or client configuration review.', 'Collect username, device name, VPN client version, error message, network type, time of failure, MFA status, and screenshots. Escalate to Network or VPN Support.', 1, 'Escalate immediately if multiple users cannot connect to VPN.', 'high')]
 
@@ -574,6 +574,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Malware or Virus Suspected": "MALWARE_OR_VIRUS_SUSPECTED",
     "Email Attachment Not Opening": "EMAIL_ATTACHMENT_NOT_OPENING",
     "Calendar Sync Issue": "CALENDAR_SYNC_ISSUE",
+    "Software Installation Request": "SOFTWARE_INSTALLATION_REQUEST",
 }
 
 
@@ -587,10 +588,10 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED", "EMAIL_ATTACHMENT_NOT_OPENING", "CALENDAR_SYNC_ISSUE"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED", "EMAIL_ATTACHMENT_NOT_OPENING", "CALENDAR_SYNC_ISSUE", "SOFTWARE_INSTALLATION_REQUEST"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
-    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, Device Running Out of Storage, Phishing Email Reported, Malware or Virus Suspected, Email Attachment Not Opening, and Calendar Sync Issue. Other sample issues are hidden until they "
+    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, Device Running Out of Storage, Phishing Email Reported, Malware or Virus Suspected, Email Attachment Not Opening, Calendar Sync Issue, and Software Installation Request. Other sample issues are hidden until they "
     "are expanded with detailed symptoms, causes, user steps, and technician steps."
 )
 
@@ -2181,7 +2182,7 @@ PRINTER_FAILURE_PROBLEM = (
     'PRINTER_FAILURE',
     'Printer Failure',
     'Hardware',
-    'Medium',
+    'medium',
     'User cannot print, printer is offline, print jobs are stuck, or printer shows hardware/network errors.',
 )
 
@@ -2393,7 +2394,7 @@ PASSWORD_RESET_REQUEST_PROBLEM = (
     'PASSWORD_RESET_REQUEST',
     'Password Reset Request',
     'Account & Access',
-    'Medium',
+    'medium',
     'User cannot sign in because they forgot their password, believe their password expired, or need to reset it.',
 )
 
@@ -2638,7 +2639,7 @@ ACCOUNT_LOCKED_PROBLEM = (
     'ACCOUNT_LOCKED',
     'Account Locked',
     'Account & Access',
-    'Medium',
+    'medium',
     'User cannot sign in because their account is temporarily locked after repeated failed sign-in attempts or suspicious activity.',
 )
 
@@ -2861,7 +2862,7 @@ MFA_ISSUE_PROBLEM = (
     'MULTI_FACTOR_AUTHENTICATION_ISSUE',
     'Multi-factor Authentication Issue',
     'Account & Access',
-    'Medium',
+    'medium',
     'User cannot complete sign-in because the MFA prompt, code, authenticator app, phone call, or text message is not working.',
 )
 
@@ -3083,7 +3084,7 @@ VPN_CONNECTION_FAILURE_PROBLEM = (
     'VPN_CONNECTION_FAILURE',
     'VPN Connection Failure',
     'Network, Remote Access & Storage',
-    'High',
+    'high',
     'User cannot connect to the company VPN or loses VPN access after connecting.',
 )
 
@@ -3321,7 +3322,7 @@ SHARED_DRIVE_ACCESS_PROBLEM = (
     'SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE',
     'Shared Drive / Network Drive Access Issue',
     'Network, Remote Access & Storage',
-    'Medium',
+    'medium',
     'User cannot access a shared drive, mapped network drive, file server folder, or shared company location.',
 )
 
@@ -3560,7 +3561,7 @@ REMOTE_DESKTOP_CONNECTION_PROBLEM = (
     'REMOTE_DESKTOP_CONNECTION_ISSUE',
     'Remote Desktop Connection Issue',
     'Network, Remote Access & Storage',
-    'Medium',
+    'medium',
     'User cannot connect to a remote computer, server, virtual desktop, or remote desktop session.',
 )
 
@@ -3805,7 +3806,7 @@ SLOW_COMPUTER_PERFORMANCE_PROBLEM = (
     'SLOW_COMPUTER_PERFORMANCE',
     'Slow Computer Performance',
     'Performance & Operating System',
-    'Medium',
+    'medium',
     'Computer is slow, freezes, starts slowly, opens applications slowly, or responds slowly during normal work.',
 )
 
@@ -4054,7 +4055,7 @@ APPLICATION_NOT_OPENING_PROBLEM = (
     'APPLICATION_NOT_OPENING',
     'Application Not Opening',
     'Software & Applications',
-    'Medium',
+    'medium',
     'Application does not open, closes immediately, gets stuck loading, or shows launch, sign-in, licensing, or access errors.',
 )
 
@@ -4281,7 +4282,7 @@ APPLICATION_CRASHING_FREEZING_PROBLEM = (
     'APPLICATION_CRASHING_FREEZING',
     'Application Crashing / Freezing',
     'Software & Applications',
-    'Medium',
+    'medium',
     'Application opens but freezes, stops responding, closes unexpectedly, crashes during a task, or becomes unstable.',
 )
 
@@ -4528,7 +4529,7 @@ OPERATING_SYSTEM_UPDATE_PROBLEM = (
     'OPERATING_SYSTEM_UPDATE_ISSUE',
     'Operating System Update Issue',
     'Performance & Operating System',
-    'Medium',
+    'medium',
     'Computer cannot install operating system updates, gets stuck during updates, shows an update error, or repeatedly asks to restart.',
 )
 
@@ -4774,7 +4775,7 @@ DEVICE_STORAGE_PROBLEM = (
     'DEVICE_RUNNING_OUT_OF_STORAGE',
     'Device Running Out of Storage',
     'Performance & Operating System',
-    'Medium',
+    'medium',
     'Computer is low on storage space, cannot save files, cannot install updates, or shows disk-full warnings.',
 )
 
@@ -5005,7 +5006,7 @@ PHISHING_EMAIL_PROBLEM = (
     'PHISHING_EMAIL_REPORTED',
     'Phishing Email Reported',
     'Security',
-    'Medium',
+    'medium',
     'User received a suspicious email, link, attachment, QR code, or message that may be attempting credential theft, malware delivery, impersonation, or fraud.',
 )
 
@@ -5368,7 +5369,7 @@ MALWARE_PROBLEM = (
     'MALWARE_OR_VIRUS_SUSPECTED',
     'Malware or Virus Suspected',
     'Security',
-    'High',
+    'high',
     'User suspects the device may be infected because of endpoint alerts, pop-ups, unusual behavior, suspicious downloads, ransomware messages, or activity after a link, attachment, or file download.',
 )
 
@@ -5615,7 +5616,7 @@ EMAIL_ATTACHMENT_PROBLEM = (
     'EMAIL_ATTACHMENT_NOT_OPENING',
     'Email Attachment Not Opening',
     'Email, Calendar & Collaboration',
-    'Medium',
+    'medium',
     'User cannot open, preview, download, or save an email attachment.',
 )
 
@@ -5859,7 +5860,7 @@ CALENDAR_SYNC_PROBLEM = (
     'CALENDAR_SYNC_ISSUE',
     'Calendar Sync Issue',
     'Email, Calendar & Collaboration',
-    'Medium',
+    'medium',
     'Calendar events are missing, delayed, duplicated, or inconsistent between Outlook desktop, Outlook web, and mobile devices.',
 )
 
@@ -6061,6 +6062,257 @@ def seed_calendar_sync_tree(cursor, audience, tree_code, title, description, nod
     cursor.execute("""
         INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
         VALUES (?, ?, 'CALENDAR_SYNC_ISSUE', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
+
+# -----------------------------
+# SOFTWARE INSTALLATION REQUEST CONTENT
+# -----------------------------
+SOFTWARE_INSTALLATION_PROBLEM = (
+    'SOFTWARE_INSTALLATION_REQUEST',
+    'Software Installation Request',
+    'Software & Applications',
+    'Low to Medium',
+    'The user needs approved software installed, updated, or made available on their work device.'
+)
+
+SOFTWARE_INSTALLATION_KB = {
+    'title': 'Software Installation Request',
+    'summary': 'Use this guide when you need approved software installed, the installer is blocked, the software is missing from your device, or installation fails.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-30 minutes, depending on approval/licensing',
+    'escalation_required': 1,
+    'escalation_notes': 'Escalate when approval, licensing, security review, endpoint deployment, packaging, or vendor support is required.',
+    'tags': ['software installation', 'app install', 'software portal', 'admin rights', 'license', 'endpoint management', 'approved software', 'installer error', 'security block', 'least privilege'],
+    'symptoms': [
+        'User needs software installed or made available on a work device.',
+        'User does not have admin rights to install software.',
+        'Installer shows access denied, blocked, or security warning.',
+        'Software is not available in the company software portal.',
+        'Installation fails or asks for a license.',
+        'Previous version conflicts with the new installation.',
+        'Software portal or endpoint deployment fails.',
+    ],
+    'causes': [
+        'Software installation problems are commonly caused by missing approval, license assignment, lack of admin rights, unapproved installer source, endpoint security blocks, old version conflicts, missing prerequisites, low disk space, pending restart, OS incompatibility, or endpoint management deployment issues.',
+        'Advanced causes include corrupted installer metadata, broken uninstall/repair state, package detection-rule problems, missing runtimes, certificate/signature validation failure, proxy/firewall download blocks, vendor installer limitations, and licensing or activation service reachability issues.',
+    ],
+    'user_steps': [
+        'Do not install software from unapproved websites.',
+        'Check whether the software is available in the company software portal.',
+        'Confirm the software name, vendor, version, and business reason.',
+        'Ask your manager or application owner for approval if required.',
+        'Check whether you already have a similar approved tool installed.',
+        'Take a screenshot of any install error.',
+        'Do not try to bypass security warnings or admin restrictions.',
+        'Submit a ticket with the software name, vendor, version, purpose, and deadline.',
+        'If you downloaded an installer from the internet, do not run it until IT confirms it is safe.',
+        'Wait for IT to install or deploy the approved software.',
+    ],
+    'it_steps': [
+        'Tier 1: Confirm the user, device name, operating system, software name, vendor, version, and business need.',
+        'Tier 1: Confirm whether the software is already available in the approved software portal.',
+        'Tier 1: Check whether the user already has the app installed.',
+        'Tier 1: Confirm whether manager, application-owner, security, or licensing approval is required.',
+        'Tier 1: Confirm whether a license is available or assigned.',
+        'Tier 1: Verify the installer source is approved and trusted.',
+        'Tier 1: Do not grant broad local admin rights just to complete the install.',
+        'Tier 1: Check install error message or screenshot.',
+        'Tier 1: Check basic blockers such as low disk space, pending restart, existing old version, missing prerequisite, or unsupported OS version.',
+        'Tier 1: Install or deploy the software through approved company process if authorized.',
+        'Tier 1: Verify the application launches successfully after installation.',
+        'Tier 1: Document software name, version, approval, install source, and result.',
+        'Tier 2 / Endpoint Support: Review installation logs if available.',
+        'Tier 2 / Endpoint Support: Check whether the installer is MSI, EXE, Store app, or company-packaged app.',
+        'Tier 2 / Endpoint Support: Check whether previous installation remnants or registry data block install/uninstall.',
+        'Tier 2 / Endpoint Support: Use approved Microsoft install/uninstall troubleshooting tools when appropriate for blocked installs/removals.',
+        'Tier 2 / Endpoint Support: Check endpoint management deployment status if the app is deployed through Intune, SCCM, MDM, or RMM.',
+        'Tier 2 / Endpoint Support: Check detection rules, assignment group, device compliance, and deployment error where available.',
+        'Tier 2 / Endpoint Support: Check endpoint security alerts/quarantine if installer is blocked.',
+        'Tier 2 / Endpoint Support: Check prerequisites, dependencies, licensing, activation path, and vendor requirements.',
+        'Tier 2 / Network Support: Check network, proxy, DNS, or firewall path if installer download or activation service cannot be reached.',
+        'Determine whether the issue is approval/licensing, missing package, local install failure, endpoint management deployment failure, security block, compatibility issue, or vendor/application issue.',
+        'Escalate with installer name/version, source, error code, logs, approval status, device details, and business impact.',
+    ],
+}
+
+SOFTWARE_INSTALLATION_SOLUTIONS = [
+    ('FIX_SOFTWARE_INSTALL_APPROVED_PORTAL', 'Install from Approved Software Portal', 'The software is already approved and available through the company software portal.', 'Install from the approved company portal and verify launch.', 0, 'Escalate only if portal access, deployment group, or install status fails.', 'low'),
+    ('FIX_SOFTWARE_INSTALL_REQUEST_APPROVAL', 'Request Approval for Software Installation', 'The software needs business, manager, licensing, or application-owner approval before installation.', 'Collect business reason and route approval before installation.', 1, 'Escalate to manager, application owner, licensing, or procurement as required.', 'medium'),
+    ('FIX_SOFTWARE_INSTALL_SECURITY_BLOCK', 'Do Not Bypass Security Block', 'Security controls blocked the installer or warned that the app may be unsafe.', 'Do not bypass security; collect details and route for review.', 1, 'Escalate to Security if source is unknown, suspicious, high-risk, or blocked by endpoint protection.', 'high'),
+    ('FIX_SOFTWARE_INSTALL_SUBMIT_ERROR_DETAILS', 'Submit Installer Error Details', 'The installation failed and IT needs the exact error, version, and device details.', 'Capture error details and continue with targeted install troubleshooting.', 0, 'Escalate if error indicates packaging, security, corruption, or vendor issue.', 'medium'),
+    ('FIX_SOFTWARE_INSTALL_SUBMIT_TICKET', 'Submit Software Installation Ticket', 'IT needs to review the request and install or deploy the software through approved process.', 'Submit complete installation request with software, business need, approval, and device details.', 0, 'Escalate if approval, licensing, or deployment ownership is unclear.', 'medium'),
+    ('FIX_SOFTWARE_INSTALL_APPROVAL_SECURITY_REVIEW', 'Escalate Software Approval or Security Review', 'Software is not clearly approved, trusted, licensed, or safe.', 'Route unapproved or unclear software request through approval/security process.', 1, 'Escalate to Security, application owner, procurement, or manager before installation.', 'high'),
+    ('FIX_SOFTWARE_INSTALL_LICENSE_APPROVAL', 'Verify Approval and License Assignment', 'Installation cannot proceed until approval and licensing are confirmed.', 'Confirm approval and license assignment before installation.', 1, 'Escalate if license availability or application-owner approval is required.', 'medium'),
+    ('FIX_SOFTWARE_INSTALL_DEPLOY_PORTAL', 'Deploy from Approved Software Portal', 'IT deploys or makes available the software through company endpoint management/software portal.', 'Assign, deploy, monitor, and verify app install through approved endpoint process.', 0, 'Escalate to Endpoint Management if deployment or assignment fails.', 'medium'),
+    ('FIX_SOFTWARE_INSTALL_LOCAL_FAILURE', 'Troubleshoot Local Installation Failure', 'Approved software fails to install locally because of prerequisites, old version, disk space, pending restart, or installer issue.', 'Review logs and local blockers, then repair or escalate.', 1, 'Escalate if corruption, packaging, endpoint management, or vendor issue is suspected.', 'high'),
+    ('FIX_SOFTWARE_INSTALL_PACKAGE_DEPLOYMENT', 'Package or Escalate Software Deployment Request', 'Software is approved but not yet packaged or available for managed deployment.', 'Collect deployment details and route to packaging/endpoint management.', 1, 'Escalate to Endpoint Management/Application Packaging team.', 'medium'),
+]
+
+SOFTWARE_INSTALLATION_SOLUTION_STEPS = {
+    'FIX_SOFTWARE_INSTALL_APPROVED_PORTAL': {
+        'user': ['Open the company software portal.', 'Search for the software name.', 'Select the approved version.', 'Start the installation.', 'Restart the computer if prompted.'],
+        'technician': ['Confirm the software is available to the user/device.', 'Confirm the user is in the correct deployment group if needed.', 'Guide the user through installation.', 'Verify the app launches after install.', 'Document the installed version.'],
+        'admin': ['Escalate only if software portal availability, assignment group, or device check-in is not working.'],
+    },
+    'FIX_SOFTWARE_INSTALL_REQUEST_APPROVAL': {
+        'user': ['Provide the software name and vendor.', 'Explain the business reason.', 'Include project/team need and deadline.', 'Wait for approval before installation.'],
+        'technician': ['Confirm whether approval is required.', 'Route request to manager, application owner, licensing, or procurement.', 'Confirm whether an approved alternative already exists.', 'Do not install until approval is documented.', 'Update the ticket with approval status.'],
+        'admin': ['Escalate to application owner, manager, procurement, or licensing owner when approval or funding is required.'],
+    },
+    'FIX_SOFTWARE_INSTALL_SECURITY_BLOCK': {
+        'user': ['Do not bypass the warning.', 'Do not run the installer again.', 'Send IT the software name, source link, and screenshot.', 'Wait for IT/Security review.'],
+        'technician': ['Verify installer source and digital trust where appropriate.', 'Check endpoint security alert or block reason.', 'Do not whitelist or allow the installer without approval.', 'Escalate to Security if the source is unknown, suspicious, or high-risk.', 'Recommend approved alternative if available.'],
+        'admin': ['Escalate to Security with installer source, hash/signature if available, vendor, business need, screenshot, and endpoint block details.'],
+    },
+    'FIX_SOFTWARE_INSTALL_SUBMIT_ERROR_DETAILS': {
+        'user': ['Take a screenshot of the error.', 'Note the software name and version.', 'Tell IT where the installer came from.', 'Submit a ticket with the screenshot.'],
+        'technician': ['Record error message/code and install source.', 'Check disk space, pending restart, OS version, and existing installed version.', 'Check whether prerequisites are missing.', 'Review installer logs if available.', 'Continue with local installation troubleshooting.'],
+        'admin': ['Escalate if logs suggest package corruption, endpoint management failure, missing dependencies, or vendor-specific installer error.'],
+    },
+    'FIX_SOFTWARE_INSTALL_SUBMIT_TICKET': {
+        'user': ['Provide software name, vendor, version, and business reason.', 'Include any approval or license information.', 'Include your device name and deadline.', 'Wait for IT confirmation.'],
+        'technician': ['Confirm request completeness.', 'Check approval/licensing/source.', 'Determine whether install is manual, portal-based, or managed deployment.', 'Schedule install if needed.', 'Document result after installation.'],
+        'admin': ['Escalate request ownership if software approval, licensing, or deployment method is unclear.'],
+    },
+    'FIX_SOFTWARE_INSTALL_APPROVAL_SECURITY_REVIEW': {
+        'user': ['Do not install the software.', 'Provide the business reason and vendor/source link.', 'Wait for IT/Security or manager approval.'],
+        'technician': ['Confirm business need and approved alternatives.', 'Check vendor reputation/source and software category.', 'Route to Security, App Owner, Procurement, or Manager as required.', 'Document approval decision.', 'Proceed only after approval.'],
+        'admin': ['Escalate with business need, vendor/source, risk notes, licensing/cost impact, and requested user/device scope.'],
+    },
+    'FIX_SOFTWARE_INSTALL_LICENSE_APPROVAL': {
+        'user': ['Provide approval details if already granted.', 'Confirm whether this is new access or replacement software.', 'Wait for license assignment if needed.'],
+        'technician': ['Confirm manager/application-owner approval.', 'Check license availability.', 'Assign license or route request if authorized.', 'Confirm user/device is eligible.', 'Document license and approval status.'],
+        'admin': ['Escalate to licensing, procurement, or app owner when license availability, entitlement, or approval is unresolved.'],
+    },
+    'FIX_SOFTWARE_INSTALL_DEPLOY_PORTAL': {
+        'user': ['Keep the device online.', 'Connect to VPN if required by company policy.', 'Restart when prompted.', 'Tell IT if installation does not appear.'],
+        'technician': ['Assign app to user/device group.', 'Check endpoint management deployment status.', 'Confirm device is online and checking in.', 'Review deployment error if install fails.', 'Verify successful installation and launch.'],
+        'admin': ['Escalate to Endpoint Management with app assignment, device/user group, management status, deployment error, and check-in time.'],
+    },
+    'FIX_SOFTWARE_INSTALL_LOCAL_FAILURE': {
+        'user': ['Restart the computer if IT asks.', 'Keep the installer error visible or screenshot it.', 'Do not repeatedly run the installer.'],
+        'technician': ['Check install logs and error code.', 'Check pending restart and disk space.', 'Check existing installed version and uninstall/repair state.', 'Check prerequisites/dependencies.', 'Use approved install/uninstall repair tools when appropriate.', 'Escalate if corruption, packaging, or vendor issue is suspected.'],
+        'admin': ['Escalate with install log, error code, package type, source, current version, prerequisites checked, and remediation attempted.'],
+    },
+    'FIX_SOFTWARE_INSTALL_PACKAGE_DEPLOYMENT': {
+        'user': ['Provide business need and deadline.', 'Wait for IT to confirm deployment timeline.', 'Use approved alternative if offered.'],
+        'technician': ['Confirm software is approved and licensed.', 'Collect installer, silent install options, license details, and vendor documentation.', 'Escalate to Endpoint Management/Application Packaging team.', 'Provide user/device group, urgency, and business impact.', 'Document deployment request status.'],
+        'admin': ['Escalate to packaging team with installer, vendor documentation, silent switches if known, licensing details, assignment scope, and business deadline.'],
+    },
+}
+
+SOFTWARE_INSTALLATION_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_SOFTWARE_INSTALL_USER', None, 'category', 'Software Installation Request', 'User-friendly diagnostic path for approved software installation requests.', None, None, None, None, 1),
+    ('Q_SOFTWARE_PORTAL_USER', 'ROOT_SOFTWARE_INSTALL_USER', 'question', 'Check Software Portal', None, 'Is the software available in the company software portal?', None, None, None, 1),
+    ('S_SOFTWARE_PORTAL_USER', 'Q_SOFTWARE_PORTAL_USER', 'solution', 'Install from Approved Software Portal', None, None, 'Yes', 'Yes', 'FIX_SOFTWARE_INSTALL_APPROVED_PORTAL', 1),
+    ('Q_SOFTWARE_APPROVAL_USER', 'Q_SOFTWARE_PORTAL_USER', 'question', 'Check Approval or Business Reason', None, 'Do you have approval or a business reason?', 'No / Not sure', 'No / Not sure', None, 2),
+    ('S_SOFTWARE_APPROVAL_USER', 'Q_SOFTWARE_APPROVAL_USER', 'solution', 'Request Approval for Software Installation', None, None, 'No / Not sure', 'No / Not sure', 'FIX_SOFTWARE_INSTALL_REQUEST_APPROVAL', 1),
+    ('Q_SOFTWARE_ERROR_USER', 'Q_SOFTWARE_APPROVAL_USER', 'question', 'Check Installation or Security Error', None, 'Do you see an installation or security error?', 'Yes', 'Yes', None, 2),
+    ('S_SOFTWARE_SECURITY_USER', 'Q_SOFTWARE_ERROR_USER', 'solution', 'Do Not Bypass Security Block', None, None, 'Security blocked / warning', 'Security blocked / warning', 'FIX_SOFTWARE_INSTALL_SECURITY_BLOCK', 1),
+    ('S_SOFTWARE_INSTALL_FAILED_USER', 'Q_SOFTWARE_ERROR_USER', 'solution', 'Submit Installer Error Details', None, None, 'Install failed', 'Install failed', 'FIX_SOFTWARE_INSTALL_SUBMIT_ERROR_DETAILS', 2),
+    ('S_SOFTWARE_TICKET_USER', 'Q_SOFTWARE_ERROR_USER', 'solution', 'Submit Software Installation Ticket', None, None, 'No error', 'No error', 'FIX_SOFTWARE_INSTALL_SUBMIT_TICKET', 3),
+]
+
+SOFTWARE_INSTALLATION_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_SOFTWARE_INSTALL_TECH', None, 'category', 'Software Installation Request - IT Support Specialist', 'IT Support Specialist diagnostic path for approval, licensing, endpoint deployment, and installation failures.', None, None, None, None, 1),
+    ('Q_SOFTWARE_APPROVED_TECH', 'ROOT_SOFTWARE_INSTALL_TECH', 'question', 'Validate Approved Source', None, 'Is the software approved and from a trusted source?', None, None, None, 1),
+    ('S_SOFTWARE_SECURITY_REVIEW_TECH', 'Q_SOFTWARE_APPROVED_TECH', 'solution', 'Escalate Software Approval or Security Review', None, None, 'No / Not sure', 'No / Not sure', 'FIX_SOFTWARE_INSTALL_APPROVAL_SECURITY_REVIEW', 1),
+    ('Q_SOFTWARE_LICENSE_TECH', 'Q_SOFTWARE_APPROVED_TECH', 'question', 'Check Approval and Licensing', None, 'Is licensing or application-owner approval required?', 'Yes', 'Yes', None, 2),
+    ('S_SOFTWARE_LICENSE_TECH', 'Q_SOFTWARE_LICENSE_TECH', 'solution', 'Verify Approval and License Assignment', None, None, 'Yes', 'Yes', 'FIX_SOFTWARE_INSTALL_LICENSE_APPROVAL', 1),
+    ('Q_SOFTWARE_PORTAL_TECH', 'Q_SOFTWARE_LICENSE_TECH', 'question', 'Check Software Portal or Endpoint Management', None, 'Is the app available through software portal or endpoint management?', 'No', 'No', None, 2),
+    ('S_SOFTWARE_DEPLOY_TECH', 'Q_SOFTWARE_PORTAL_TECH', 'solution', 'Deploy from Approved Software Portal', None, None, 'Yes', 'Yes', 'FIX_SOFTWARE_INSTALL_DEPLOY_PORTAL', 1),
+    ('Q_SOFTWARE_LOCAL_FAIL_TECH', 'Q_SOFTWARE_PORTAL_TECH', 'question', 'Check Local Install Error', None, 'Is local install failing with an error?', 'No', 'No', None, 2),
+    ('S_SOFTWARE_LOCAL_FAIL_TECH', 'Q_SOFTWARE_LOCAL_FAIL_TECH', 'solution', 'Troubleshoot Local Installation Failure', None, None, 'Yes', 'Yes', 'FIX_SOFTWARE_INSTALL_LOCAL_FAILURE', 1),
+    ('S_SOFTWARE_PACKAGE_TECH', 'Q_SOFTWARE_LOCAL_FAIL_TECH', 'solution', 'Package or Escalate Software Deployment Request', None, None, 'No', 'No', 'FIX_SOFTWARE_INSTALL_PACKAGE_DEPLOYMENT', 2),
+]
+
+def seed_software_installation_request_content(cursor):
+    code_, title, category, severity, description = SOFTWARE_INSTALLATION_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, SOFTWARE_INSTALLATION_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, SOFTWARE_INSTALLATION_KB['title'], SOFTWARE_INSTALLATION_KB['summary'], SOFTWARE_INSTALLATION_KB['difficulty'], SOFTWARE_INSTALLATION_KB['estimated_time'], SOFTWARE_INSTALLATION_KB['escalation_required'], SOFTWARE_INSTALLATION_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, SOFTWARE_INSTALLATION_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, SOFTWARE_INSTALLATION_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, SOFTWARE_INSTALLATION_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, SOFTWARE_INSTALLATION_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, SOFTWARE_INSTALLATION_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, SOFTWARE_INSTALLATION_SOLUTIONS)
+    for solution_code, audience_steps in SOFTWARE_INSTALLATION_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_software_installation_tree(cursor, 'user', 'SOFTWARE_INSTALLATION_REQUEST_USER', 'Software Installation Request - User Diagnostic', 'User-friendly diagnostic tree for software installation requests, approval, and installer errors.', SOFTWARE_INSTALLATION_USER_DIAGNOSTIC_NODES)
+    seed_software_installation_tree(cursor, 'technician', 'SOFTWARE_INSTALLATION_REQUEST_TECHNICIAN', 'Software Installation Request - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for approval, licensing, deployment, and installation failure handling.', SOFTWARE_INSTALLATION_TECH_DIAGNOSTIC_NODES)
+
+def seed_software_installation_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'SOFTWARE_INSTALLATION_REQUEST')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'SOFTWARE_INSTALLATION_REQUEST', ?, ?, ?, 1, CURRENT_TIMESTAMP)
         ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
             problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
             title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
@@ -6463,6 +6715,7 @@ def initialize_database():
     seed_malware_or_virus_suspected_content(cursor)
     seed_email_attachment_not_opening_content(cursor)
     seed_calendar_sync_issue_content(cursor)
+    seed_software_installation_request_content(cursor)
     seed_existing_issue_role_alignment(cursor)
 
     cursor.execute("""
@@ -11778,7 +12031,7 @@ def show_my_tickets():
         with st.expander(f"Ticket {i}: {ticket.get('issue')} — {ticket.get('status', 'Open')}{unread_label}"):
             st.write(f"**Severity:** {ticket.get('severity')}")
             show_priority_badge(ticket.get("priority", "Medium"))
-            st.markdown(f"**Priority Label:** {format_priority_text(ticket.get('priority', 'Medium'))}", unsafe_allow_html=True)
+            st.markdown(f"**Priority Label:** {format_priority_text(ticket.get('priority', 'medium'))}", unsafe_allow_html=True)
             show_sla_badge(ticket)
             st.write(f"**Status:** {ticket.get('status', 'Open')}")
             if ticket.get("created_at"):
