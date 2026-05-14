@@ -575,6 +575,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Email Attachment Not Opening": "EMAIL_ATTACHMENT_NOT_OPENING",
     "Calendar Sync Issue": "CALENDAR_SYNC_ISSUE",
     "Software Installation Request": "SOFTWARE_INSTALLATION_REQUEST",
+    "Browser Issue": "BROWSER_ISSUE",
 }
 
 
@@ -588,10 +589,10 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED", "EMAIL_ATTACHMENT_NOT_OPENING", "CALENDAR_SYNC_ISSUE", "SOFTWARE_INSTALLATION_REQUEST"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED", "EMAIL_ATTACHMENT_NOT_OPENING", "CALENDAR_SYNC_ISSUE", "SOFTWARE_INSTALLATION_REQUEST", "BROWSER_ISSUE"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
-    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, Device Running Out of Storage, Phishing Email Reported, Malware or Virus Suspected, Email Attachment Not Opening, Calendar Sync Issue, and Software Installation Request. Other sample issues are hidden until they "
+    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, Device Running Out of Storage, Phishing Email Reported, Malware or Virus Suspected, Email Attachment Not Opening, Calendar Sync Issue, Software Installation Request, and Browser Issue. Other sample issues are hidden until they "
     "are expanded with detailed symptoms, causes, user steps, and technician steps."
 )
 
@@ -6688,6 +6689,255 @@ def seed_existing_issue_role_alignment(cursor):
         for audience, steps in audience_map.items():
             _replace_solution_audience_steps(cursor, solution_code, audience, steps)
 
+
+# -----------------------------
+# BROWSER ISSUE CONTENT
+# -----------------------------
+BROWSER_ISSUE_PROBLEM = (
+    'BROWSER_ISSUE',
+    'Browser Issue',
+    'Software & Applications',
+    'Medium',
+    'The user cannot open the browser, load a website, sign in to a web app, download files, or use a browser-based business application correctly.'
+)
+
+BROWSER_ISSUE_KB = {
+    'title': 'Browser Issue',
+    'summary': 'Use this guide when a browser will not open, websites will not load, a web app behaves incorrectly, login loops occur, downloads are blocked, or browser security warnings appear.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-25 minutes',
+    'escalation_required': 0,
+    'escalation_notes': 'Escalate when a business-critical web app is unavailable, multiple users are affected, network/proxy/DNS/firewall issues are suspected, or suspicious browser behavior/security warnings appear.',
+    'tags': ['browser', 'website not loading', 'cache', 'cookies', 'extensions', 'Microsoft Edge', 'Chrome', 'VPN', 'DNS', 'proxy', 'certificate warning', 'web app'],
+    'symptoms': [
+        'Pages do not load or stay spinning.',
+        'The browser is slow, crashes, opens and closes immediately, or does not respond.',
+        'One website or business web app fails while other sites work.',
+        'Login loops, sign-in errors, or web app buttons do not work.',
+        'Downloads, pop-ups, camera, microphone, cookies, or other site permissions are blocked.',
+        'Certificate warnings, security warnings, blocked pages, or download warnings appear.',
+        'Unexpected pop-ups, redirects, homepage/search changes, or suspicious extensions appear.',
+    ],
+    'causes': [
+        'Common causes include stale cache/cookies, browser extensions, outdated browser version, corrupted profile, wrong account/session, blocked permissions, DNS or network problems, VPN/proxy/firewall restrictions, endpoint security tools, certificate warnings, or web app outage.',
+        'Advanced causes include certificate chain/TLS inspection issues, incorrect system date/time, DNS cache or hosts-file problems, managed browser policy, malicious extension/browser hijacker, SSO or conditional access issue, proxy misconfiguration, web app backend/API outage, or captive portal/public Wi-Fi interference.',
+    ],
+    'user_steps': [
+        'Confirm whether other websites work.',
+        'Refresh the page, then close and reopen the browser.',
+        'Try a private/incognito window.',
+        'Try another approved browser.',
+        'Confirm you are signed in with the correct work account.',
+        'Connect to VPN if the site is internal or company-only.',
+        'Do not bypass certificate or security warnings unless IT confirms it is safe.',
+        'Do not install browser extensions from unapproved sources.',
+        'Take a screenshot of the error, warning, or blocked page.',
+        'Contact IT if the issue blocks business work, affects internal resources, or looks suspicious.',
+    ],
+    'it_steps': [
+        'Confirm the user, device name, browser name/version, website URL, network type, VPN status, and exact error.',
+        'Determine scope: one website, all websites, one browser, all browsers, one user/device, or multiple users.',
+        'Test whether the site works in private/incognito mode.',
+        'Test another approved browser.',
+        'Restart browser and device if needed.',
+        'Check browser update status.',
+        'Clear cache/cookies for the affected site or browser if appropriate.',
+        'Temporarily disable extensions only if company policy allows.',
+        'Confirm whether the user is signed in with the correct account.',
+        'Check whether VPN is required for the site.',
+        'Check whether endpoint, web filtering, proxy, or security tools are blocking the site or download.',
+        'Test DNS resolution for the affected website or internal host.',
+        'Compare behavior on VPN, office network, home network, and hotspot if appropriate.',
+        'Check proxy settings and whether a proxy or web filter is involved.',
+        'Check certificate details and system date/time if a certificate warning appears.',
+        'Check site permissions such as pop-ups, cookies, camera, microphone, location, notifications, and downloads.',
+        'Review suspicious extensions, homepage/search changes, redirects, or pop-ups as possible malware/browser hijack.',
+        'Check whether multiple users are affected, suggesting web app, DNS, proxy, or service outage.',
+        'Escalate with URL, DNS results, browser/version, network path, screenshots, certificate details, and affected scope.',
+    ],
+}
+
+BROWSER_ISSUE_SOLUTIONS = [
+    ('FIX_BROWSER_CHECK_NETWORK_ACCESS', 'Check Internet, DNS, or Network Access', 'If all websites fail, the issue may be internet, DNS, proxy, or network connectivity rather than the browser.', 'Confirm network access before browser-specific troubleshooting.', 0, 'Escalate to Network team if DNS, proxy, routing, or connectivity issue is suspected.', 'medium'),
+    ('FIX_BROWSER_CACHE_COOKIES_EXTENSION', 'Clear Cache/Cookies or Disable Problem Extension', 'Cached data, cookies, or extensions can cause login loops, stale pages, or broken web app behavior.', 'Test private mode, clear site data, and isolate extensions according to policy.', 0, 'Escalate if managed extension or browser policy causes the issue.', 'medium'),
+    ('FIX_BROWSER_CONNECT_VPN_INTERNAL_SITE', 'Connect to VPN and Test Internal Site', 'Internal company websites may require VPN or corporate network access.', 'Connect to VPN and confirm internal access.', 0, 'Escalate if VPN, internal DNS, routing, or web app access fails.', 'medium'),
+    ('FIX_BROWSER_SECURITY_WARNING_SUSPICIOUS', 'Report Browser Security Warning or Suspicious Behavior', 'Security warnings, redirects, pop-ups, and unknown extensions may indicate unsafe site, malware, or browser hijack.', 'Do not bypass warnings; collect evidence and report safely.', 1, 'Escalate to Security if malicious site, browser hijack, suspicious extension, or malware is suspected.', 'high'),
+    ('FIX_BROWSER_WEB_APP_ACCESS_ISSUE', 'Report Website or Web App Access Issue', 'One website or web app fails even after browser-local checks.', 'Collect URL, screenshots, and affected scope for support.', 1, 'Escalate to App Support, Network, or Identity based on evidence.', 'medium'),
+    ('FIX_BROWSER_PROFILE_EXTENSIONS', 'Troubleshoot Browser Cache, Profile, or Extensions', 'Browser-specific failures often come from corrupted profile, cached data, or extensions.', 'Isolate browser profile, cache, and extension behavior.', 0, 'Escalate to Endpoint/Desktop if browser repair, managed policy, or profile rebuild is needed.', 'medium'),
+    ('FIX_BROWSER_DNS_NETWORK_PATH', 'Troubleshoot Browser-Related DNS or Network Path', 'The browser may fail because the site hostname does not resolve or the network path is blocked.', 'Test DNS and compare network paths.', 1, 'Escalate to Network with DNS results, URL, network path, and affected scope.', 'high'),
+    ('FIX_BROWSER_PROXY_VPN_WEB_FILTER', 'Investigate Proxy, VPN, Firewall, or Web Filter', 'Browser traffic may be blocked or modified by proxy, VPN, firewall, web filter, or TLS inspection.', 'Check network path and security filtering.', 1, 'Escalate to Network/Security with URL, category, block reason, and business need.', 'high'),
+    ('FIX_BROWSER_ESCALATE_WEB_APP_SERVICE', 'Escalate Web App or Service Issue', 'Multiple users affected may indicate application, backend, identity, or service outage.', 'Confirm scope and escalate to app/service owner.', 1, 'Escalate to Web App/Application Support or Systems team with incident details.', 'high'),
+    ('FIX_BROWSER_POLICIES_PERMISSIONS_SECURITY', 'Check Browser Policies, Permissions, and Security Tools', 'Managed browser policies, permissions, endpoint tools, or site settings may block required functionality.', 'Review permissions, policy, and endpoint/security controls.', 1, 'Escalate to Endpoint/Security/App Support if policy change is required.', 'medium'),
+]
+
+BROWSER_ISSUE_SOLUTION_STEPS = {
+    'FIX_BROWSER_CHECK_NETWORK_ACCESS': {
+        'user': ['Confirm Wi-Fi or Ethernet is connected.', 'Try another website.', 'Restart the browser.', 'Restart the computer if needed.', 'Contact IT if no websites work.'],
+        'technician': ['Confirm IP address, gateway, DNS, and network status.', 'Test public website access and DNS resolution.', 'Compare browser behavior with other network applications.', 'Check proxy and VPN status if applicable.', 'Escalate if network outage or DNS issue is suspected.'],
+        'admin': ['Escalate to Network with device name, network type, IP/DNS/gateway details, affected websites, DNS results, and affected scope.'],
+    },
+    'FIX_BROWSER_CACHE_COOKIES_EXTENSION': {
+        'user': ['Try a private/incognito window.', 'If it works there, tell IT.', 'Clear cache/cookies only for the affected site if instructed.', 'Do not install or remove extensions unless IT instructs you.'],
+        'technician': ['Test private/incognito mode.', 'Clear site-specific cache and cookies first when possible.', 'Disable extensions one at a time if allowed by policy.', 'Update browser and extensions.', 'Document which change resolved the issue.'],
+        'admin': ['Escalate if a managed extension, browser policy, or business web app cookie/session requirement needs review.'],
+    },
+    'FIX_BROWSER_CONNECT_VPN_INTERNAL_SITE': {
+        'user': ['Connect to the company VPN.', 'Wait until VPN shows connected.', 'Refresh the internal site.', 'If VPN fails, use the VPN troubleshooting flow.'],
+        'technician': ['Confirm whether the site is internal-only.', 'Confirm VPN status and internal resource access.', 'Test DNS resolution for the internal site.', 'Determine whether this is VPN, DNS, routing, or web app access issue.', 'Escalate with URL, VPN status, DNS result, and error screenshot.'],
+        'admin': ['Escalate to Network or Application Support if VPN is connected but internal DNS/routing/web access still fails.'],
+    },
+    'FIX_BROWSER_SECURITY_WARNING_SUSPICIOUS': {
+        'user': ['Do not bypass certificate or security warnings.', 'Do not enter passwords on suspicious pages.', 'Take a screenshot of the warning if safe.', 'Report unexpected redirects, pop-ups, or homepage changes to IT.'],
+        'technician': ['Capture URL, screenshot, warning text, and browser version.', 'Check certificate details if appropriate.', 'Check for suspicious extensions or homepage/search changes.', 'Check endpoint/web filtering alerts.', 'Escalate to Security if malicious site, browser hijack, or malware is suspected.'],
+        'admin': ['Escalate to Security with URL, certificate warning details, screenshots, extensions found, endpoint alerts, and user actions.'],
+    },
+    'FIX_BROWSER_WEB_APP_ACCESS_ISSUE': {
+        'user': ['Record the website URL.', 'Take a screenshot of the error.', 'Note whether coworkers can access it.', 'Submit a ticket with the time the issue started.'],
+        'technician': ['Confirm affected URL and user action.', 'Check whether multiple users are affected.', 'Compare different browsers, devices, and networks.', 'Check whether user has permission to the web app.', 'Escalate to App Support, Network, or Identity based on evidence.'],
+        'admin': ['Escalate with URL, screenshots, user/account, affected users, browsers tested, network paths tested, and business impact.'],
+    },
+    'FIX_BROWSER_PROFILE_EXTENSIONS': {
+        'user': ['Try another approved browser.', 'Try private/incognito mode.', 'Report whether the issue happens only in one browser.'],
+        'technician': ['Confirm issue is browser/profile-specific.', 'Clear site data or browser cache as appropriate.', 'Test with extensions disabled.', 'Create a temporary clean browser profile if policy allows.', 'Repair or reset browser only after preserving needed bookmarks/settings according to policy.'],
+        'admin': ['Escalate to Endpoint/Desktop if managed browser settings, profile corruption, or repair/reinstall is required.'],
+    },
+    'FIX_BROWSER_DNS_NETWORK_PATH': {
+        'user': ['Confirm internet or VPN is connected.', 'Try the site again later if IT confirms outage.', 'Provide the exact URL and screenshot.'],
+        'technician': ['Test DNS resolution for the site or internal host.', 'Compare behavior on VPN, office network, home network, and hotspot.', 'Check proxy and DNS settings.', 'Determine whether issue is DNS, routing, firewall, proxy, or site outage.', 'Escalate with DNS results, URL, network path, and affected scope.'],
+        'admin': ['Escalate to Network with DNS results, tested networks, URL/hostname, error screenshot, timestamp, and affected scope.'],
+    },
+    'FIX_BROWSER_PROXY_VPN_WEB_FILTER': {
+        'user': ['Tell IT whether you are on VPN, office network, home Wi-Fi, or public Wi-Fi.', 'Take a screenshot of the blocked page.', 'Do not try to bypass company filtering.'],
+        'technician': ['Confirm network path and proxy status.', 'Check whether web filtering/security tool blocked the site.', 'Check whether issue affects one user or network segment.', 'Compare on alternate trusted network if allowed.', 'Escalate to Network/Security with URL, category, block reason, and business need.'],
+        'admin': ['Escalate to Network/Security with URL, block reason/category, proxy/VPN path, affected users, and business justification.'],
+    },
+    'FIX_BROWSER_ESCALATE_WEB_APP_SERVICE': {
+        'user': ['Record the error message and time.', 'Ask whether coworkers see the same issue.', 'Avoid repeated login attempts if errors continue.'],
+        'technician': ['Confirm affected users, browsers, devices, and locations.', 'Check service status or internal outage notes if available.', 'Capture URL, error, timestamp, and steps to reproduce.', 'Escalate to Web App/Application Support or Systems team.', 'Update the ticket with incident details.'],
+        'admin': ['Escalate as a possible app/service incident with affected scope, URL, screenshots, timestamps, user groups, and reproduction steps.'],
+    },
+    'FIX_BROWSER_POLICIES_PERMISSIONS_SECURITY': {
+        'user': ['Tell IT what action is blocked, such as camera, microphone, pop-up, download, or sign-in.', 'Do not change security settings unless IT instructs you.', 'Provide a screenshot of the blocked action.'],
+        'technician': ['Check site permissions for pop-ups, cookies, camera, microphone, notifications, location, and downloads.', 'Check managed browser policies if available.', 'Check endpoint, web filtering, and security events.', 'Confirm whether the setting should be allowed for business use.', 'Escalate to Endpoint/Security/App Support if policy change is required.'],
+        'admin': ['Escalate with required permission/policy, business need, URL, affected browser, current policy behavior, and security impact.'],
+    },
+}
+
+BROWSER_ISSUE_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_BROWSER_USER', None, 'category', 'Browser Issue', 'User-friendly diagnostic path for browser, website, internal site, and security-warning issues.', None, None, None, None, 1),
+    ('Q_BROWSER_SCOPE_USER', 'ROOT_BROWSER_USER', 'question', 'Check Website Scope', None, 'Is the issue with one website or all websites?', None, None, None, 1),
+    ('S_BROWSER_NETWORK_USER', 'Q_BROWSER_SCOPE_USER', 'solution', 'Check Internet, DNS, or Network Access', None, None, 'All websites', 'All websites', 'FIX_BROWSER_CHECK_NETWORK_ACCESS', 1),
+    ('Q_BROWSER_PRIVATE_USER', 'Q_BROWSER_SCOPE_USER', 'question', 'Try Private or Another Browser', None, 'Does it work in private/incognito or another approved browser?', 'One website', 'One website', None, 2),
+    ('S_BROWSER_CACHE_USER', 'Q_BROWSER_PRIVATE_USER', 'solution', 'Clear Cache/Cookies or Disable Problem Extension', None, None, 'Yes', 'Yes', 'FIX_BROWSER_CACHE_COOKIES_EXTENSION', 1),
+    ('Q_BROWSER_INTERNAL_USER', 'Q_BROWSER_PRIVATE_USER', 'question', 'Check Internal Site Requirement', None, 'Is it an internal company site requiring VPN?', 'No', 'No', None, 2),
+    ('S_BROWSER_VPN_USER', 'Q_BROWSER_INTERNAL_USER', 'solution', 'Connect to VPN and Test Internal Site', None, None, 'Yes', 'Yes', 'FIX_BROWSER_CONNECT_VPN_INTERNAL_SITE', 1),
+    ('Q_BROWSER_SECURITY_USER', 'Q_BROWSER_INTERNAL_USER', 'question', 'Check Warning or Suspicious Behavior', None, 'Is there a security warning, blocked page, pop-up, or redirect?', 'No', 'No', None, 2),
+    ('S_BROWSER_SECURITY_USER', 'Q_BROWSER_SECURITY_USER', 'solution', 'Report Browser Security Warning or Suspicious Behavior', None, None, 'Yes', 'Yes', 'FIX_BROWSER_SECURITY_WARNING_SUSPICIOUS', 1),
+    ('S_BROWSER_WEBAPP_USER', 'Q_BROWSER_SECURITY_USER', 'solution', 'Report Website or Web App Access Issue', None, None, 'No', 'No', 'FIX_BROWSER_WEB_APP_ACCESS_ISSUE', 2),
+]
+
+BROWSER_ISSUE_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_BROWSER_TECH', None, 'category', 'Browser Issue - IT Support Specialist', 'IT Support Specialist diagnostic path for browser profile, DNS, proxy, VPN, web app, and security-tool issues.', None, None, None, None, 1),
+    ('Q_BROWSER_PROFILE_TECH', 'ROOT_BROWSER_TECH', 'question', 'Check Browser/Profile Scope', None, 'Is the issue one browser/profile or all browsers?', None, None, None, 1),
+    ('S_BROWSER_PROFILE_TECH', 'Q_BROWSER_PROFILE_TECH', 'solution', 'Troubleshoot Browser Cache, Profile, or Extensions', None, None, 'One browser/profile', 'One browser/profile', 'FIX_BROWSER_PROFILE_EXTENSIONS', 1),
+    ('Q_BROWSER_DNS_TECH', 'Q_BROWSER_PROFILE_TECH', 'question', 'Check DNS Resolution', None, 'Does DNS resolve the affected site/internal host?', 'All browsers', 'All browsers', None, 2),
+    ('S_BROWSER_DNS_TECH', 'Q_BROWSER_DNS_TECH', 'solution', 'Troubleshoot Browser-Related DNS or Network Path', None, None, 'No', 'No', 'FIX_BROWSER_DNS_NETWORK_PATH', 1),
+    ('Q_BROWSER_NETWORKPATH_TECH', 'Q_BROWSER_DNS_TECH', 'question', 'Check VPN/Proxy/Network Path', None, 'Does issue depend on VPN, proxy, or network path?', 'Yes', 'Yes', None, 2),
+    ('S_BROWSER_PROXY_TECH', 'Q_BROWSER_NETWORKPATH_TECH', 'solution', 'Investigate Proxy, VPN, Firewall, or Web Filter', None, None, 'Yes', 'Yes', 'FIX_BROWSER_PROXY_VPN_WEB_FILTER', 1),
+    ('Q_BROWSER_MULTI_TECH', 'Q_BROWSER_NETWORKPATH_TECH', 'question', 'Check Multiple Users', None, 'Are multiple users affected?', 'No', 'No', None, 2),
+    ('S_BROWSER_WEBAPP_TECH', 'Q_BROWSER_MULTI_TECH', 'solution', 'Escalate Web App or Service Issue', None, None, 'Yes', 'Yes', 'FIX_BROWSER_ESCALATE_WEB_APP_SERVICE', 1),
+    ('S_BROWSER_POLICY_TECH', 'Q_BROWSER_MULTI_TECH', 'solution', 'Check Browser Policies, Permissions, and Security Tools', None, None, 'No', 'No', 'FIX_BROWSER_POLICIES_PERMISSIONS_SECURITY', 2),
+]
+
+def seed_browser_issue_content(cursor):
+    """Seed Browser Issue KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = BROWSER_ISSUE_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, BROWSER_ISSUE_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, BROWSER_ISSUE_KB['title'], BROWSER_ISSUE_KB['summary'], BROWSER_ISSUE_KB['difficulty'], BROWSER_ISSUE_KB['estimated_time'], BROWSER_ISSUE_KB['escalation_required'], BROWSER_ISSUE_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, BROWSER_ISSUE_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, BROWSER_ISSUE_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, BROWSER_ISSUE_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, BROWSER_ISSUE_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, BROWSER_ISSUE_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, BROWSER_ISSUE_SOLUTIONS)
+    for solution_code, audience_steps in BROWSER_ISSUE_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_browser_issue_tree(cursor, 'user', 'BROWSER_ISSUE_USER', 'Browser Issue - User Diagnostic', 'User-friendly diagnostic tree for browser, website, internal-site, and security-warning issues.', BROWSER_ISSUE_USER_DIAGNOSTIC_NODES)
+    seed_browser_issue_tree(cursor, 'technician', 'BROWSER_ISSUE_TECHNICIAN', 'Browser Issue - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for browser profile, DNS, proxy, VPN, web app, and security-tool issues.', BROWSER_ISSUE_TECH_DIAGNOSTIC_NODES)
+
+def seed_browser_issue_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'BROWSER_ISSUE')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'BROWSER_ISSUE', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
 def initialize_database():
     """Create SQLite tables if they do not already exist."""
     connection = get_db_connection()
@@ -6716,6 +6966,7 @@ def initialize_database():
     seed_email_attachment_not_opening_content(cursor)
     seed_calendar_sync_issue_content(cursor)
     seed_software_installation_request_content(cursor)
+    seed_browser_issue_content(cursor)
     seed_existing_issue_role_alignment(cursor)
 
     cursor.execute("""
