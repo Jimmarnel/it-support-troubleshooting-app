@@ -577,6 +577,8 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Software Installation Request": "SOFTWARE_INSTALLATION_REQUEST",
     "Browser Issue": "BROWSER_ISSUE",
     "Certificate / Security Warning": "CERTIFICATE_SECURITY_WARNING",
+    "Mobile Email Setup Issue": "MOBILE_EMAIL_SETUP_ISSUE",
+    "Video Conferencing Issue": "VIDEO_CONFERENCING_ISSUE",
 }
 
 
@@ -590,10 +592,10 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED", "EMAIL_ATTACHMENT_NOT_OPENING", "CALENDAR_SYNC_ISSUE", "SOFTWARE_INSTALLATION_REQUEST", "BROWSER_ISSUE", "CERTIFICATE_SECURITY_WARNING"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED", "EMAIL_ATTACHMENT_NOT_OPENING", "CALENDAR_SYNC_ISSUE", "SOFTWARE_INSTALLATION_REQUEST", "BROWSER_ISSUE", "CERTIFICATE_SECURITY_WARNING", "MOBILE_EMAIL_SETUP_ISSUE", "VIDEO_CONFERENCING_ISSUE"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
-    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, Device Running Out of Storage, Phishing Email Reported, Malware or Virus Suspected, Email Attachment Not Opening, Calendar Sync Issue, Software Installation Request, Browser Issue, and Certificate / Security Warning. Other sample issues are hidden until they "
+    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, Device Running Out of Storage, Phishing Email Reported, Malware or Virus Suspected, Email Attachment Not Opening, Calendar Sync Issue, Software Installation Request, Browser Issue, Certificate / Security Warning, Mobile Email Setup Issue, and Video Conferencing Issue. Other sample issues are hidden until they "
     "are expanded with detailed symptoms, causes, user steps, and technician steps."
 )
 
@@ -7185,6 +7187,491 @@ def seed_certificate_security_warning_tree(cursor, audience, tree_code, title, d
                 updated_at=CURRENT_TIMESTAMP
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
+
+# -----------------------------
+# MOBILE EMAIL SETUP ISSUE CONTENT
+# -----------------------------
+MOBILE_EMAIL_SETUP_ISSUE_PROBLEM = (
+    'MOBILE_EMAIL_SETUP_ISSUE',
+    'Mobile Email Setup Issue',
+    'Email, Calendar & Collaboration',
+    'Medium',
+    'The user cannot add or use their work email on a mobile phone or tablet.'
+)
+
+MOBILE_EMAIL_SETUP_ISSUE_KB = {
+    'title': 'Mobile Email Setup Issue',
+    'summary': 'Use this guide when work email cannot be added to a phone or tablet, mobile email keeps asking for sign-in, MFA does not complete, or email/calendar/contacts do not sync on mobile.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-25 minutes',
+    'escalation_required': 1,
+    'escalation_notes': 'Escalate to Identity, Endpoint/Mobile Device Management, Email/Collaboration, or Security depending on whether the blocker is MFA, conditional access, device compliance, mailbox access, or suspicious sign-in activity.',
+    'tags': ['mobile email', 'Outlook mobile', 'iOS email', 'Android email', 'MFA', 'device compliance', 'MDM', 'Intune', 'Exchange', 'Microsoft 365', 'calendar sync'],
+    'symptoms': [
+        'Cannot add work email to phone or tablet.',
+        'Outlook mobile or email app repeatedly asks for sign-in.',
+        'MFA prompt does not appear or cannot be completed during setup.',
+        'Device shows compliance, management, enrollment, or organization-required message.',
+        'Email works on desktop or web but not on mobile.',
+        'Email syncs but calendar or contacts do not sync.',
+        'Mobile email stopped working after password change, phone change, or app update.'
+    ],
+    'causes': [
+        'Common causes include wrong account type, incorrect username, password or MFA failure, outdated app, missing app permissions, unsupported native mail app, device compliance requirements, MDM enrollment, conditional access policy, or mailbox/mobile sync settings.',
+        'Advanced causes include conditional access failure, app protection policy issue, MDM/Intune enrollment failure, unsupported or non-compliant mobile OS, disabled mobile access, stale device partnership, token/session issue, mailbox license problem, or Microsoft 365/Exchange service issue.'
+    ],
+    'user_steps': [
+        'Confirm the phone has internet access.',
+        'Install or open the approved company email app, usually Outlook mobile if required.',
+        'Enter your full company email address.',
+        'Sign in with your current company password.',
+        'Approve the MFA prompt only if you initiated the sign-in.',
+        'Allow required app permissions for email, calendar, contacts, and notifications if company policy allows.',
+        'If prompted, complete device enrollment or compliance steps.',
+        'Restart the mobile app and try again.',
+        'If you recently changed your password, update the password or remove/re-add the account only if IT instructs you.',
+        'Submit a ticket with the phone type, app name, error message, and screenshot.'
+    ],
+    'it_steps': [
+        'Confirm the user, phone type, mobile OS version, email app, account, and exact error message.',
+        'Confirm whether email works in Outlook web or desktop Outlook.',
+        'Identify whether this is first-time setup, new phone migration, password change, MFA issue, calendar/contact sync issue, or compliance/enrollment issue.',
+        'Confirm the user is using the approved app and correct account type.',
+        'Confirm internet connectivity on the phone.',
+        'Check whether the user receives and approves MFA.',
+        'Check for account locked, password expired, or MFA problem.',
+        'Confirm app permissions for mail, calendar, contacts, and notifications as appropriate.',
+        'Ask the user to update the mobile app and restart it.',
+        'Capture screenshots, phone model, OS version, app version, error text, and time of failure.',
+        'Check sign-in logs or authentication failure reason if available.',
+        'Check whether conditional access, device compliance, or app protection policy blocked the sign-in.',
+        'Check whether the device is enrolled if company policy requires enrollment.',
+        'Check MDM/Intune compliance state where applicable.',
+        'Check whether the user has required mailbox, license, or service access.',
+        'Check whether mobile access or Exchange ActiveSync is disabled for the mailbox if applicable.',
+        'Check whether stale mobile device partnerships or tokens need cleanup according to policy.',
+        'Compare Outlook mobile versus native mail app behavior if policy allows.',
+        'Check whether the issue follows the user, device, app, or network.',
+        'Escalate with username, device model, OS/app version, error screenshot, sign-in result, policy result, compliance state, and steps already completed.'
+    ]
+}
+
+MOBILE_EMAIL_SETUP_ISSUE_SOLUTIONS = [
+    ('FIX_MOBILE_EMAIL_APPROVED_APP', 'Use Approved Mobile Email App', 'The organization may require a specific app, such as Outlook mobile, for work email.', 'Use the approved mobile email app and correct work account.', 0, 'Escalate only if approved app install or access is blocked by policy.', 'medium'),
+    ('FIX_MOBILE_EMAIL_MFA_SETUP', 'Resolve MFA During Mobile Email Setup', 'Mobile email setup may fail if MFA prompt is missed, blocked, or unavailable.', 'Confirm MFA works and route to MFA troubleshooting if needed.', 1, 'Escalate to Identity if MFA method is unavailable or conditional access blocks setup.', 'medium'),
+    ('FIX_MOBILE_EMAIL_DEVICE_ENROLLMENT', 'Complete Device Enrollment or Compliance Steps', 'Company policy may require the phone to be enrolled, managed, or compliant before email access is allowed.', 'Complete approved enrollment and compliance requirements.', 1, 'Escalate to Endpoint/Mobile Device Management if compliance or enrollment does not update.', 'medium'),
+    ('FIX_MOBILE_EMAIL_SYNC_PERMISSIONS', 'Troubleshoot Mobile App Sync or Permissions', 'Email works elsewhere but mobile app permissions, cache, or sync settings may be blocking mobile access.', 'Check app permissions, sync settings, update state, and mobile app behavior.', 0, 'Escalate if app policy or mobile management controls sync.', 'medium'),
+    ('FIX_MOBILE_EMAIL_ACCOUNT_MAILBOX_ACCESS', 'Check Account, Password, or Mailbox Access', 'Mobile setup may fail because the account, password, license, or mailbox access has a problem.', 'Check account state, password, MFA, and mailbox access.', 1, 'Escalate to Identity or Email/Collaboration if account or mailbox access is blocked.', 'high'),
+    ('FIX_MOBILE_EMAIL_AUTH_ACCOUNT_STATE', 'Troubleshoot Mobile Sign-In, MFA, or Account State', 'Authentication failure may be caused by password, account lockout, MFA, conditional access, or risk policy.', 'Review authentication failure reason and account state.', 1, 'Escalate to Identity/Security if blocked by policy or suspicious activity.', 'high'),
+    ('FIX_MOBILE_EMAIL_ENROLLMENT_COMPLIANCE', 'Troubleshoot Mobile Device Enrollment or Compliance', 'Mobile access is blocked because device management or compliance requirements are not met.', 'Review enrollment and compliance state.', 1, 'Escalate to Endpoint/MDM team if compliance remains blocked.', 'high'),
+    ('FIX_MOBILE_EMAIL_APP_CACHE_SYNC', 'Troubleshoot Mobile App Sync, Permissions, or Cache', 'Mobile app setup completes, but mail/calendar/contacts do not sync correctly.', 'Compare mobile, web, and desktop behavior and verify permissions/sync scope.', 1, 'Escalate if mailbox or mobile policy issue is suspected.', 'medium'),
+    ('FIX_MOBILE_EMAIL_MAILBOX_SERVICE_ESCALATE', 'Escalate Mailbox or Service Access Issue', 'Email does not work on web/desktop either, so the issue is not mobile-specific.', 'Confirm broader mailbox/service problem and escalate with evidence.', 1, 'Escalate to Email/Collaboration Admin or Microsoft 365 support path with evidence.', 'high'),
+]
+
+MOBILE_EMAIL_SETUP_ISSUE_SOLUTION_STEPS = {
+    'FIX_MOBILE_EMAIL_APPROVED_APP': {
+        'user': ['Install or open the approved company email app.', 'Enter your full company email address.', 'Sign in with your work account.', 'Approve MFA only if you initiated setup.', 'Allow required permissions if prompted.'],
+        'technician': ['Confirm the company-approved mobile email app.', 'Confirm the user is using the correct account type.', 'Guide the user through setup.', 'Document phone type, app version, and setup result.'],
+        'admin': ['Escalate only if app availability, policy assignment, or approved app deployment is blocked.']
+    },
+    'FIX_MOBILE_EMAIL_MFA_SETUP': {
+        'user': ['Keep the authenticator app or phone available.', 'Retry setup and watch for the MFA prompt.', 'Do not approve prompts you did not initiate.', 'Contact IT if your MFA method is unavailable.'],
+        'technician': ['Confirm whether MFA prompt is sent and completed.', 'Check whether the user can complete MFA elsewhere.', 'Route to MFA troubleshooting if method is unavailable.', 'Escalate if conditional access or MFA policy blocks setup.'],
+        'admin': ['Identity handoff: include user, sign-in timestamp, MFA method, failure message, and whether other sign-ins work.']
+    },
+    'FIX_MOBILE_EMAIL_DEVICE_ENROLLMENT': {
+        'user': ['Follow the company enrollment instructions.', 'Keep the device connected to the internet.', 'Set required passcode, encryption, or security settings if prompted.', 'Contact IT if enrollment fails.'],
+        'technician': ['Confirm whether device enrollment/compliance is required.', 'Check enrollment status if available.', 'Confirm required OS version, passcode, encryption, and app protection settings.', 'Escalate to MDM/Endpoint team if compliance does not update.'],
+        'admin': ['Endpoint/MDM handoff: include device model, OS version, enrollment state, compliance error, assigned policies, and user impact.']
+    },
+    'FIX_MOBILE_EMAIL_SYNC_PERMISSIONS': {
+        'user': ['Confirm the phone has internet access.', 'Restart the mobile email app.', 'Check that notifications, calendar, and contacts permissions are enabled if needed.', 'Update the app.', 'Report whether only email or also calendar/contacts fail.'],
+        'technician': ['Confirm web/desktop email works.', 'Check mobile app version and permissions.', 'Check whether sync is enabled for mail/calendar/contacts.', 'Remove/re-add account only if policy allows.', 'Escalate if app policy or mobile management controls sync.'],
+        'admin': ['Mobile/Endpoint handoff: include app version, sync scope, permission state, and whether web/desktop email works.']
+    },
+    'FIX_MOBILE_EMAIL_ACCOUNT_MAILBOX_ACCESS': {
+        'user': ['Confirm you can sign in to Outlook web or your computer.', 'Use your current company password.', 'Tell IT if you recently changed your password or got locked out.', 'Avoid repeated failed attempts.'],
+        'technician': ['Check account locked, password expired, disabled, or MFA issue.', 'Confirm mailbox/license/service access.', 'Confirm the user can sign in to web/desktop email.', 'Route to Password Reset, Account Locked, MFA, or mailbox support as needed.'],
+        'admin': ['Identity/Email handoff: include account state, license/mailbox status, sign-in result, and whether web/desktop access works.']
+    },
+    'FIX_MOBILE_EMAIL_AUTH_ACCOUNT_STATE': {
+        'user': ['Stop retrying if sign-in keeps failing.', 'Report the exact error message.', 'Do not approve unexpected MFA prompts.', 'Follow IT instructions for password or MFA reset if needed.'],
+        'technician': ['Check sign-in logs or authentication failure reason if available.', 'Check account status, password expiration, and MFA state.', 'Check conditional access or risk policy result.', 'Escalate to Identity/Security if blocked by policy or suspicious activity.'],
+        'admin': ['Escalate to Identity/Security with sign-in log result, conditional access result, risk status, MFA status, and timestamp.']
+    },
+    'FIX_MOBILE_EMAIL_ENROLLMENT_COMPLIANCE': {
+        'user': ['Follow company device enrollment prompts.', 'Apply required security settings.', 'Keep the device online.', 'Send IT the compliance/enrollment error screenshot.'],
+        'technician': ['Check device enrollment state.', 'Check MDM/Intune compliance state where applicable.', 'Check compliance errors such as OS version, passcode, encryption, jailbreak/root detection, or app protection policy.', 'Confirm the user/device is assigned to the correct policy.', 'Escalate to Endpoint/MDM team if compliance remains blocked.'],
+        'admin': ['Endpoint/MDM handoff: include compliance state, policy assignment, enrollment error, OS version, and remediation attempted.']
+    },
+    'FIX_MOBILE_EMAIL_APP_CACHE_SYNC': {
+        'user': ['Confirm internet works.', 'Restart the app and phone.', 'Update the email app.', 'Check calendar/contact permissions.', 'Tell IT whether web/desktop email works.'],
+        'technician': ['Compare mobile, web, and desktop behavior.', 'Check app permissions and sync scope.', 'Clear app cache or re-add account only if policy allows.', 'Check mobile app protection/management policy.', 'Escalate if mailbox or mobile policy issue is suspected.'],
+        'admin': ['Email/Mobile handoff: include client comparison, app version, permission state, policy result, and affected sync type.']
+    },
+    'FIX_MOBILE_EMAIL_MAILBOX_SERVICE_ESCALATE': {
+        'user': ['Report whether email fails on all devices.', 'Provide screenshots from web/desktop/mobile.', 'Wait for IT to verify mailbox access.'],
+        'technician': ['Confirm issue affects web/desktop/mobile.', 'Check mailbox/license/service status.', 'Check whether multiple users are affected.', 'Escalate to Email/Collaboration Admin or Microsoft 365 support path with evidence.'],
+        'admin': ['Email/Collaboration handoff: include mailbox status, service health, affected users, screenshots, and client comparison.']
+    }
+}
+
+MOBILE_EMAIL_SETUP_ISSUE_USER_DIAGNOSTIC_NODES = [
+    ('ROOT', None, 'question', 'Mobile Email Setup Issue', 'Start here when work email cannot be added or used on a phone/tablet.', 'Are you using the approved company email app?', None, None, None, 1),
+    ('APP_NO', 'ROOT', 'solution', 'Use Approved Mobile Email App', 'Use the approved company mobile email application and account type.', None, 'No / Not sure', 'no', 'FIX_MOBILE_EMAIL_APPROVED_APP', 1),
+    ('MFA_Q', 'ROOT', 'question', 'MFA During Setup', 'Check whether MFA prompt is being received and approved.', 'Do you receive and approve the MFA prompt during setup?', 'Yes', 'yes', None, 2),
+    ('MFA_NO', 'MFA_Q', 'solution', 'Resolve MFA During Mobile Email Setup', 'MFA may be unavailable, missed, or blocked.', None, 'No', 'no', 'FIX_MOBILE_EMAIL_MFA_SETUP', 1),
+    ('ENROLL_Q', 'MFA_Q', 'question', 'Enrollment or Compliance Prompt', 'Check for device management or compliance requirement.', 'Does setup mention device compliance, management, or enrollment?', 'Yes', 'yes', None, 2),
+    ('ENROLL_YES', 'ENROLL_Q', 'solution', 'Complete Device Enrollment or Compliance Steps', 'Device must meet company policy before mobile email works.', None, 'Yes', 'yes', 'FIX_MOBILE_EMAIL_DEVICE_ENROLLMENT', 1),
+    ('WEB_Q', 'ENROLL_Q', 'question', 'Web or Desktop Email Works', 'Determine whether the problem is mobile-specific.', 'Does email work on Outlook web or your computer?', 'No', 'no', None, 2),
+    ('WEB_YES', 'WEB_Q', 'solution', 'Troubleshoot Mobile App Sync or Permissions', 'Web/desktop works, so focus on mobile app sync and permissions.', None, 'Yes', 'yes', 'FIX_MOBILE_EMAIL_SYNC_PERMISSIONS', 1),
+    ('WEB_NO', 'WEB_Q', 'solution', 'Check Account, Password, or Mailbox Access', 'Email fails beyond mobile, so account or mailbox access may be affected.', None, 'No / Not sure', 'no', 'FIX_MOBILE_EMAIL_ACCOUNT_MAILBOX_ACCESS', 2),
+]
+
+MOBILE_EMAIL_SETUP_ISSUE_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT', None, 'question', 'Mobile Email Setup Issue - IT Support Specialist', 'Start here for mobile email setup, MFA, enrollment, compliance, and mailbox access.', 'Is the failure authentication or MFA-related?', None, None, None, 1),
+    ('AUTH_YES', 'ROOT', 'solution', 'Troubleshoot Mobile Sign-In, MFA, or Account State', 'Authentication, MFA, conditional access, or account state may block setup.', None, 'Yes', 'yes', 'FIX_MOBILE_EMAIL_AUTH_ACCOUNT_STATE', 1),
+    ('ENROLL_Q', 'ROOT', 'question', 'Enrollment or Compliance Required', 'Check whether device management or compliance is required.', 'Is device enrollment or compliance required?', 'No', 'no', None, 2),
+    ('ENROLL_YES', 'ENROLL_Q', 'solution', 'Troubleshoot Mobile Device Enrollment or Compliance', 'Mobile access is blocked by enrollment or compliance requirements.', None, 'Yes', 'yes', 'FIX_MOBILE_EMAIL_ENROLLMENT_COMPLIANCE', 1),
+    ('WEB_Q', 'ENROLL_Q', 'question', 'Web/Desktop Email Works', 'Determine whether issue is mobile-only or mailbox-wide.', 'Does Outlook web or desktop work for the user?', 'No / Not sure', 'no', None, 2),
+    ('WEB_YES', 'WEB_Q', 'solution', 'Troubleshoot Mobile App Sync, Permissions, or Cache', 'Mailbox works elsewhere, so isolate mobile app sync, cache, or permission problem.', None, 'Yes', 'yes', 'FIX_MOBILE_EMAIL_APP_CACHE_SYNC', 1),
+    ('WEB_NO', 'WEB_Q', 'solution', 'Escalate Mailbox or Service Access Issue', 'Email fails beyond mobile, indicating mailbox/service/account issue.', None, 'No', 'no', 'FIX_MOBILE_EMAIL_MAILBOX_SERVICE_ESCALATE', 2),
+]
+
+def seed_mobile_email_setup_issue_content(cursor):
+    """Seed Mobile Email Setup Issue KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = MOBILE_EMAIL_SETUP_ISSUE_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, MOBILE_EMAIL_SETUP_ISSUE_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, MOBILE_EMAIL_SETUP_ISSUE_KB['title'], MOBILE_EMAIL_SETUP_ISSUE_KB['summary'], MOBILE_EMAIL_SETUP_ISSUE_KB['difficulty'], MOBILE_EMAIL_SETUP_ISSUE_KB['estimated_time'], MOBILE_EMAIL_SETUP_ISSUE_KB['escalation_required'], MOBILE_EMAIL_SETUP_ISSUE_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, MOBILE_EMAIL_SETUP_ISSUE_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, MOBILE_EMAIL_SETUP_ISSUE_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, MOBILE_EMAIL_SETUP_ISSUE_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, MOBILE_EMAIL_SETUP_ISSUE_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, MOBILE_EMAIL_SETUP_ISSUE_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, MOBILE_EMAIL_SETUP_ISSUE_SOLUTIONS)
+    for solution_code, audience_steps in MOBILE_EMAIL_SETUP_ISSUE_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_mobile_email_setup_tree(cursor, 'user', 'MOBILE_EMAIL_SETUP_ISSUE_USER', 'Mobile Email Setup Issue - User Diagnostic', 'User-friendly diagnostic tree for mobile email setup, MFA, app, and compliance issues.', MOBILE_EMAIL_SETUP_ISSUE_USER_DIAGNOSTIC_NODES)
+    seed_mobile_email_setup_tree(cursor, 'technician', 'MOBILE_EMAIL_SETUP_ISSUE_TECHNICIAN', 'Mobile Email Setup Issue - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for mobile sign-in, MFA, enrollment, compliance, and mailbox access issues.', MOBILE_EMAIL_SETUP_ISSUE_TECH_DIAGNOSTIC_NODES)
+
+def seed_mobile_email_setup_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'MOBILE_EMAIL_SETUP_ISSUE')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'MOBILE_EMAIL_SETUP_ISSUE', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
+
+
+# -----------------------------
+# VIDEO CONFERENCING ISSUE CONTENT
+# -----------------------------
+VIDEO_CONFERENCING_ISSUE_PROBLEM = (
+    'VIDEO_CONFERENCING_ISSUE',
+    'Video Conferencing Issue',
+    'Email, Calendar & Collaboration',
+    'Medium',
+    'The user has trouble joining, hearing, speaking, using camera, sharing screen, or staying connected during a video meeting.'
+)
+
+VIDEO_CONFERENCING_ISSUE_KB = {
+    'title': 'Video Conferencing Issue',
+    'summary': 'Use this guide when Teams, Zoom, Google Meet, or another meeting app has microphone, speaker, camera, screen sharing, join, lag, or disconnect problems.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '5-20 minutes',
+    'escalation_required': 1,
+    'escalation_notes': 'Escalate to Endpoint/Desktop, Network, Collaboration/Microsoft 365/Zoom Admin, or Security depending on whether the issue is device detection, network quality, meeting policy, service health, or suspicious meeting-link behavior.',
+    'tags': ['video conferencing', 'Teams', 'Zoom', 'Google Meet', 'microphone', 'camera', 'speaker', 'screen sharing', 'meeting lag', 'Wi-Fi', 'VPN'],
+    'symptoms': [
+        'Cannot join a video meeting or meeting link fails.',
+        'No microphone input, no speaker audio, echo, or others cannot hear the user.',
+        'Camera is not detected, blocked, physically covered, or selected incorrectly.',
+        'Screen sharing does not work or is blocked by app, browser, operating system, or meeting policy.',
+        'Meeting lags, freezes, disconnects, or has poor audio/video quality.',
+        'Issue works in one meeting app, browser, or device but not another.',
+        'Multiple users have the same meeting-platform or call-quality issue.'
+    ],
+    'causes': [
+        'Common causes include wrong audio/video device selection, mute settings, disconnected headset/camera, blocked OS or browser permissions, another app using the device, outdated meeting app, poor Wi-Fi, VPN/proxy/firewall restrictions, driver problems, or meeting-service issues.',
+        'Advanced causes include endpoint security or device policy blocking camera/microphone, USB dock or firmware issues, packet loss/jitter/latency, DNS or firewall blocks to meeting media endpoints, corrupted app cache/profile, conflicting virtual audio/video drivers, conditional access, or meeting policy restrictions.'
+    ],
+    'user_steps': [
+        'Check that you are not muted in the meeting app.',
+        'Confirm your headset, microphone, speakers, and camera are connected.',
+        'In the meeting app, select the correct microphone, speaker, and camera.',
+        'Test audio/video before joining if the app provides a test option.',
+        'Close other apps that may be using the camera or microphone.',
+        'Restart the meeting app.',
+        'Try joining from another approved browser or the desktop app.',
+        'Move closer to Wi-Fi or switch to wired Ethernet if available.',
+        'Disconnect from VPN only if company policy allows and the meeting does not require VPN.',
+        'Take a screenshot of any error message and submit a ticket if the issue continues.'
+    ],
+    'it_steps': [
+        'Confirm the user, device name, meeting app, app version, meeting type, network type, VPN status, and exact symptom.',
+        'Identify whether the issue is join/access, no microphone, no speaker/audio output, no camera, screen sharing failure, or poor quality/disconnects.',
+        'Confirm the correct microphone, speaker, and camera are selected in the meeting app.',
+        'Check whether the user is muted in the app or operating system sound settings.',
+        'Confirm headset/camera physical connection, USB/Bluetooth status, and battery level.',
+        'Confirm OS privacy permissions for microphone and camera.',
+        'Check browser site permissions if the user is joining from the web client.',
+        'Close other apps that may be using camera or microphone.',
+        'Restart the meeting app and retest.',
+        'Test with another approved meeting app, browser, or built-in/external device if appropriate.',
+        'Check whether the issue follows the user, device, meeting app, headset/camera, or network.',
+        'Check Device Manager or system settings for camera/audio device status.',
+        'Update or reinstall the meeting app from approved source if needed.',
+        'Check camera/audio drivers, headset firmware, or USB dock/hub behavior if available.',
+        'Check network quality such as Wi-Fi signal, latency, packet loss, jitter, and bandwidth.',
+        'Compare behavior on office network, home Wi-Fi, hotspot, wired Ethernet, and VPN where appropriate.',
+        'Check whether firewall, proxy, VPN, or web filtering may block meeting media traffic.',
+        'Check service health/status if multiple users are affected.',
+        'Escalate with meeting app, version, device model, selected devices, network tests, error screenshots, affected scope, and troubleshooting already completed.'
+    ]
+}
+
+VIDEO_CONFERENCING_ISSUE_SOLUTIONS = [
+    ('FIX_VIDEO_CONF_AUDIO_DEVICE_MUTE', 'Check Meeting Audio Device and Mute Settings', 'Audio problems are often caused by mute status, wrong device selection, or headset connection.', 'Check mute/device selection and test audio.', 0, 'Escalate to Endpoint/Desktop if OS audio device detection, driver, headset, or hardware issue persists.', 'medium'),
+    ('FIX_VIDEO_CONF_CAMERA_PERMISSIONS', 'Check Camera Device and Permissions', 'Camera problems are often caused by blocked permissions, wrong camera selection, or another app using the camera.', 'Check camera device selection, OS/browser permissions, and app conflicts.', 0, 'Escalate to Endpoint/Desktop if the OS does not detect the camera, policy blocks camera access, or driver/hardware issue is suspected.', 'medium'),
+    ('FIX_VIDEO_CONF_JOIN_ACCESS', 'Check Meeting Link, Account, and App Access', 'Join failures may be caused by wrong account, expired link, app version, license, or meeting policy.', 'Check link, account, app/browser path, and meeting policy.', 1, 'Escalate to Collaboration Admin if meeting policy, external/guest access, license, or service issue blocks joining.', 'medium'),
+    ('FIX_VIDEO_CONF_SCREEN_SHARE_PERMISSION', 'Check Screen Sharing Permission', 'Screen sharing can fail because app, OS, browser, or meeting policy blocks sharing.', 'Check host policy, OS/browser permissions, and sharing mode.', 1, 'Escalate to Collaboration or Endpoint if screen sharing is blocked by policy, OS permission, browser restriction, or managed app setting.', 'medium'),
+    ('FIX_VIDEO_CONF_NETWORK_QUALITY_USER', 'Improve Network Connection for Meeting', 'Meeting lag or disconnects are often caused by Wi-Fi, bandwidth, VPN, latency, packet loss, or jitter.', 'Improve network path and reduce bandwidth use.', 0, 'Escalate to Network if quality issues persist across users, sites, VLANs, VPN paths, or show latency/packet-loss patterns.', 'medium'),
+    ('FIX_VIDEO_CONF_OS_DEVICE_PRIVACY', 'Troubleshoot OS Device Detection and Privacy Permissions', 'Meeting app cannot use camera/microphone because OS does not detect device or permissions are blocked.', 'Check OS device detection, permissions, and approved drivers.', 1, 'Escalate to Endpoint/Desktop if hardware, driver, firmware, USB dock, or managed privacy policy issue is suspected.', 'high'),
+    ('FIX_VIDEO_CONF_APP_DEVICE_SELECTION', 'Troubleshoot Meeting App Device Selection', 'OS detects the device, but the meeting app is using the wrong audio/video device.', 'Adjust meeting app device settings and compare app behavior.', 0, 'Escalate to Collaboration or Endpoint if app cache, profile, repair, or policy issue persists after device selection checks.', 'medium'),
+    ('FIX_VIDEO_CONF_NETWORK_QUALITY_TECH', 'Troubleshoot Meeting Network Quality', 'Poor quality may require network-path testing and isolation.', 'Check Wi-Fi, VPN, latency, packet loss, jitter, and bandwidth.', 1, 'Escalate to Network or Collaboration with network test results, affected users, meeting platform, timestamps, and scope.', 'high'),
+    ('FIX_VIDEO_CONF_ESCALATE_SERVICE_NETWORK', 'Escalate Collaboration Service or Network Issue', 'Multiple users affected may indicate meeting-platform service, network, or policy problem.', 'Confirm affected scope and escalate with evidence.', 1, 'Escalate to Collaboration, Network, or Systems team depending on whether service health, site/VPN path, or policy is suspected.', 'high'),
+    ('FIX_VIDEO_CONF_POLICY_ACCOUNT_CACHE', 'Check Meeting Policy, Account, or App Cache', 'Access or app behavior may be affected by account, meeting policy, cache, or corrupted local app state.', 'Check account/license/policy and app cache or profile.', 1, 'Escalate to Collaboration Admin if tenant policy, license, guest/external access, or meeting setting is involved.', 'medium')
+]
+
+VIDEO_CONFERENCING_ISSUE_SOLUTION_STEPS = {
+    'FIX_VIDEO_CONF_AUDIO_DEVICE_MUTE': {
+        'user': ['Check that you are not muted in the meeting.', 'Select the correct microphone and speaker in meeting settings.', 'Check headset battery or cable connection.', 'Try disconnecting and reconnecting the headset.', 'Run the app audio test if available.'],
+        'technician': ['Confirm selected microphone and speaker in meeting app.', 'Check OS sound input/output settings.', 'Confirm the app is not muted in volume mixer.', 'Test built-in audio versus headset.', 'Check Bluetooth pairing or USB connection.'],
+        'admin': ['Escalation notes: involve Endpoint/Desktop if the audio device is not detected by the OS, driver/firmware issue is suspected, or a managed policy blocks audio.']
+    },
+    'FIX_VIDEO_CONF_CAMERA_PERMISSIONS': {
+        'user': ['Confirm the camera is not physically covered.', 'Select the correct camera in meeting settings.', 'Close other apps that may use the camera.', 'Restart the meeting app.', 'Try the browser or desktop app alternative.'],
+        'technician': ['Confirm OS detects the camera.', 'Check OS camera privacy permissions.', 'Check browser site permissions if using web meeting.', 'Test built-in versus external camera.', 'Check whether another process is using the camera.'],
+        'admin': ['Escalation notes: involve Endpoint/Desktop or Security if camera access is blocked by managed policy, endpoint security, driver failure, or hardware issue.']
+    },
+    'FIX_VIDEO_CONF_JOIN_ACCESS': {
+        'user': ['Confirm you are using the correct meeting link.', 'Sign in with your work account if required.', 'Try joining from the browser if desktop app fails.', 'Take a screenshot of the join error.'],
+        'technician': ['Confirm meeting link and meeting platform.', 'Check user account/license if needed.', 'Check whether external/guest access or meeting policy blocks joining.', 'Test browser versus desktop app.', 'Escalate if policy or service issue is suspected.'],
+        'admin': ['Escalation notes: provide meeting platform, meeting URL, user account, guest/external status, license state, error message, timestamp, and policy result to Collaboration Admin.']
+    },
+    'FIX_VIDEO_CONF_SCREEN_SHARE_PERMISSION': {
+        'user': ['Confirm the host allows screen sharing.', 'Restart the meeting app.', 'Try sharing one window instead of the full screen.', 'Report any permission prompt or error.'],
+        'technician': ['Check meeting policy and host permissions.', 'Check OS screen recording or screen sharing permission where applicable.', 'Check browser permissions if using web meeting.', 'Test desktop app versus browser.', 'Escalate to Collaboration admin if policy blocks sharing.'],
+        'admin': ['Escalation notes: include meeting policy, host role, user account, OS/browser permission state, app version, and screenshot when handing off.']
+    },
+    'FIX_VIDEO_CONF_NETWORK_QUALITY_USER': {
+        'user': ['Move closer to Wi-Fi or use wired Ethernet if available.', 'Close streaming or large downloads during the meeting.', 'Turn off video temporarily if bandwidth is poor.', 'Try reconnecting from a stable network.', 'Disconnect VPN only if company policy allows and the meeting does not require it.'],
+        'technician': ['Confirm network type and VPN status.', 'Compare behavior on Wi-Fi, wired, hotspot, and VPN where appropriate.', 'Check basic latency, packet loss, jitter, and bandwidth where tools allow.', 'Determine whether issue is local network, VPN path, or meeting service.', 'Escalate with network test results and affected scope.'],
+        'admin': ['Escalation notes: escalate to Network if packet loss, jitter, latency, Wi-Fi coverage, VPN media path, proxy, firewall, or site-wide quality issue is suspected.']
+    },
+    'FIX_VIDEO_CONF_OS_DEVICE_PRIVACY': {
+        'user': ['Reconnect the headset or camera.', 'Restart the computer.', 'Tell IT if the device works in other apps.', 'Do not install drivers from unapproved websites.'],
+        'technician': ['Check Device Manager or system settings for camera/audio device.', 'Check microphone/camera privacy permissions.', 'Check driver status and approved updates.', 'Test a known-good headset/camera.', 'Escalate if hardware, driver, or policy issue is suspected.'],
+        'admin': ['Escalation notes: provide device model, peripheral model, driver status, OS privacy settings, dock/hub status, and known-good test result to Endpoint/Desktop.']
+    },
+    'FIX_VIDEO_CONF_APP_DEVICE_SELECTION': {
+        'user': ['Open meeting app settings.', 'Select the correct microphone, speaker, and camera.', 'Run a test call if available.', 'Restart the app if the device list does not update.'],
+        'technician': ['Confirm OS detects the device.', 'Confirm meeting app selected devices.', 'Clear or reset app device settings if available.', 'Update or repair meeting app if needed.', 'Compare Teams, Zoom, and browser behavior.'],
+        'admin': ['Escalation notes: involve Collaboration or Endpoint if the app profile/cache, policy, or app install is preventing correct device selection.']
+    },
+    'FIX_VIDEO_CONF_NETWORK_QUALITY_TECH': {
+        'user': ['Report whether the issue happens on Wi-Fi, VPN, or all networks.', 'Note whether audio, video, or screen sharing is affected.', 'Capture time of poor quality or disconnect.'],
+        'technician': ['Check Wi-Fi signal and network type.', 'Compare on alternate trusted network.', 'Test latency, packet loss, jitter, and bandwidth where tools allow.', 'Check whether firewall, proxy, VPN, or web filtering may block meeting media traffic.', 'Escalate to Network/Collaboration team if multiple users or network path issue is suspected.'],
+        'admin': ['Escalation notes: include network path, VPN status, public/office location, packet loss/jitter/latency, meeting platform, affected users, and timestamps.']
+    },
+    'FIX_VIDEO_CONF_ESCALATE_SERVICE_NETWORK': {
+        'user': ['Report meeting time, platform, and error.', 'Ask whether coworkers are affected.', 'Use phone dial-in or alternate meeting method if available.'],
+        'technician': ['Confirm affected users, locations, and meeting platform.', 'Check service health/status if available.', 'Check network or firewall impact if users share a site/VPN.', 'Escalate to Collaboration or Network team with evidence.', 'Document workaround and user impact.'],
+        'admin': ['Escalation notes: hand off meeting platform, tenant/site, affected scope, network path, service-health result, screenshots, and business impact.']
+    },
+    'FIX_VIDEO_CONF_POLICY_ACCOUNT_CACHE': {
+        'user': ['Sign out and back into the meeting app.', 'Try the browser or desktop app alternative.', 'Report any account or policy error.'],
+        'technician': ['Confirm user account/license and meeting policy.', 'Check whether guest/external join is allowed.', 'Clear app cache or repair/reinstall app if policy allows.', 'Compare behavior with another user/device.', 'Escalate to Collaboration admin if policy or tenant setting is involved.'],
+        'admin': ['Escalation notes: provide account/license state, policy result, app version, cache/repair attempt, comparison test, and error screenshots to Collaboration Admin.']
+    }
+}
+
+VIDEO_CONFERENCING_ISSUE_USER_DIAGNOSTIC_NODES = [
+    ('ROOT', None, 'question', 'Video Conferencing Issue', 'Start here for meeting audio, camera, join, screen sharing, or quality problems.', 'What part of the meeting is not working?', None, None, None, 1),
+    ('AUDIO', 'ROOT', 'solution', 'Check Meeting Audio Device and Mute Settings', 'No speaker audio or others cannot hear the user.', None, 'Cannot hear / others cannot hear me', 'audio', 'FIX_VIDEO_CONF_AUDIO_DEVICE_MUTE', 1),
+    ('CAMERA', 'ROOT', 'solution', 'Check Camera Device and Permissions', 'Camera is not detected, selected, or allowed.', None, 'Camera not working', 'camera', 'FIX_VIDEO_CONF_CAMERA_PERMISSIONS', 2),
+    ('JOIN', 'ROOT', 'solution', 'Check Meeting Link, Account, and App Access', 'User cannot join the meeting.', None, 'Cannot join', 'join', 'FIX_VIDEO_CONF_JOIN_ACCESS', 3),
+    ('SHARE', 'ROOT', 'solution', 'Check Screen Sharing Permission', 'Screen sharing does not work or is blocked.', None, 'Screen sharing not working', 'share', 'FIX_VIDEO_CONF_SCREEN_SHARE_PERMISSION', 4),
+    ('QUALITY', 'ROOT', 'solution', 'Improve Network Connection for Meeting', 'Meeting lag, freezing, or disconnects.', None, 'Lag/disconnects', 'quality', 'FIX_VIDEO_CONF_NETWORK_QUALITY_USER', 5),
+]
+
+VIDEO_CONFERENCING_ISSUE_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT', None, 'question', 'Video Conferencing Issue - IT Support Specialist', 'Start here for meeting device, app, account, policy, service, or network quality issues.', 'Is the issue audio/video device detection or meeting access/network quality?', None, None, None, 1),
+    ('DEVICE_Q', 'ROOT', 'question', 'Device Detection and Permissions', 'Check whether OS detects device and permissions allow access.', 'Does the OS detect the device and allow permissions?', 'Audio/video device', 'device', None, 1),
+    ('DEVICE_NO', 'DEVICE_Q', 'solution', 'Troubleshoot OS Device Detection and Privacy Permissions', 'OS device detection or privacy permission issue.', None, 'No', 'no', 'FIX_VIDEO_CONF_OS_DEVICE_PRIVACY', 1),
+    ('DEVICE_YES', 'DEVICE_Q', 'solution', 'Troubleshoot Meeting App Device Selection', 'OS detects device but app selection/settings may be wrong.', None, 'Yes', 'yes', 'FIX_VIDEO_CONF_APP_DEVICE_SELECTION', 2),
+    ('MULTI_Q', 'ROOT', 'question', 'Affected Scope', 'Check whether the issue affects multiple users.', 'Are multiple users affected?', 'Access/network quality', 'access_network', None, 2),
+    ('MULTI_YES', 'MULTI_Q', 'solution', 'Escalate Collaboration Service or Network Issue', 'Multiple users indicate service, policy, or network issue.', None, 'Yes', 'yes', 'FIX_VIDEO_CONF_ESCALATE_SERVICE_NETWORK', 1),
+    ('NET_Q', 'MULTI_Q', 'question', 'Network Quality or VPN', 'Check network path and quality.', 'Is network quality poor or VPN/proxy involved?', 'No', 'no', None, 2),
+    ('NET_YES', 'NET_Q', 'solution', 'Troubleshoot Meeting Network Quality', 'Network path, VPN, Wi-Fi, or media traffic may be affecting meetings.', None, 'Yes', 'yes', 'FIX_VIDEO_CONF_NETWORK_QUALITY_TECH', 1),
+    ('POLICY', 'NET_Q', 'solution', 'Check Meeting Policy, Account, or App Cache', 'Account, policy, or app cache may be affecting access.', None, 'No', 'no', 'FIX_VIDEO_CONF_POLICY_ACCOUNT_CACHE', 2),
+]
+
+def seed_video_conferencing_issue_content(cursor):
+    """Seed Video Conferencing Issue KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = VIDEO_CONFERENCING_ISSUE_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, VIDEO_CONFERENCING_ISSUE_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, VIDEO_CONFERENCING_ISSUE_KB['title'], VIDEO_CONFERENCING_ISSUE_KB['summary'], VIDEO_CONFERENCING_ISSUE_KB['difficulty'], VIDEO_CONFERENCING_ISSUE_KB['estimated_time'], VIDEO_CONFERENCING_ISSUE_KB['escalation_required'], VIDEO_CONFERENCING_ISSUE_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, VIDEO_CONFERENCING_ISSUE_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, VIDEO_CONFERENCING_ISSUE_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, VIDEO_CONFERENCING_ISSUE_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, VIDEO_CONFERENCING_ISSUE_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, VIDEO_CONFERENCING_ISSUE_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, VIDEO_CONFERENCING_ISSUE_SOLUTIONS)
+    for solution_code, audience_steps in VIDEO_CONFERENCING_ISSUE_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_video_conferencing_tree(cursor, 'user', 'VIDEO_CONFERENCING_ISSUE_USER', 'Video Conferencing Issue - User Diagnostic', 'User-friendly diagnostic tree for meeting audio, video, join, sharing, and call-quality issues.', VIDEO_CONFERENCING_ISSUE_USER_DIAGNOSTIC_NODES)
+    seed_video_conferencing_tree(cursor, 'technician', 'VIDEO_CONFERENCING_ISSUE_TECHNICIAN', 'Video Conferencing Issue - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for device, app, policy, service, and network-quality issues.', VIDEO_CONFERENCING_ISSUE_TECH_DIAGNOSTIC_NODES)
+
+def seed_video_conferencing_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'VIDEO_CONFERENCING_ISSUE')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'VIDEO_CONFERENCING_ISSUE', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
 def initialize_database():
     """Create SQLite tables if they do not already exist."""
     connection = get_db_connection()
@@ -7215,6 +7702,8 @@ def initialize_database():
     seed_software_installation_request_content(cursor)
     seed_browser_issue_content(cursor)
     seed_certificate_security_warning_content(cursor)
+    seed_mobile_email_setup_issue_content(cursor)
+    seed_video_conferencing_issue_content(cursor)
     seed_existing_issue_role_alignment(cursor)
 
     cursor.execute("""
