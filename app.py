@@ -576,6 +576,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Calendar Sync Issue": "CALENDAR_SYNC_ISSUE",
     "Software Installation Request": "SOFTWARE_INSTALLATION_REQUEST",
     "Browser Issue": "BROWSER_ISSUE",
+    "Certificate / Security Warning": "CERTIFICATE_SECURITY_WARNING",
 }
 
 
@@ -589,10 +590,10 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED", "EMAIL_ATTACHMENT_NOT_OPENING", "CALENDAR_SYNC_ISSUE", "SOFTWARE_INSTALLATION_REQUEST", "BROWSER_ISSUE"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED", "EMAIL_ATTACHMENT_NOT_OPENING", "CALENDAR_SYNC_ISSUE", "SOFTWARE_INSTALLATION_REQUEST", "BROWSER_ISSUE", "CERTIFICATE_SECURITY_WARNING"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
-    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, Device Running Out of Storage, Phishing Email Reported, Malware or Virus Suspected, Email Attachment Not Opening, Calendar Sync Issue, Software Installation Request, and Browser Issue. Other sample issues are hidden until they "
+    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, Device Running Out of Storage, Phishing Email Reported, Malware or Virus Suspected, Email Attachment Not Opening, Calendar Sync Issue, Software Installation Request, Browser Issue, and Certificate / Security Warning. Other sample issues are hidden until they "
     "are expanded with detailed symptoms, causes, user steps, and technician steps."
 )
 
@@ -6938,6 +6939,252 @@ def seed_browser_issue_tree(cursor, audience, tree_code, title, description, nod
                 updated_at=CURRENT_TIMESTAMP
         """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
 
+
+CERTIFICATE_SECURITY_WARNING_PROBLEM = (
+    'CERTIFICATE_SECURITY_WARNING',
+    'Certificate / Security Warning',
+    'Software & Applications / Security',
+    'Medium',
+    'The user sees a browser or application warning that a website, certificate, or connection may not be secure.'
+)
+
+CERTIFICATE_SECURITY_WARNING_KB = {
+    'title': 'Certificate / Security Warning',
+    'summary': 'Use this guide when a browser or application warns that a website connection is not private, not secure, expired, mismatched, or untrusted.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '10-25 minutes',
+    'escalation_required': 1,
+    'escalation_notes': 'Escalate when credentials may have been entered, a company site is affected, multiple users see the warning, DNS/proxy/VPN/TLS inspection is suspected, or phishing/interception risk exists.',
+    'tags': ['certificate warning', 'security warning', 'HTTPS', 'TLS', 'SSL', 'browser security', 'certificate expired', 'untrusted certificate', 'DNS', 'proxy', 'VPN'],
+    'symptoms': [
+        'Browser says the site is not secure or the connection is not private.',
+        'The certificate is expired, not trusted, or does not match the website name.',
+        'Secure connection failed or certificate authority not trusted message appears.',
+        'Warning appears only on VPN, public Wi-Fi, office network, or one specific browser/device.',
+        'The site worked previously but now shows a security warning.',
+        'Coworkers can access the site but the user cannot, or multiple users see the same warning.',
+        'The warning appeared after clicking a link from email, chat, or an unexpected message.',
+    ],
+    'causes': [
+        'Common causes include expired or mismatched certificates, incorrect device date/time, untrusted certificate authority, captive portal/public Wi-Fi, internal certificate trust issue, DNS misdirection, proxy/TLS inspection, endpoint security inspection, or phishing/lookalike websites.',
+        'Advanced causes include missing intermediate certificate, certificate chain misconfiguration, DNS poisoning or wrong DNS record, TLS inspection appliance issue, revocation-check failure, split-horizon DNS problem, old browser/OS trust store, incorrect SNI/load balancer certificate, or incomplete certificate renewal deployment.',
+    ],
+    'user_steps': [
+        'Do not bypass the warning or continue to the site unless IT confirms it is safe.',
+        'Check that the website address is typed correctly.',
+        'Do not enter passwords, MFA codes, payment information, or sensitive data on a site with a warning.',
+        'If the site was opened from an email or chat link, stop and report the message/link to IT.',
+        'Check whether the warning appears in another approved browser.',
+        'Check whether the device date and time look correct.',
+        'If on public Wi-Fi, complete the Wi-Fi sign-in page first or switch to a trusted network.',
+        'Take a screenshot of the warning and visible website address.',
+        'Note whether coworkers see the same warning.',
+        'Submit a ticket with the URL, screenshot, network type, and VPN status.',
+    ],
+    'it_steps': [
+        'Confirm the user, device name, browser/application, URL, network type, VPN status, and exact warning message.',
+        'Ask whether the user typed the address manually or clicked a link from email/chat.',
+        'Instruct the user not to bypass the warning or enter credentials until reviewed.',
+        'Determine scope: one site or many sites, one browser or all browsers, one device or multiple devices, one network/VPN/proxy path or all paths.',
+        'Check system date, time, and time zone.',
+        'Check whether the URL is spelled correctly and matches the expected company domain.',
+        'Test in another approved browser if appropriate.',
+        'Ask whether coworkers can access the same site.',
+        'Capture screenshot, URL, certificate warning text, timestamp, and network path.',
+        'If the link came from suspicious email/chat, route to phishing process.',
+        'Inspect certificate details safely: subject, SAN, issuer, expiration dates, chain/path, and trust status.',
+        'Check whether the certificate hostname matches the URL.',
+        'Test DNS resolution for the hostname and compare with expected IP/path.',
+        'Compare behavior on office network, VPN, home network, and hotspot where appropriate.',
+        'Check whether proxy, TLS inspection, web filtering, or endpoint security is presenting a replacement certificate.',
+        'Check whether required internal CA/root/intermediate certificate is missing from the device.',
+        'Check whether multiple users or devices are affected.',
+        'For internal sites, check whether certificate renewal/deployment may be incomplete.',
+        'Escalate with URL, certificate details, DNS result, network path, screenshots, affected scope, and risk assessment.',
+    ],
+}
+
+CERTIFICATE_SECURITY_WARNING_SOLUTIONS = [
+    ('FIX_CERT_WARNING_REPORT_PHISHING_LINK', 'Report Possible Phishing or Unsafe Link', 'The warning appeared after opening a suspicious or unexpected link.', 'Stop, do not continue, and report the source message/link.', 1, 'Escalate to Security if the link/domain is suspicious or multiple users received it.', 'high'),
+    ('FIX_CERT_WARNING_CREDENTIAL_EXPOSURE', 'Report Possible Credential Exposure', 'User entered credentials or sensitive information on a site that showed a certificate/security warning.', 'Treat as possible account compromise and escalate immediately.', 1, 'Escalate to Security/Identity for password reset, session revocation, MFA review, and sign-in review.', 'high'),
+    ('FIX_CERT_WARNING_DEVICE_TIME_TRUST', 'Check Device Time, Network, or Trust Issue', 'Certificate warnings on many sites often indicate device time, captive portal, proxy, or trust-store issue.', 'Check date/time, network path, captive portal, and trust store.', 0, 'Escalate if internal CA or TLS inspection trust deployment appears misconfigured.', 'medium'),
+    ('FIX_CERT_WARNING_INTERNAL_SITE', 'Report Internal Site Certificate Warning', 'An internal company site may have an expired, mismatched, or untrusted certificate.', 'Collect URL/certificate details and route to site owner.', 1, 'Escalate to Systems/Web App/Network team based on certificate or path issue.', 'high'),
+    ('FIX_CERT_WARNING_DO_NOT_BYPASS', 'Do Not Bypass Browser Security Warning', 'The safest action is to stop and verify before continuing.', 'Do not continue until IT validates the site and certificate.', 0, 'Escalate if site ownership, certificate validity, or safety is unclear.', 'medium'),
+    ('FIX_CERT_WARNING_ESCALATE_SECURITY', 'Escalate Suspicious Certificate Warning to Security', 'Suspicious certificate warning may indicate phishing, unsafe domain, or interception.', 'Escalate with indicators and user actions.', 1, 'Escalate to Security with URL, screenshot, source link, user actions, and affected users.', 'high'),
+    ('FIX_CERT_WARNING_VALIDATE_CERT_ROUTE_OWNER', 'Validate Certificate Details and Route Owner', 'Certificate appears expired, mismatched, untrusted, or incorrectly chained.', 'Inspect certificate fields and route to responsible owner.', 1, 'Escalate to Systems/Web App or vendor owner with certificate subject/SAN, issuer, dates, chain, and affected scope.', 'high'),
+    ('FIX_CERT_WARNING_DNS_NETWORK_PATH', 'Troubleshoot DNS or Network Path', 'DNS or network path may send the user to the wrong server or certificate.', 'Compare DNS and network path across trusted paths.', 1, 'Escalate to Network if DNS, routing, split-DNS, proxy, or path is wrong.', 'high'),
+    ('FIX_CERT_WARNING_TRUST_TLS_INSPECTION', 'Investigate Device Trust Store or TLS Inspection', 'One device or network path may lack the required trusted CA or may be affected by TLS inspection.', 'Check internal CA trust and TLS inspection behavior.', 1, 'Escalate to Endpoint/Network/Security if trust deployment or TLS inspection is misconfigured.', 'high'),
+    ('FIX_CERT_WARNING_CERT_DEPLOYMENT_ESCALATE', 'Escalate Internal Site or Certificate Deployment Issue', 'Multiple users or a legitimate internal site may have server/load-balancer certificate deployment issue.', 'Collect evidence and escalate to the certificate/site owner.', 1, 'Escalate to Systems/Web App/Network team with URL, certificate details, network path, screenshots, and affected scope.', 'high'),
+]
+
+CERTIFICATE_SECURITY_WARNING_SOLUTION_STEPS = {
+    'FIX_CERT_WARNING_REPORT_PHISHING_LINK': {
+        'user': ['Do not continue to the site.', 'Do not enter credentials, MFA codes, or sensitive information.', 'Close the page.', 'Report the email, chat, or link to IT or Security.', 'Tell IT whether you clicked or entered anything.'],
+        'technician': ['Capture the URL, source message, screenshot, and user action.', 'Route the report to the phishing workflow.', 'Check whether credentials or MFA were entered.', 'Escalate to Security if the domain is suspicious or multiple users received it.'],
+        'admin': ['Escalate to Security with source message, URL, domain, screenshot, user action, timestamp, and affected-user scope.'],
+    },
+    'FIX_CERT_WARNING_CREDENTIAL_EXPOSURE': {
+        'user': ['Stop using the site immediately.', 'Do not approve unexpected MFA prompts.', 'Contact IT/Security immediately.', 'Be ready to reset your password through the official process.'],
+        'technician': ['Treat as possible account compromise.', 'Capture timeline, URL, account, information entered, and whether MFA was approved.', 'Escalate to Security/Identity for password reset, session revocation, and sign-in review.', 'Document containment actions.'],
+        'admin': ['Escalate immediately to Security/Identity with account, URL, timestamps, submitted information, MFA status, and requested containment actions.'],
+    },
+    'FIX_CERT_WARNING_DEVICE_TIME_TRUST': {
+        'user': ['Check whether the date and time look correct.', 'If on public Wi-Fi, complete the Wi-Fi sign-in page first.', 'Try a trusted network if available.', 'Do not bypass warnings.'],
+        'technician': ['Confirm system date, time, and time zone.', 'Check whether the warning occurs on many HTTPS sites.', 'Check network type and captive portal status.', 'Compare another approved browser.', 'Check internal CA/trust store if using managed TLS inspection.'],
+        'admin': ['Escalate if managed certificate trust, captive portal, proxy, TLS inspection, or internal CA deployment appears misconfigured.'],
+    },
+    'FIX_CERT_WARNING_INTERNAL_SITE': {
+        'user': ['Do not bypass the warning.', 'Capture the URL and screenshot.', 'Tell IT whether VPN is connected.', 'Ask coworkers whether they see the same warning.'],
+        'technician': ['Confirm the internal URL and VPN/network path.', 'Inspect certificate subject, issuer, validity dates, SAN, and chain.', 'Check whether multiple users are affected.', 'Route to Systems/Web App/Network team based on certificate or path issue.'],
+        'admin': ['Escalate with internal URL, certificate details, VPN/network path, affected users, screenshots, and business impact.'],
+    },
+    'FIX_CERT_WARNING_DO_NOT_BYPASS': {
+        'user': ['Do not continue past the browser warning.', 'Do not enter passwords or personal information.', 'Take a screenshot.', 'Submit a ticket with the website address.'],
+        'technician': ['Review screenshot and URL.', 'Confirm whether the site is expected and business-related.', 'Check certificate details before advising next steps.', 'Escalate if site ownership, certificate validity, or safety is unclear.'],
+        'admin': ['Escalate for validation when site owner, certificate state, or safe workaround cannot be confirmed.'],
+    },
+    'FIX_CERT_WARNING_ESCALATE_SECURITY': {
+        'user': ['Stop using the site.', 'Report the message or link.', 'Tell IT if you entered information.'],
+        'technician': ['Capture URL, screenshot, source link, and user actions.', 'Check domain similarity and reported phishing context.', 'Escalate to Security with indicators and affected users.', 'Route to credential-exposure workflow if needed.'],
+        'admin': ['Escalate as a possible phishing/interception event with URL, source, screenshot, user action, and affected-user list.'],
+    },
+    'FIX_CERT_WARNING_VALIDATE_CERT_ROUTE_OWNER': {
+        'user': ['Wait for IT confirmation.', 'Use an approved alternate site or application if provided.', 'Do not bypass the warning unless IT confirms a safe workaround.'],
+        'technician': ['Inspect subject/SAN, issuer, validity dates, and certificate chain.', 'Confirm whether hostname matches certificate.', 'Identify site/application owner.', 'Escalate to Systems/Web App or vendor owner with details.', 'Document affected scope and risk.'],
+        'admin': ['Escalate to the certificate/site owner with certificate fields, mismatch/expiration evidence, chain status, affected users, and required renewal/deployment action.'],
+    },
+    'FIX_CERT_WARNING_DNS_NETWORK_PATH': {
+        'user': ['Provide the exact URL.', 'Note whether VPN is connected.', 'Tell IT what network you are using.'],
+        'technician': ['Test DNS resolution for the hostname.', 'Compare expected IP/path across VPN, office, and trusted network.', 'Check split-DNS or proxy path if an internal site is involved.', 'Escalate to Network if DNS, routing, or proxy path is wrong.'],
+        'admin': ['Escalate to Network with URL, DNS results, expected vs observed IP/path, VPN/proxy status, network type, and affected scope.'],
+    },
+    'FIX_CERT_WARNING_TRUST_TLS_INSPECTION': {
+        'user': ['Do not change certificate settings yourself.', 'Tell IT whether the issue happens only on one device or network.', 'Wait for IT to confirm the correct trust configuration.'],
+        'technician': ['Check whether the device trusts the required internal CA.', 'Compare another managed device.', 'Check browser/OS certificate store where appropriate.', 'Check TLS inspection/proxy certificate if used.', 'Escalate to Endpoint/Network/Security if trust deployment is misconfigured.'],
+        'admin': ['Escalate with device comparison, internal CA/trust-store status, proxy/TLS inspection certificate details, and affected network path.'],
+    },
+    'FIX_CERT_WARNING_CERT_DEPLOYMENT_ESCALATE': {
+        'user': ['Use an approved alternate service path if provided.', 'Do not bypass the warning.', 'Wait for IT update.'],
+        'technician': ['Confirm multiple users or devices are affected.', 'Collect URL, certificate details, network path, and screenshots.', 'Check whether certificate renewal or deployment recently occurred.', 'Escalate to Systems/Web App/Network team.', 'Track resolution and notify users when safe.'],
+        'admin': ['Escalate as certificate deployment issue with load balancer/server path, certificate details, affected scope, business impact, and renewal/deployment history if known.'],
+    },
+}
+
+CERTIFICATE_SECURITY_WARNING_USER_DIAGNOSTIC_NODES = [
+    ('ROOT_CERT_USER', None, 'category', 'Certificate / Security Warning', 'User-friendly diagnostic path for browser/application certificate and security warnings.', None, None, None, None, 1),
+    ('Q_CERT_LINK_USER', 'ROOT_CERT_USER', 'question', 'Check Link Source', None, 'Did you open the site from an email, chat, or unexpected link?', None, None, None, 1),
+    ('S_CERT_PHISH_USER', 'Q_CERT_LINK_USER', 'solution', 'Report Possible Phishing or Unsafe Link', None, None, 'Yes', 'Yes', 'FIX_CERT_WARNING_REPORT_PHISHING_LINK', 1),
+    ('Q_CERT_CREDENTIALS_USER', 'Q_CERT_LINK_USER', 'question', 'Check Credential Exposure', None, 'Did you enter credentials or sensitive information?', 'No', 'No', None, 2),
+    ('S_CERT_CREDS_USER', 'Q_CERT_CREDENTIALS_USER', 'solution', 'Report Possible Credential Exposure', None, None, 'Yes', 'Yes', 'FIX_CERT_WARNING_CREDENTIAL_EXPOSURE', 1),
+    ('Q_CERT_SCOPE_USER', 'Q_CERT_CREDENTIALS_USER', 'question', 'Check Warning Scope', None, 'Is the warning for one site or many sites?', 'No', 'No', None, 2),
+    ('S_CERT_TIME_USER', 'Q_CERT_SCOPE_USER', 'solution', 'Check Device Time, Network, or Trust Issue', None, None, 'Many sites', 'Many sites', 'FIX_CERT_WARNING_DEVICE_TIME_TRUST', 1),
+    ('Q_CERT_INTERNAL_USER', 'Q_CERT_SCOPE_USER', 'question', 'Check Internal Site', None, 'Is this a company/internal site?', 'One site', 'One site', None, 2),
+    ('S_CERT_INTERNAL_USER', 'Q_CERT_INTERNAL_USER', 'solution', 'Report Internal Site Certificate Warning', None, None, 'Yes', 'Yes', 'FIX_CERT_WARNING_INTERNAL_SITE', 1),
+    ('S_CERT_DONT_BYPASS_USER', 'Q_CERT_INTERNAL_USER', 'solution', 'Do Not Bypass Browser Security Warning', None, None, 'No / Not sure', 'No / Not sure', 'FIX_CERT_WARNING_DO_NOT_BYPASS', 2),
+]
+
+CERTIFICATE_SECURITY_WARNING_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT_CERT_TECH', None, 'category', 'Certificate / Security Warning - IT Support Specialist', 'IT Support Specialist diagnostic path for certificate, DNS, trust-store, proxy/TLS inspection, and security-risk issues.', None, None, None, None, 1),
+    ('Q_CERT_SUSPICIOUS_TECH', 'ROOT_CERT_TECH', 'question', 'Check Suspicious Link Context', None, 'Is the link suspicious or phishing-related?', None, None, None, 1),
+    ('S_CERT_SECURITY_TECH', 'Q_CERT_SUSPICIOUS_TECH', 'solution', 'Escalate Suspicious Certificate Warning to Security', None, None, 'Yes', 'Yes', 'FIX_CERT_WARNING_ESCALATE_SECURITY', 1),
+    ('Q_CERT_DETAILS_TECH', 'Q_CERT_SUSPICIOUS_TECH', 'question', 'Check Certificate Details', None, 'Is the certificate expired, mismatched, or untrusted?', 'No', 'No', None, 2),
+    ('S_CERT_VALIDATE_TECH', 'Q_CERT_DETAILS_TECH', 'solution', 'Validate Certificate Details and Route Owner', None, None, 'Yes', 'Yes', 'FIX_CERT_WARNING_VALIDATE_CERT_ROUTE_OWNER', 1),
+    ('Q_CERT_DNS_TECH', 'Q_CERT_DETAILS_TECH', 'question', 'Check DNS Path', None, 'Does DNS resolve to expected address/path?', 'No / Not checked', 'No / Not checked', None, 2),
+    ('S_CERT_DNS_TECH', 'Q_CERT_DNS_TECH', 'solution', 'Troubleshoot DNS or Network Path', None, None, 'No', 'No', 'FIX_CERT_WARNING_DNS_NETWORK_PATH', 1),
+    ('Q_CERT_TRUST_TECH', 'Q_CERT_DNS_TECH', 'question', 'Check Device or Network Path', None, 'Does it happen only on one device/network/VPN/proxy?', 'Yes', 'Yes', None, 2),
+    ('S_CERT_TLS_TECH', 'Q_CERT_TRUST_TECH', 'solution', 'Investigate Device Trust Store or TLS Inspection', None, None, 'Yes', 'Yes', 'FIX_CERT_WARNING_TRUST_TLS_INSPECTION', 1),
+    ('S_CERT_DEPLOY_TECH', 'Q_CERT_TRUST_TECH', 'solution', 'Escalate Internal Site or Certificate Deployment Issue', None, None, 'No', 'No', 'FIX_CERT_WARNING_CERT_DEPLOYMENT_ESCALATE', 2),
+]
+
+def seed_certificate_security_warning_content(cursor):
+    """Seed Certificate / Security Warning KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = CERTIFICATE_SECURITY_WARNING_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, CERTIFICATE_SECURITY_WARNING_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, CERTIFICATE_SECURITY_WARNING_KB['title'], CERTIFICATE_SECURITY_WARNING_KB['summary'], CERTIFICATE_SECURITY_WARNING_KB['difficulty'], CERTIFICATE_SECURITY_WARNING_KB['estimated_time'], CERTIFICATE_SECURITY_WARNING_KB['escalation_required'], CERTIFICATE_SECURITY_WARNING_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, CERTIFICATE_SECURITY_WARNING_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, CERTIFICATE_SECURITY_WARNING_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, CERTIFICATE_SECURITY_WARNING_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, CERTIFICATE_SECURITY_WARNING_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, CERTIFICATE_SECURITY_WARNING_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, CERTIFICATE_SECURITY_WARNING_SOLUTIONS)
+    for solution_code, audience_steps in CERTIFICATE_SECURITY_WARNING_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_certificate_security_warning_tree(cursor, 'user', 'CERTIFICATE_SECURITY_WARNING_USER', 'Certificate / Security Warning - User Diagnostic', 'User-friendly diagnostic tree for certificate/security warnings, phishing-link context, and safe reporting.', CERTIFICATE_SECURITY_WARNING_USER_DIAGNOSTIC_NODES)
+    seed_certificate_security_warning_tree(cursor, 'technician', 'CERTIFICATE_SECURITY_WARNING_TECHNICIAN', 'Certificate / Security Warning - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for certificate details, DNS, TLS inspection, and security escalation.', CERTIFICATE_SECURITY_WARNING_TECH_DIAGNOSTIC_NODES)
+
+def seed_certificate_security_warning_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'CERTIFICATE_SECURITY_WARNING')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'CERTIFICATE_SECURITY_WARNING', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text,
+                condition_label, condition_value, solution_id, sort_order, is_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                diagnostic_tree_id=excluded.diagnostic_tree_id,
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
 def initialize_database():
     """Create SQLite tables if they do not already exist."""
     connection = get_db_connection()
@@ -6967,6 +7214,7 @@ def initialize_database():
     seed_calendar_sync_issue_content(cursor)
     seed_software_installation_request_content(cursor)
     seed_browser_issue_content(cursor)
+    seed_certificate_security_warning_content(cursor)
     seed_existing_issue_role_alignment(cursor)
 
     cursor.execute("""
@@ -13018,8 +13266,15 @@ def get_diagnostic_tree_records_for_admin():
     connection = get_db_connection()
     cursor = connection.cursor()
 
+    active_problem_codes = sorted(MVP_ACTIVE_PROBLEM_CODES)
+    if not active_problem_codes:
+        connection.close()
+        return []
+
+    placeholders = ",".join("?" for _ in active_problem_codes)
+
     cursor.execute(
-        """
+        f"""
         SELECT
             dt.diagnostic_tree_id,
             dt.diagnostic_tree_code,
@@ -13034,7 +13289,7 @@ def get_diagnostic_tree_records_for_admin():
         FROM diagnostic_tree dt
         LEFT JOIN problem p
             ON dt.problem_id = p.problem_id
-        WHERE dt.base_tree_code IN ('PRINTER_FAILURE', 'PASSWORD_RESET_REQUEST', 'ACCOUNT_LOCKED', 'MULTI_FACTOR_AUTHENTICATION_ISSUE', 'VPN_CONNECTION_FAILURE')
+        WHERE dt.base_tree_code IN ({placeholders})
         ORDER BY
             COALESCE(p.category, ''),
             COALESCE(p.title, dt.title),
@@ -13045,7 +13300,8 @@ def get_diagnostic_tree_records_for_admin():
                 ELSE 4
             END,
             dt.title
-        """
+        """,
+        active_problem_codes,
     )
 
     rows = cursor.fetchall()
