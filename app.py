@@ -579,6 +579,7 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
     "Certificate / Security Warning": "CERTIFICATE_SECURITY_WARNING",
     "Mobile Email Setup Issue": "MOBILE_EMAIL_SETUP_ISSUE",
     "Video Conferencing Issue": "VIDEO_CONFERENCING_ISSUE",
+    "Keyboard or Mouse Not Working": "KEYBOARD_OR_MOUSE_NOT_WORKING",
 }
 
 
@@ -592,10 +593,10 @@ PROBLEM_CODE_BY_ISSUE_TITLE = {
 # the database for future expansion, but they are hidden from the visible MVP
 # until their content is upgraded to the same depth.
 MVP_CONTENT_FOCUS_ENABLED = True
-MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED", "EMAIL_ATTACHMENT_NOT_OPENING", "CALENDAR_SYNC_ISSUE", "SOFTWARE_INSTALLATION_REQUEST", "BROWSER_ISSUE", "CERTIFICATE_SECURITY_WARNING", "MOBILE_EMAIL_SETUP_ISSUE", "VIDEO_CONFERENCING_ISSUE"}
+MVP_ACTIVE_PROBLEM_CODES = {"PRINTER_FAILURE", "PASSWORD_RESET_REQUEST", "ACCOUNT_LOCKED", "MULTI_FACTOR_AUTHENTICATION_ISSUE", "VPN_CONNECTION_FAILURE", "SHARED_DRIVE_NETWORK_DRIVE_ACCESS_ISSUE", "REMOTE_DESKTOP_CONNECTION_ISSUE", "SLOW_COMPUTER_PERFORMANCE", "APPLICATION_NOT_OPENING", "APPLICATION_CRASHING_FREEZING", "OPERATING_SYSTEM_UPDATE_ISSUE", "DEVICE_RUNNING_OUT_OF_STORAGE", "PHISHING_EMAIL_REPORTED", "MALWARE_OR_VIRUS_SUSPECTED", "EMAIL_ATTACHMENT_NOT_OPENING", "CALENDAR_SYNC_ISSUE", "SOFTWARE_INSTALLATION_REQUEST", "BROWSER_ISSUE", "CERTIFICATE_SECURITY_WARNING", "MOBILE_EMAIL_SETUP_ISSUE", "VIDEO_CONFERENCING_ISSUE", "KEYBOARD_OR_MOUSE_NOT_WORKING"}
 MVP_CONTENT_FOCUS_NOTE = (
     "The visible MVP currently focuses on a small set of high-quality troubleshooting examples: "
-    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, Device Running Out of Storage, Phishing Email Reported, Malware or Virus Suspected, Email Attachment Not Opening, Calendar Sync Issue, Software Installation Request, Browser Issue, Certificate / Security Warning, Mobile Email Setup Issue, and Video Conferencing Issue. Other sample issues are hidden until they "
+    "Printer Failure, Password Reset Request, Account Locked, Multi-factor Authentication Issue, VPN Connection Failure, Shared Drive / Network Drive Access Issue, Remote Desktop Connection Issue, Slow Computer Performance, Application Not Opening, Application Crashing / Freezing, Operating System Update Issue, Device Running Out of Storage, Phishing Email Reported, Malware or Virus Suspected, Email Attachment Not Opening, Calendar Sync Issue, Software Installation Request, Browser Issue, Certificate / Security Warning, Mobile Email Setup Issue, Video Conferencing Issue, and Keyboard or Mouse Not Working. Other sample issues are hidden until they "
     "are expanded with detailed symptoms, causes, user steps, and technician steps."
 )
 
@@ -7429,6 +7430,249 @@ def seed_mobile_email_setup_tree(cursor, audience, tree_code, title, description
 
 
 
+
+
+# -----------------------------
+# KEYBOARD OR MOUSE NOT WORKING CONTENT
+# -----------------------------
+KEYBOARD_OR_MOUSE_NOT_WORKING_PROBLEM = (
+    'KEYBOARD_OR_MOUSE_NOT_WORKING',
+    'Keyboard or Mouse Not Working',
+    'Hardware & Peripherals',
+    'Medium',
+    'The user\'s keyboard, mouse, touchpad, or external input device is not responding, disconnecting, typing incorrectly, lagging, or not detected.'
+)
+
+KEYBOARD_OR_MOUSE_NOT_WORKING_KB = {
+    'title': 'Keyboard or Mouse Not Working',
+    'summary': 'Use this guide when a keyboard, mouse, touchpad, Bluetooth input device, wireless dongle device, or dock-connected input device is not responding or behaves incorrectly.',
+    'difficulty': 'Intermediate',
+    'estimated_time': '5-20 minutes',
+    'escalation_required': 1,
+    'escalation_notes': 'Escalate to Endpoint/Desktop, Hardware/Asset Support, Security/Endpoint Management, or Systems/Endpoint Management depending on whether the issue is device detection, physical damage, USB policy, dock firmware, or a broad update/deployment problem.',
+    'tags': ['keyboard', 'mouse', 'touchpad', 'USB device', 'Bluetooth', 'wireless dongle', 'docking station', 'HID driver', 'input device', 'hardware'],
+    'symptoms': [
+        'Keyboard does not type, mouse pointer does not move, or touchpad does not respond.',
+        'Keyboard types wrong characters or layout appears incorrect.',
+        'Mouse pointer lags, jumps, disconnects, or behaves inconsistently.',
+        'Wireless keyboard or mouse will not connect, pair, or stay connected.',
+        'Input device works directly on the laptop but not through docking station or USB hub.',
+        'Device is not detected by Windows, Bluetooth, USB, or Device Manager.',
+        'Issue started after Windows update, new dock, new device, spill, drop, or workstation move.'
+    ],
+    'causes': [
+        'Common causes include loose USB connection, bad USB port, dead batteries, missing wireless receiver, Bluetooth pairing failure, disabled touchpad, wrong keyboard layout, docking station issue, computer needing restart, driver problem, or failed peripheral hardware.',
+        'Advanced causes include USB selective suspend or power management, HID service or driver stack issue, Windows or driver update problem, BIOS/firmware issue, dock firmware issue, endpoint policy blocking USB devices, USB controller failure, physical/liquid damage, or malware/remote-control suspicion when input behaves unexpectedly.'
+    ],
+    'user_steps': [
+        'Check whether the keyboard or mouse is connected securely.',
+        'If wired, unplug and reconnect it.',
+        'Try a different USB port.',
+        'If wireless, confirm the device is powered on.',
+        'Replace or recharge the batteries.',
+        'Confirm the USB receiver or wireless dongle is plugged in.',
+        'If Bluetooth, turn Bluetooth off and on, then try reconnecting.',
+        'Restart the computer.',
+        'If using a docking station, connect the keyboard or mouse directly to the laptop.',
+        'Note whether the built-in laptop keyboard or touchpad still works.'
+    ],
+    'it_steps': [
+        'Confirm the user, device name, operating system, peripheral type, connection type, and exact symptom.',
+        'Identify whether the issue affects keyboard only, mouse only, touchpad only, all input devices, or dock-connected devices only.',
+        'Confirm whether the connection type is wired USB, wireless USB dongle, Bluetooth, built-in laptop device, or docking station/USB hub.',
+        'Ask when the issue started and whether there was a Windows update, new dock, new device, battery replacement, spill/drop, or workstation move.',
+        'Check physical connection, power state, batteries, receiver/dongle, and Bluetooth pairing.',
+        'Test another USB port and compare direct connection versus dock/hub connection.',
+        'Restart the computer and retest.',
+        'Test the user keyboard/mouse on another computer and test a known-good keyboard/mouse on the user computer.',
+        'Check keyboard layout/language if characters are wrong.',
+        'Check Device Manager or system settings for device detection and driver status.',
+        'Check Bluetooth pairing state and remove/re-pair device if appropriate.',
+        'Check whether other USB devices work on the same port or docking station.',
+        'Check USB controller, HID device, or Bluetooth warnings.',
+        'Update or reinstall device drivers only from approved sources.',
+        'Check Windows update or driver update history if the issue started after an update.',
+        'Check power management settings if USB devices sleep or disconnect.',
+        'Check dock firmware/driver if input devices fail only through the dock.',
+        'Run BIOS/UEFI or vendor hardware diagnostics if built-in keyboard/touchpad fails and tools are available.',
+        'Determine whether the issue is peripheral failure, USB port/dock issue, Bluetooth pairing issue, driver/OS issue, keyboard layout/settings issue, hardware damage, or endpoint policy/security restriction.',
+        'Escalate with device model, peripheral model, connection type, test matrix, driver status, update history, and business impact.'
+    ]
+}
+
+KEYBOARD_OR_MOUSE_NOT_WORKING_SOLUTIONS = [
+    ('FIX_INPUT_WIRELESS_POWER_RECEIVER_BLUETOOTH', 'Check Wireless Power, Receiver, or Bluetooth Pairing', 'Wireless keyboards and mice often fail because of dead batteries, missing receiver, or broken Bluetooth pairing.', 'Check wireless power, receiver/dongle, and pairing.', 0, 'Escalate to Endpoint/Desktop or Hardware Support if pairing, receiver detection, or peripheral replacement is needed.', 'medium'),
+    ('FIX_INPUT_DOCK_USB_HUB_CONNECTION', 'Troubleshoot Dock or USB Hub Connection', 'Input devices may fail only through a docking station, USB hub, or specific USB port.', 'Compare dock/hub connection with direct laptop connection.', 0, 'Escalate to Endpoint/Desktop or Hardware Support if dock firmware, driver, USB hub, or dock hardware issue is suspected.', 'medium'),
+    ('FIX_INPUT_RESTART_REPORT', 'Restart and Report Input Device Issue', 'Restarting may clear temporary input, USB, Bluetooth, or driver issues.', 'Restart and collect issue details if input still fails.', 0, 'Escalate if restart does not restore input and the issue blocks work.', 'medium'),
+    ('FIX_INPUT_MULTIPLE_DEVICES_USB_SYSTEM', 'Check Dock, USB Ports, or System Input Issue', 'If multiple input devices fail, the problem may be USB controller, dock, OS, or system-level input issue.', 'Test ports, dock path, and known-good input device.', 1, 'Escalate to Endpoint/Desktop if OS, USB controller, driver stack, or hardware issue is suspected.', 'high'),
+    ('FIX_INPUT_REPLACE_REPAIR_PERIPHERAL', 'Replace or Re-Pair Faulty Peripheral', 'The peripheral appears faulty if a known-good device works on the same computer.', 'Replace or re-pair the faulty input peripheral.', 0, 'Escalate to Hardware/Asset Support if replacement, warranty, or asset tracking is needed.', 'medium'),
+    ('FIX_INPUT_USB_HID_DRIVER_DETECTION', 'Troubleshoot USB/HID Driver or OS Detection', 'The OS may not detect the keyboard/mouse due to USB, HID, Bluetooth, or driver issue.', 'Check device detection, drivers, and approved updates.', 1, 'Escalate to Endpoint/Desktop or Systems if controller, driver deployment, or OS repair is needed.', 'high'),
+    ('FIX_INPUT_HARDWARE_REPAIR_REPLACEMENT', 'Escalate Hardware Repair or Replacement', 'Physical damage, liquid spill, or built-in keyboard/touchpad failure may require repair or replacement.', 'Escalate physical or built-in device failure.', 1, 'Escalate to Hardware/Asset Support for repair, replacement, asset swap, or warranty handling.', 'high'),
+    ('FIX_INPUT_SETTINGS_LAYOUT_POWER_POLICY', 'Check Settings, Layout, Power Management, or Policy', 'Input devices may work but behave incorrectly due to keyboard layout, touchpad settings, power management, or policy.', 'Check layout, touchpad setting, power management, and endpoint policy.', 0, 'Escalate to Endpoint Management/Security if USB policy, managed setting, or update deployment caused the issue.', 'medium'),
+]
+
+KEYBOARD_OR_MOUSE_NOT_WORKING_SOLUTION_STEPS = {
+    'FIX_INPUT_WIRELESS_POWER_RECEIVER_BLUETOOTH': {
+        'user': ['Confirm the keyboard or mouse is powered on.', 'Replace or recharge batteries.', 'Confirm the USB receiver is plugged in.', 'If Bluetooth, turn Bluetooth off and on.', 'Restart the computer and try again.'],
+        'technician': ['Confirm whether the device uses wireless dongle or Bluetooth.', 'Check battery and power state.', 'Confirm receiver/dongle is present and recognized.', 'Remove and re-pair Bluetooth device if appropriate.', 'Test with a known-good input device if issue continues.'],
+        'admin': ['Escalation notes: provide connection type, receiver status, battery check, pairing attempts, known-good test result, and replacement need if confirmed.']
+    },
+    'FIX_INPUT_DOCK_USB_HUB_CONNECTION': {
+        'user': ['Disconnect and reconnect the dock or hub.', 'Connect keyboard/mouse directly to the computer.', 'Try another USB port.', 'Restart the computer.'],
+        'technician': ['Test direct connection versus dock/hub connection.', 'Check whether other USB devices work through the dock.', 'Power-cycle the dock if appropriate.', 'Check dock firmware/driver if available.', 'Escalate if dock hardware or managed dock firmware issue is suspected.'],
+        'admin': ['Escalation notes: provide dock model, port tests, direct-versus-dock results, firmware/driver version if available, and affected devices/users.']
+    },
+    'FIX_INPUT_RESTART_REPORT': {
+        'user': ['Save your work if possible.', 'Restart the computer.', 'Reconnect the keyboard/mouse after restart.', 'Submit a ticket if it still does not work.'],
+        'technician': ['Confirm restart was completed.', 'Recheck detection after restart.', 'Capture connection type, device model, error message, and recent changes.', 'Continue with driver, dock, or hardware isolation.'],
+        'admin': ['Escalation notes: include restart result, symptoms after reboot, device/peripheral model, connection type, and recent changes.']
+    },
+    'FIX_INPUT_MULTIPLE_DEVICES_USB_SYSTEM': {
+        'user': ['Try another USB port if possible.', 'Disconnect from dock and connect directly.', 'Restart the computer.', 'Tell IT if no keyboard or mouse works at all.'],
+        'technician': ['Test with a known-good keyboard/mouse.', 'Test different USB ports.', 'Check Device Manager for USB/HID errors.', 'Check whether issue started after Windows or driver update.', 'Escalate if OS, USB controller, or hardware issue is suspected.'],
+        'admin': ['Escalation notes: provide known-good test results, USB port tests, Device Manager errors, update history, and whether built-in input still works.']
+    },
+    'FIX_INPUT_REPLACE_REPAIR_PERIPHERAL': {
+        'user': ['Use a temporary replacement device if available.', 'Do not continue using damaged equipment.', 'Report any spill, drop, or physical damage.'],
+        'technician': ['Confirm user peripheral fails or behaves inconsistently.', 'Confirm known-good input device works on user computer.', 'Re-pair if Bluetooth/wireless.', 'Replace peripheral if hardware failure is confirmed.', 'Document asset or replacement details.'],
+        'admin': ['Escalation notes: include peripheral model, damage condition, known-good comparison, replacement asset need, and business impact.']
+    },
+    'FIX_INPUT_USB_HID_DRIVER_DETECTION': {
+        'user': ['Try another USB port or reconnect Bluetooth.', 'Restart the computer.', 'Do not download drivers from unapproved websites.'],
+        'technician': ['Check Device Manager or system settings for device detection.', 'Check USB/HID/Bluetooth device status.', 'Update or reinstall driver from approved source if needed.', 'Check Windows update/driver history.', 'Escalate if controller/OS repair is needed.'],
+        'admin': ['Escalation notes: provide device detection status, USB/HID/Bluetooth error, driver version, update history, and approved remediation attempted.']
+    },
+    'FIX_INPUT_HARDWARE_REPAIR_REPLACEMENT': {
+        'user': ['Stop using damaged equipment if unsafe.', 'Report any spill, drop, or visible damage.', 'Use an external keyboard/mouse temporarily if available.'],
+        'technician': ['Document physical condition and failure symptoms.', 'Run hardware diagnostics if available.', 'Provide temporary workaround if possible.', 'Escalate for warranty repair, replacement, or asset swap.'],
+        'admin': ['Escalation notes: include damage details, diagnostic result, serial/asset tag, warranty status if known, and temporary workaround.']
+    },
+    'FIX_INPUT_SETTINGS_LAYOUT_POWER_POLICY': {
+        'user': ['Confirm whether keys type wrong characters.', 'Check if touchpad was disabled accidentally.', 'Tell IT if the device disconnects after sleep.', 'Report if this started after an update.'],
+        'technician': ['Check keyboard language/layout.', 'Check touchpad settings and function-key toggle.', 'Check USB/Bluetooth power management if disconnecting after sleep.', 'Check endpoint policy if USB devices are blocked.', 'Escalate if managed policy or update caused the issue.'],
+        'admin': ['Escalation notes: provide layout/settings result, power management finding, policy block evidence, update/deployment timing, and affected scope.']
+    },
+}
+
+KEYBOARD_OR_MOUSE_NOT_WORKING_USER_DIAGNOSTIC_NODES = [
+    ('ROOT', None, 'question', 'Keyboard or Mouse Not Working', 'Start here for keyboard, mouse, touchpad, wireless, Bluetooth, dock, or USB input problems.', 'Which device is not working?', None, None, None, 1),
+    ('MULTIPLE', 'ROOT', 'solution', 'Check Dock, USB Ports, or System Input Issue', 'Multiple input devices do not work.', None, 'Multiple input devices', 'multiple', 'FIX_INPUT_MULTIPLE_DEVICES_USB_SYSTEM', 1),
+    ('KEYBOARD_Q', 'ROOT', 'question', 'Keyboard Connection Type', 'Determine keyboard connection type.', 'Is the keyboard wired, wireless, Bluetooth, or built-in?', 'Keyboard', 'keyboard', None, 2),
+    ('MOUSE_Q', 'ROOT', 'question', 'Mouse Connection Type', 'Determine mouse/touchpad connection type.', 'Is the mouse wired, wireless, Bluetooth, built-in touchpad, or dock-connected?', 'Mouse', 'mouse', None, 3),
+    ('TOUCHPAD_Q', 'ROOT', 'question', 'Touchpad State', 'Check touchpad settings and built-in device state.', 'Did this start after an update, spill/drop, or touchpad setting change?', 'Touchpad', 'touchpad', None, 4),
+    ('KEY_DOCK_YES', 'KEYBOARD_Q', 'solution', 'Troubleshoot Dock or USB Hub Connection', 'Keyboard works directly but not through dock or hub.', None, 'Docking station/USB hub', 'dock', 'FIX_INPUT_DOCK_USB_HUB_CONNECTION', 1),
+    ('KEY_WIRELESS', 'KEYBOARD_Q', 'solution', 'Check Wireless Power, Receiver, or Bluetooth Pairing', 'Wireless or Bluetooth keyboard issue.', None, 'Wireless/Bluetooth', 'wireless', 'FIX_INPUT_WIRELESS_POWER_RECEIVER_BLUETOOTH', 2),
+    ('KEY_WIRED', 'KEYBOARD_Q', 'solution', 'Restart and Report Input Device Issue', 'Wired or built-in keyboard still needs troubleshooting after basic checks.', None, 'Wired USB/Built-in', 'wired_builtin', 'FIX_INPUT_RESTART_REPORT', 3),
+    ('MOUSE_DOCK', 'MOUSE_Q', 'solution', 'Troubleshoot Dock or USB Hub Connection', 'Mouse works directly but not through dock or hub.', None, 'Docking station/USB hub', 'dock', 'FIX_INPUT_DOCK_USB_HUB_CONNECTION', 1),
+    ('MOUSE_WIRELESS', 'MOUSE_Q', 'solution', 'Check Wireless Power, Receiver, or Bluetooth Pairing', 'Wireless or Bluetooth mouse issue.', None, 'Wireless/Bluetooth', 'wireless', 'FIX_INPUT_WIRELESS_POWER_RECEIVER_BLUETOOTH', 2),
+    ('MOUSE_WIRED', 'MOUSE_Q', 'solution', 'Restart and Report Input Device Issue', 'Wired mouse or touchpad issue still needs troubleshooting after basic checks.', None, 'Wired USB/Built-in', 'wired_builtin', 'FIX_INPUT_RESTART_REPORT', 3),
+    ('TOUCHPAD_DAMAGE', 'TOUCHPAD_Q', 'solution', 'Escalate Hardware Repair or Replacement', 'Built-in touchpad or keyboard failure after damage or hardware symptom.', None, 'Spill/drop/hardware symptom', 'damage', 'FIX_INPUT_HARDWARE_REPAIR_REPLACEMENT', 1),
+    ('TOUCHPAD_SETTINGS', 'TOUCHPAD_Q', 'solution', 'Check Settings, Layout, Power Management, or Policy', 'Touchpad may be disabled or affected by settings/update.', None, 'Setting/update/no damage', 'settings', 'FIX_INPUT_SETTINGS_LAYOUT_POWER_POLICY', 2),
+]
+
+KEYBOARD_OR_MOUSE_NOT_WORKING_TECH_DIAGNOSTIC_NODES = [
+    ('ROOT', None, 'question', 'Keyboard or Mouse Not Working - IT Support Specialist', 'Start here for endpoint input device troubleshooting.', 'Does a known-good input device work on the user computer?', None, None, None, 1),
+    ('KNOWN_GOOD_YES', 'ROOT', 'solution', 'Replace or Re-Pair Faulty Peripheral', 'Computer works with known-good device, so peripheral is likely faulty or mispaired.', None, 'Yes', 'yes', 'FIX_INPUT_REPLACE_REPAIR_PERIPHERAL', 1),
+    ('DOCK_Q', 'ROOT', 'question', 'Dock or Direct Connection', 'Known-good device does not work; isolate dock/hub path.', 'Is the issue limited to dock or hub connection?', 'No', 'no', None, 2),
+    ('DOCK_YES', 'DOCK_Q', 'solution', 'Troubleshoot Dock or USB Hub Connection', 'Input fails through dock/hub but not direct connection.', None, 'Yes', 'yes', 'FIX_INPUT_DOCK_USB_HUB_CONNECTION', 1),
+    ('OS_Q', 'DOCK_Q', 'question', 'OS Detection', 'Check whether OS detects the device.', 'Does the OS detect the device without warning?', 'No', 'no', None, 2),
+    ('OS_NO', 'OS_Q', 'solution', 'Troubleshoot USB/HID Driver or OS Detection', 'Device is not detected or shows warning/error.', None, 'No / Warning', 'no_warning', 'FIX_INPUT_USB_HID_DRIVER_DETECTION', 1),
+    ('DAMAGE_Q', 'OS_Q', 'question', 'Damage or Built-in Failure', 'Check for physical or built-in hardware issue.', 'Is there physical damage, liquid spill, or built-in device failure?', 'Yes', 'yes', None, 2),
+    ('DAMAGE_YES', 'DAMAGE_Q', 'solution', 'Escalate Hardware Repair or Replacement', 'Physical damage or built-in input hardware failure.', None, 'Yes', 'yes', 'FIX_INPUT_HARDWARE_REPAIR_REPLACEMENT', 1),
+    ('SETTINGS', 'DAMAGE_Q', 'solution', 'Check Settings, Layout, Power Management, or Policy', 'Input device is detected but settings, layout, power, or policy may affect behavior.', None, 'No', 'no', 'FIX_INPUT_SETTINGS_LAYOUT_POWER_POLICY', 2),
+]
+
+def seed_keyboard_mouse_issue_content(cursor):
+    """Seed Keyboard or Mouse Not Working KB article, solutions, steps, and diagnostic trees."""
+    code_, title, category, severity, description = KEYBOARD_OR_MOUSE_NOT_WORKING_PROBLEM
+    cursor.execute("""
+        INSERT INTO problem (problem_code, title, category, severity, description)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(problem_code) DO UPDATE SET
+            title=excluded.title, category=excluded.category, severity=excluded.severity,
+            description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, KEYBOARD_OR_MOUSE_NOT_WORKING_PROBLEM)
+    cursor.execute('SELECT problem_id FROM problem WHERE problem_code = ?', (code_,))
+    row = cursor.fetchone()
+    if not row:
+        return
+    problem_id = row['problem_id']
+    cursor.execute("""
+        INSERT INTO kb_article (problem_id, title, summary, difficulty, estimated_time, escalation_required, escalation_notes, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(problem_id) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, difficulty=excluded.difficulty,
+            estimated_time=excluded.estimated_time, escalation_required=excluded.escalation_required,
+            escalation_notes=excluded.escalation_notes, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, KEYBOARD_OR_MOUSE_NOT_WORKING_KB['title'], KEYBOARD_OR_MOUSE_NOT_WORKING_KB['summary'], KEYBOARD_OR_MOUSE_NOT_WORKING_KB['difficulty'], KEYBOARD_OR_MOUSE_NOT_WORKING_KB['estimated_time'], KEYBOARD_OR_MOUSE_NOT_WORKING_KB['escalation_required'], KEYBOARD_OR_MOUSE_NOT_WORKING_KB['escalation_notes']))
+    cursor.execute('SELECT kb_article_id FROM kb_article WHERE problem_id = ?', (problem_id,))
+    article = cursor.fetchone()
+    if article:
+        kb_id = article['kb_article_id']
+        delete_kb_child_rows(cursor, kb_id)
+        insert_kb_child_rows(cursor, 'kb_article_tag', 'tag', kb_id, KEYBOARD_OR_MOUSE_NOT_WORKING_KB['tags'])
+        insert_kb_child_rows(cursor, 'kb_article_symptom', 'symptom', kb_id, KEYBOARD_OR_MOUSE_NOT_WORKING_KB['symptoms'])
+        insert_kb_child_rows(cursor, 'kb_article_cause', 'cause', kb_id, KEYBOARD_OR_MOUSE_NOT_WORKING_KB['causes'])
+        insert_kb_child_rows(cursor, 'kb_article_user_step', 'step_text', kb_id, KEYBOARD_OR_MOUSE_NOT_WORKING_KB['user_steps'])
+        insert_kb_child_rows(cursor, 'kb_article_it_step', 'step_text', kb_id, KEYBOARD_OR_MOUSE_NOT_WORKING_KB['it_steps'])
+    cursor.executemany("""
+        INSERT INTO solution (solution_code, title, summary, resolution_steps, escalation_required, escalation_notes, priority_recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(solution_code) DO UPDATE SET
+            title=excluded.title, summary=excluded.summary, resolution_steps=excluded.resolution_steps,
+            escalation_required=excluded.escalation_required, escalation_notes=excluded.escalation_notes,
+            priority_recommendation=excluded.priority_recommendation, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, KEYBOARD_OR_MOUSE_NOT_WORKING_SOLUTIONS)
+    for solution_code, audience_steps in KEYBOARD_OR_MOUSE_NOT_WORKING_SOLUTION_STEPS.items():
+        solution_id = get_solution_id_by_code(cursor, solution_code)
+        if not solution_id:
+            continue
+        for audience, steps in audience_steps.items():
+            cursor.execute('DELETE FROM solution_step WHERE solution_id = ? AND audience = ?', (solution_id, audience))
+            cursor.executemany('INSERT INTO solution_step (solution_id, audience, step_text, sort_order) VALUES (?, ?, ?, ?)', [(solution_id, audience, step, idx) for idx, step in enumerate(steps, start=1)])
+    seed_keyboard_mouse_tree(cursor, 'user', 'KEYBOARD_OR_MOUSE_NOT_WORKING_USER', 'Keyboard or Mouse Not Working - User Diagnostic', 'User-friendly diagnostic tree for wired, wireless, Bluetooth, dock, touchpad, and input device symptoms.', KEYBOARD_OR_MOUSE_NOT_WORKING_USER_DIAGNOSTIC_NODES)
+    seed_keyboard_mouse_tree(cursor, 'technician', 'KEYBOARD_OR_MOUSE_NOT_WORKING_TECHNICIAN', 'Keyboard or Mouse Not Working - IT Support Specialist Diagnostic', 'IT Support Specialist diagnostic tree for peripheral isolation, dock/USB path, OS detection, hardware, settings, and policy issues.', KEYBOARD_OR_MOUSE_NOT_WORKING_TECH_DIAGNOSTIC_NODES)
+
+def seed_keyboard_mouse_tree(cursor, audience, tree_code, title, description, nodes):
+    problem_id = get_problem_id_for_tree_code(cursor, 'KEYBOARD_OR_MOUSE_NOT_WORKING')
+    cursor.execute("""
+        INSERT INTO diagnostic_tree (problem_id, diagnostic_tree_code, base_tree_code, audience, title, description, is_active, updated_at)
+        VALUES (?, ?, 'KEYBOARD_OR_MOUSE_NOT_WORKING', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(diagnostic_tree_code) DO UPDATE SET
+            problem_id=excluded.problem_id, base_tree_code=excluded.base_tree_code, audience=excluded.audience,
+            title=excluded.title, description=excluded.description, is_active=1, updated_at=CURRENT_TIMESTAMP
+    """, (problem_id, tree_code, audience, title, description))
+    tree_id = get_diagnostic_tree_id_by_code(cursor, tree_code)
+    if not tree_id:
+        return
+    cursor.execute('UPDATE diagnostic_node SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE diagnostic_tree_id = ?', (tree_id,))
+    for node_key, parent_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_code, sort_order in nodes:
+        parent_id = get_diagnostic_node_id_by_tree_and_key(cursor, tree_id, parent_key) if parent_key else None
+        solution_id = get_solution_id_by_code(cursor, solution_code) if solution_code else None
+        cursor.execute("""
+            INSERT INTO diagnostic_node (
+                diagnostic_tree_id, parent_diagnostic_node_id, problem_id, diagnostic_tree_code,
+                node_key, node_type, title, description, prompt_text, condition_label,
+                condition_value, solution_id, sort_order, is_active, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(diagnostic_tree_code, node_key) DO UPDATE SET
+                parent_diagnostic_node_id=excluded.parent_diagnostic_node_id,
+                problem_id=excluded.problem_id,
+                diagnostic_tree_code=excluded.diagnostic_tree_code,
+                node_type=excluded.node_type,
+                title=excluded.title,
+                description=excluded.description,
+                prompt_text=excluded.prompt_text,
+                condition_label=excluded.condition_label,
+                condition_value=excluded.condition_value,
+                solution_id=excluded.solution_id,
+                sort_order=excluded.sort_order,
+                is_active=1,
+                updated_at=CURRENT_TIMESTAMP
+        """, (tree_id, parent_id, problem_id, tree_code, node_key, node_type, node_title, node_desc, prompt, condition_label, condition_value, solution_id, sort_order))
+
+
 # -----------------------------
 # VIDEO CONFERENCING ISSUE CONTENT
 # -----------------------------
@@ -7704,6 +7948,7 @@ def initialize_database():
     seed_certificate_security_warning_content(cursor)
     seed_mobile_email_setup_issue_content(cursor)
     seed_video_conferencing_issue_content(cursor)
+    seed_keyboard_mouse_issue_content(cursor)
     seed_existing_issue_role_alignment(cursor)
 
     cursor.execute("""
@@ -8834,12 +9079,35 @@ def calculate_search_score(issue, search_query):
     return score
 
 
+def normalize_choice(value, allowed_values, default_value):
+    """Return a display-safe value from allowed_values, accepting case/spacing variations."""
+    if value is None:
+        return default_value
+
+    value_text = str(value).strip()
+    for allowed in allowed_values:
+        if value_text.lower() == allowed.lower():
+            return allowed
+
+    return default_value
+
+
+def get_issue_severity(issue):
+    """Return normalized severity for legacy and seeded KB records."""
+    return normalize_choice(issue.get("severity"), ["Low", "Medium", "High"], "Medium")
+
+
+def get_issue_difficulty(issue):
+    """Return normalized difficulty for legacy and seeded KB records."""
+    return normalize_choice(issue.get("difficulty"), ["Beginner", "Intermediate", "Advanced"], "Beginner")
+
+
 def issue_matches_filters(issue, selected_category, selected_severity, search_query):
     """Apply category, severity, and search filters."""
     if selected_category != "All" and issue["category"] != selected_category:
         return False
 
-    if selected_severity != "All" and issue["severity"] != selected_severity:
+    if selected_severity != "All" and get_issue_severity(issue) != selected_severity:
         return False
 
     return calculate_search_score(issue, search_query) > 0
@@ -8850,7 +9118,7 @@ def show_issue_metadata(issue):
     """Display professional Knowledge Base article metadata."""
     meta_col1, meta_col2, meta_col3 = st.columns(3)
 
-    meta_col1.write(f"**Difficulty:** {issue.get('difficulty', 'Beginner')}")
+    meta_col1.write(f"**Difficulty:** {get_issue_difficulty(issue)}")
     meta_col2.write(f"**Estimated Time:** {issue.get('estimated_time', '5 minutes')}")
     meta_col3.write(f"**Escalation Required:** {'Yes' if issue.get('escalation_required') else 'No'}")
 
@@ -8863,6 +9131,7 @@ def show_issue_metadata(issue):
 
 def show_severity(severity):
     """Display severity using Streamlit status styles."""
+    severity = normalize_choice(severity, ["Low", "Medium", "High"], "Medium")
     if severity == "High":
         st.error(f"Severity: {severity}")
     elif severity == "Medium":
@@ -11121,13 +11390,13 @@ def show_admin_kb_editor():
             edit_severity = st.selectbox(
                 "Severity",
                 ["Low", "Medium", "High"],
-                index=["Low", "Medium", "High"].index(issue["severity"]),
+                index=["Low", "Medium", "High"].index(get_issue_severity(issue)),
                 key=f"edit_sev_{idx}",
             )
             edit_difficulty = st.selectbox(
                 "Difficulty",
                 ["Beginner", "Intermediate", "Advanced"],
-                index=["Beginner", "Intermediate", "Advanced"].index(issue.get("difficulty", "Beginner")),
+                index=["Beginner", "Intermediate", "Advanced"].index(get_issue_difficulty(issue)),
                 key=f"edit_difficulty_{idx}",
             )
             edit_estimated_time = st.text_input(
@@ -13246,10 +13515,10 @@ The project uses local authentication rather than enterprise SSO. That keeps the
 
 - Enterprise SSO
 - Reusable node-link graph model
-- Admin approval workflow for Knowledge Base changes
+- Future admin workflow for Knowledge Base editing and approval
 - Search across tickets and KB articles
 - SLA automation and notifications
-- Import/export tools for troubleshooting trees
+- Import/export tools for troubleshooting trees and Knowledge Base content
 - Dedicated Tier 2/3 role views for Identity, Network, Security, Endpoint, and Systems teams
 - Separate reporting or analytics module outside the core MVP
 
@@ -13504,7 +13773,7 @@ The MVP centers around these tables:
         """
 - The troubleshooting model uses parent-child trees instead of a full reusable graph model, keeping routing simple and explainable.
 - Authentication is local and portfolio-friendly rather than enterprise SSO.
-- The admin Knowledge Base editor is useful for demos, but advanced versioning and approvals are intentionally left for future work.
+- Knowledge Base editing is intentionally hidden in the public MVP so visitors can browse and test issues without changing content; editing, versioning, and approvals are future enhancements.
 - Search, notifications, SLA automation, dashboards, and assignment queues are intentionally left out of the visible MVP so the core guided-troubleshooting workflow stays finished and demoable.
 - Ticketing is included only as the escalation endpoint for unresolved troubleshooting, not as the main product focus.
 """
@@ -13518,7 +13787,7 @@ The MVP centers around these tables:
 - Dynamic ticket questions by category
 - Email or chat notifications
 - SLA escalation automation
-- Import/export tools for troubleshooting trees
+- Import/export tools for troubleshooting trees and Knowledge Base content
 - Dedicated Tier 2/3 role views for Identity, Network, Security, Endpoint, and Systems teams
 """
     )
@@ -13695,7 +13964,7 @@ processes can be organized into a working web application.
 - Ticket assignment and lifecycle management
 - Activity timeline for audit/history
 - Resolution templates
-- Knowledge Base management
+- Knowledge Base browsing
 - CSV ticket export
 """)
 
@@ -14088,7 +14357,6 @@ def main():
             "🎫 Create Ticket",
             build_menu_label("📋 View Tickets", admin_notifications["unread_updates"]),
             "🧭 Diagnostic Tree Viewer",
-            "🛠 Manage Knowledge Base",
         ]
     else:
         username = st.session_state.get("username")
@@ -14154,8 +14422,6 @@ def main():
         show_ticket_list()
     elif mode == "🧭 Diagnostic Tree Viewer":
         show_admin_diagnostic_tree_viewer()
-    elif mode == "🛠 Manage Knowledge Base":
-        show_admin_kb_editor()
 
 
 if __name__ == "__main__":
